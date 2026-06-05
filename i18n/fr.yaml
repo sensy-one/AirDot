@@ -1,0 +1,239 @@
+language:
+  id: 3
+  code: fr
+  label: Français
+
+setup_page:
+  html_title: Configurer AirDot
+  hero_title: Configurer AirDot
+  hero_body: Configurez la connexion, l’heure, l’écran et les intégrations.
+
+  saved: Paramètres enregistrés
+
+  network_title: Connexion
+  network_note: Choisissez un réseau Wi-Fi ou utilisez AirDot sans Wi-Fi.
+  wifi_ssid_label: Réseau Wi-Fi
+  wifi_password_label: Mot de passe Wi-Fi
+  wifi_password_placeholder: Saisissez le mot de passe
+  offline_option: Continuer sans Wi-Fi
+  no_networks: Aucun réseau Wi-Fi trouvé
+
+  integrations_title: Intégrations
+  integrations_note: Connectez AirDot à Home Assistant ou à un serveur MQTT.
+
+  ha_discovery_title: Home Assistant
+  ha_discovery_description: Rendez AirDot automatiquement détectable dans Home Assistant.
+
+  mqtt_title: MQTT
+  mqtt_description: Envoyez les données de mesure à un serveur MQTT.
+  mqtt_broker_label: Serveur
+  mqtt_broker_placeholder: 192.168.1.10
+  mqtt_port_label: Port
+  mqtt_username_label: Nom d’utilisateur
+  mqtt_password_label: Mot de passe
+  mqtt_topic_prefix_label: Préfixe de topic
+  optional_placeholder: Facultatif
+  publishing_interval_label: Intervalle de publication
+
+  air_quality_title: Qualité de l’air
+  air_quality_note: Choisissez la référence utilisée par AirDot pour évaluer la qualité de l’air.
+  air_quality_profile_label: Référence
+
+  sensor_calibration_title: Étalonnage du capteur
+  sensor_calibration_note: Ajustez la mesure de température interne.
+  sen66_temperature_offset_label: Le SEN66 mesure trop haut de
+  sen66_co2_reference_label: Référence CO2
+  sen66_co2_calibration_title: Forcer l’étalonnage de référence CO2
+  sen66_co2_calibration_description: Placez AirDot à l’air extérieur frais pendant au moins 3 minutes, puis enregistrez.
+
+  alerts_title: Alertes
+  alerts_note: Définissez quand recevoir une alerte.
+
+  display_alert_wake_screen_title: Réveiller l’écran
+  display_alert_wake_screen_description: Allume l’écran lorsque Home Assistant envoie une alerte.
+
+  audio_alerts_title: Alertes sonores
+  audio_alerts_description: Émettez un signal d’alerte lorsqu’une mesure atteint un niveau dangereux.
+
+  hazard_focus_title: Focus sur les valeurs critiques
+  hazard_focus_description: Affichez automatiquement le graphique du capteur présentant le niveau de risque le plus élevé.
+
+  firmware_title: Mise à jour du firmware
+  firmware_note: Sélectionnez un fichier OTA .bin pour la mise à jour du firmware AirDot.
+  firmware_file_label: Fichier firmware
+  firmware_select_button: Choisir un fichier firmware
+  firmware_upload_button: Mettre à jour le firmware
+  firmware_success: Mise à jour réussie
+  firmware_no_file: Choisissez d’abord un fichier firmware
+  firmware_failed: Mise à jour échouée
+
+  time_title: Heure
+  time_note: Réglez la date, l’heure et le format horaire.
+
+  time_server_title: Date et heure
+  time_server_description: Laissez AirDot mettre l’heure à jour automatiquement ou réglez la date et l’heure vous-même.
+  time_source_label: Réglage de l’heure
+  time_source_network_label: Automatique
+  time_source_manual_label: Manuel
+
+  manual_time_label: Date et heure
+
+  time_format_label: Format horaire
+  time_24h_label: 24 heures
+  time_12h_label: 12 heures
+
+  night_screen_off_title: Mode nuit
+  night_screen_off_description: Éteignez l’écran pendant les heures définies.
+
+  weather_title: Météo
+  weather_note: Affichez la météo extérieure locale à l’écran.
+
+  weather_sync_title: Mises à jour météo
+  weather_sync_description: Utilisez la localisation automatique ou choisissez une ville.
+  weather_location_mode_label: Localisation
+  weather_location_ip_label: Automatique
+  weather_location_manual_label: Manuel
+  weather_location_city_label: Ville
+  weather_location_city_placeholder: Paris
+
+  display_title: Écran
+  display_note: Réglez la langue, les unités, la luminosité et l’affichage.
+
+  language_label: Langue
+  units_label: Unités
+  metric_label: Métrique
+  imperial_label: Impérial
+
+  brightness_label: Luminosité
+  brightness_low: Faible
+  brightness_medium: Moyenne
+  brightness_high: Élevée
+
+  dark_mode_title: Mode sombre
+  dark_mode_description: Utilisez un affichage sombre.
+
+  adaptive_brightness_title: Luminosité automatique
+  adaptive_brightness_description: Ajustez automatiquement la luminosité selon la lumière ambiante.
+
+  save_button: Enregistrer
+  footer_note: Maintenez le bouton d’action enfoncé pour rouvrir la configuration.
+
+air_quality:
+  balanced:
+    status: BON
+    action: Aucune action nécessaire
+  moderate:
+    status: MOYEN
+    action: Surveillez les valeurs
+  poor:
+    status: MAUVAIS
+    action: Aérez la pièce
+  unhealthy:
+    status: NOCIF
+    action: Limitez l’exposition
+  hazardous:
+    status: CRITIQUE
+    action: Agissez immédiatement
+
+factory_reset:
+  factory_reset_countdown:
+    title: Réinit. usine
+    body: |-
+      Maintenez pour
+      réinitialiser AirDot.
+
+      Réinit. dans {seconds}...
+connection:
+  indoor: Intérieur
+  outdoor: Extérieur
+
+weather:
+  clear: Dégagé
+  cloudy: Nuageux
+  fog: Brouillard
+  drizzle: Bruine
+  freezing_drizzle: Bruine verglaçante
+  rain: Pluie
+  freezing_rain: Pluie verglaçante
+  snow: Neige
+  snow_grains: Neige en grains
+  rain_showers: Averses
+  snow_showers: Averses de neige
+  thunderstorm: Orage
+  thunderstorm_hail: Orage avec grêle
+  high_label: H
+  low_label: B
+
+notification:
+  fallback: Notification
+  dismiss: Fermer
+
+date:
+  format: "{weekday} {day} {month}"
+  weekdays:
+    sunday: DIM
+    monday: LUN
+    tuesday: MAR
+    wednesday: MER
+    thursday: JEU
+    friday: VEN
+    saturday: SAM
+  months:
+    january: JAN
+    february: FÉV
+    march: MARS
+    april: AVR
+    may: MAI
+    june: JUIN
+    july: JUIL
+    august: AOÛT
+    september: SEP
+    october: OCT
+    november: NOV
+    december: DÉC
+
+history:
+  pm1_title: PM₁
+  pm25_title: PM₂
+  pm4_title: PM₄
+  pm10_title: PM₁₀
+  co2_title: CO₂
+  voc_title: VOC
+  nox_title: NOx
+  temperature_title: TEMP
+  humidity_title: HR
+  pressure_title: PRES
+  light_title: LUM
+  min_pattern: "{value} min"
+  max_pattern: "{value} max"
+
+onboarding:
+  setup_language:
+    title: Choisissez la langue
+    body: |-
+      Appuyez brièvement pour changer.
+      Maintenez enfoncé pour confirmer.
+  setup_connect:
+    title: Configurer AirDot
+    body: |-
+      Ouvrez le Wi-Fi sur votre téléphone
+      et choisissez AirDot-XXXXXX.
+
+      Ouvrez ensuite votre navigateur
+      et allez sur 192.168.4.1.
+    button_0: Plus tard
+    button_0_reopen: Retour
+
+  setup_applying:
+    title: Connexion en cours
+    body: |-
+      AirDot applique vos paramètres
+      et établit la connexion.
+    button_0: Un instant…
+
+  setup_complete:
+    title: AirDot est configuré
+    body: |-
+      Vous pouvez maintenant suivre
+      la qualité de l’air.
+    countdown: L’aperçu s’ouvre dans {seconds}…

@@ -1,0 +1,9 @@
+display:
+  - platform: nhd_2_1_480480af_asxp
+    id: display_panel
+    pclk_frequency: ${display_panel_pclk_frequency}
+    hsync_front_porch: 10
+    hsync_back_porch: 10
+    vsync_front_porch: 10
+    vsync_back_porch: 10
+    auto_clear_enabled: false

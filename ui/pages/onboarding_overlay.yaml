@@ -1,0 +1,97 @@
+widgets:
+  - obj:
+      id: modal_overlay_layer
+      hidden: true
+      align: CENTER
+      width: 480
+      height: 480
+      bg_color: 0x000000
+      bg_opa: COVER
+      border_width: 0
+      radius: 0
+      pad_all: 0
+      scrollbar_mode: "OFF"
+      scrollable: false
+      widgets:
+        - obj:
+            id: modal_overlay_content_stack
+            align: CENTER
+            width: 380
+            height: 480
+            bg_opa: TRANSP
+            border_width: 0
+            radius: 0
+            pad_all: 0
+            scrollbar_mode: "OFF"
+            scrollable: false
+            layout:
+              type: FLEX
+              flex_flow: COLUMN
+              flex_align_main: CENTER
+              flex_align_cross: CENTER
+              pad_row: 24
+            widgets:
+              - label:
+                  id: modal_overlay_title_label
+                  width: 380
+                  height: SIZE_CONTENT
+                  text: "AirDot"
+                  text_font: ui_font_modal_title
+                  text_color: 0xFFFFFF
+                  bg_opa: TRANSP
+                  text_align: CENTER
+
+              - label:
+                  id: modal_overlay_body_label
+                  width: 380
+                  height: SIZE_CONTENT
+                  text: "--"
+                  text_font: ui_font_small
+                  text_color: 0xFFFFFF
+                  bg_opa: TRANSP
+                  text_align: CENTER
+
+              - obj:
+                  id: modal_overlay_primary_button_group
+                  width: 380
+                  height: SIZE_CONTENT
+                  bg_opa: TRANSP
+                  border_width: 0
+                  radius: 0
+                  pad_all: 0
+                  scrollbar_mode: "OFF"
+                  scrollable: false
+                  layout:
+                    type: FLEX
+                    flex_flow: ROW
+                    flex_align_main: CENTER
+                    flex_align_cross: CENTER
+                    pad_column: 0
+                  widgets:
+                    - label:
+                        id: modal_overlay_primary_button_left_bracket_label
+                        hidden: true
+                        width: SIZE_CONTENT
+                        height: SIZE_CONTENT
+                        text: ""
+                        text_font: ui_font_small
+                        text_color: 0xFFFFFF
+                        bg_opa: TRANSP
+                    - label:
+                        id: modal_overlay_primary_button_label
+                        width: 380
+                        height: SIZE_CONTENT
+                        text: "--"
+                        text_font: ui_font_small
+                        text_color: 0xFFFFFF
+                        bg_opa: TRANSP
+                        text_align: CENTER
+                    - label:
+                        id: modal_overlay_primary_button_right_bracket_label
+                        hidden: true
+                        width: SIZE_CONTENT
+                        height: SIZE_CONTENT
+                        text: ""
+                        text_font: ui_font_small
+                        text_color: 0xFFFFFF
+                        bg_opa: TRANSP

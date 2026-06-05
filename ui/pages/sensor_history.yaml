@@ -1,0 +1,111 @@
+id: ${metric}_history_page
+bg_color: 0x000000
+bg_opa: COVER
+pad_all: 0
+widgets:
+  - obj:
+      align: TOP_MID
+      x: 0
+      y: 58
+      width: SIZE_CONTENT
+      height: SIZE_CONTENT
+      bg_opa: TRANSP
+      border_width: 0
+      pad_all: 0
+      layout:
+        type: FLEX
+        flex_flow: COLUMN
+        flex_align_main: CENTER
+        flex_align_cross: CENTER
+      widgets:
+        - label:
+            id: ${metric}_history_title_label
+            text: "${title}"
+            text_font: ui_font_large
+            text_color: 0xFFFFFF
+            bg_opa: TRANSP
+        - label:
+            id: ${metric}_history_max_label
+            text: "--"
+            text_font: ui_font_small
+            text_color: 0xFFFFFF
+            bg_opa: TRANSP
+            text_letter_space: 1
+            translate_y: -8
+  - line:
+      id: ${metric}_history_line
+      align: CENTER
+      x: 0
+      y: 0
+      width: 345
+      height: 120
+      points:
+        - x: 0
+          y: 60
+        - x: 344
+          y: 60
+      line_color: 0xFFFFFF
+      line_width: 3
+      line_opa: TRANSP
+      line_rounded: true
+  - label:
+      id: ${metric}_history_empty_label
+      align: CENTER
+      x: 0
+      y: 0
+      text: "--"
+      text_font: ui_font_large
+      text_color: 0xFFFFFF
+      bg_opa: TRANSP
+      text_letter_space: 1
+  - obj:
+      align: BOTTOM_MID
+      x: 0
+      y: -58
+      width: SIZE_CONTENT
+      height: SIZE_CONTENT
+      bg_opa: TRANSP
+      border_width: 0
+      pad_all: 0
+      layout:
+        type: FLEX
+        flex_flow: COLUMN
+        flex_align_main: CENTER
+        flex_align_cross: CENTER
+      widgets:
+        - label:
+            id: ${metric}_history_min_label
+            text: "--"
+            text_font: ui_font_small
+            text_color: 0xFFFFFF
+            bg_opa: TRANSP
+            text_letter_space: 1
+        - obj:
+            width: SIZE_CONTENT
+            height: SIZE_CONTENT
+            bg_opa: TRANSP
+            border_width: 0
+            pad_all: 0
+            translate_y: -8
+            layout:
+              type: FLEX
+              flex_flow: ROW
+              flex_align_main: CENTER
+              flex_align_cross: END
+              pad_column: 6
+            widgets:
+              - label:
+                  id: ${metric}_current_value_label
+                  text: "--"
+                  text_font: ui_font_large
+                  text_color: 0xFFFFFF
+                  bg_opa: TRANSP
+                  text_letter_space: 1
+                  long_mode: CLIP
+              - label:
+                  id: ${metric}_unit_label
+                  text: "${unit}"
+                  text_font: ui_font_metric_unit
+                  text_color: 0xFFFFFF
+                  bg_opa: TRANSP
+                  pad_bottom: 4

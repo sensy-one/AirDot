@@ -1,0 +1,76 @@
+time:
+  - platform: sntp
+    id: sntp_time
+    timezone: UTC
+    servers:
+      - 0.pool.ntp.org
+      - 1.pool.ntp.org
+      - 2.pool.ntp.org
+    on_time_sync:
+      then:
+        - lambda: |-
+            AirDot::time_weather::note_sntp_sync_success();
+        - script.execute: ui_refresh_time_weather_page
+
+script:
+  - id: time_sync_from_network
+    mode: restart
+    then:
+      - delay: 1s
+      - if:
+          condition:
+            lambda: "return AirDot::onboarding::time_server_runtime_allowed(id(setup_ap_active), id(setup_portal_active), id(onboarding_ui_active));"
+          then:
+            - lambda: |-
+                AirDot::time_weather::request_sntp_sync();
+            - delay: 5s
+            - if:
+                condition:
+                  lambda: "return AirDot::onboarding::time_server_runtime_allowed(id(setup_ap_active), id(setup_portal_active), id(onboarding_ui_active)) && !id(sntp_time).utcnow().is_valid();"
+                then:
+                  - lambda: |-
+                      AirDot::time_weather::note_sntp_sync_failed(
+                          AirDot::connectivity::ConnectivityError::TIMEOUT);
+                  - lambda: |-
+                      AirDot::time_weather::request_sntp_sync();
+            - delay: 20s
+            - if:
+                condition:
+                  lambda: "return AirDot::onboarding::time_server_runtime_allowed(id(setup_ap_active), id(setup_portal_active), id(onboarding_ui_active)) && !id(sntp_time).utcnow().is_valid();"
+                then:
+                  - lambda: |-
+                      AirDot::time_weather::note_sntp_sync_failed(
+                          AirDot::connectivity::ConnectivityError::TIMEOUT);
+                  - lambda: |-
+                      AirDot::time_weather::request_sntp_sync();
+            - delay: 60s
+            - if:
+                condition:
+                  lambda: "return AirDot::onboarding::time_server_runtime_allowed(id(setup_ap_active), id(setup_portal_active), id(onboarding_ui_active)) && !id(sntp_time).utcnow().is_valid();"
+                then:
+                  - lambda: |-
+                      AirDot::time_weather::note_sntp_sync_failed(
+                          AirDot::connectivity::ConnectivityError::TIMEOUT);
+                  - lambda: |-
+                      AirDot::time_weather::request_sntp_sync();
+            - script.execute: ui_refresh_time_weather_page
+
+interval:
+  - interval: 30min
+    then:
+      - if:
+          condition:
+            lambda: "return AirDot::onboarding::time_server_runtime_allowed(id(setup_ap_active), id(setup_portal_active), id(onboarding_ui_active));"
+          then:
+            - lambda: |-
+                AirDot::time_weather::request_sntp_sync();
+  - interval: 1min
+    then:
+      - if:
+          condition:
+            and:
+              - lambda: "return AirDot::onboarding::time_server_runtime_allowed(id(setup_ap_active), id(setup_portal_active), id(onboarding_ui_active));"
+              - lambda: "return !id(sntp_time).utcnow().is_valid();"
+          then:
+            - lambda: |-
+                AirDot::time_weather::request_sntp_sync();

@@ -1,0 +1,215 @@
+sensor:
+  - platform: template
+    id: ha_ambient_light
+    name: Light
+    internal: false
+    update_interval: ${ha_sensor_update_interval}
+    unit_of_measurement: lx
+    accuracy_decimals: 0
+    device_class: illuminance
+    state_class: measurement
+    lambda: |-
+      if (!id(ambient_light_sensor).has_state() ||
+          !std::isfinite(id(ambient_light_sensor).state) ||
+          id(ambient_light_sensor).state < 0.0f) {
+        return {};
+      }
+      return id(ambient_light_sensor).state;
+
+  - platform: template
+    id: ha_pressure
+    name: Pressure
+    internal: false
+    update_interval: ${ha_sensor_update_interval}
+    unit_of_measurement: hPa
+    accuracy_decimals: 0
+    device_class: atmospheric_pressure
+    state_class: measurement
+    lambda: |-
+      if (!id(pressure).has_state() ||
+          !std::isfinite(id(pressure).state) ||
+          id(pressure).state < 30000.0f ||
+          id(pressure).state > 120000.0f) {
+        return {};
+      }
+      return static_cast<float>(static_cast<int>(id(pressure).state / 100.0f));
+
+  - platform: template
+    id: ha_pm1
+    name: PM1
+    internal: false
+    update_interval: ${ha_sensor_update_interval}
+    unit_of_measurement: "µg/m³"
+    accuracy_decimals: 2
+    device_class: pm1
+    state_class: measurement
+    lambda: |-
+      const uint32_t now = millis();
+      if ((id(air_quality_warmup_until_ms) != 0 &&
+           static_cast<int32_t>(now - id(air_quality_warmup_until_ms)) < 0) ||
+          !id(pm1).has_state() ||
+          !AirDot::air_quality_metric_value_valid(AirDot::AirQualityMetric::PM1, id(pm1).state)) {
+        return {};
+      }
+      return id(pm1).state;
+
+  - platform: template
+    id: ha_pm25
+    name: PM2.5
+    internal: false
+    update_interval: ${ha_sensor_update_interval}
+    unit_of_measurement: "µg/m³"
+    accuracy_decimals: 2
+    device_class: pm25
+    state_class: measurement
+    lambda: |-
+      const uint32_t now = millis();
+      if ((id(air_quality_warmup_until_ms) != 0 &&
+           static_cast<int32_t>(now - id(air_quality_warmup_until_ms)) < 0) ||
+          !id(pm25).has_state() ||
+          !AirDot::air_quality_metric_value_valid(AirDot::AirQualityMetric::PM25, id(pm25).state)) {
+        return {};
+      }
+      return id(pm25).state;
+
+  - platform: template
+    id: ha_pm4
+    name: PM4
+    internal: false
+    update_interval: ${ha_sensor_update_interval}
+    unit_of_measurement: "µg/m³"
+    accuracy_decimals: 2
+    device_class: pm4
+    state_class: measurement
+    lambda: |-
+      const uint32_t now = millis();
+      if ((id(air_quality_warmup_until_ms) != 0 &&
+           static_cast<int32_t>(now - id(air_quality_warmup_until_ms)) < 0) ||
+          !id(pm4).has_state() ||
+          !AirDot::air_quality_metric_value_valid(AirDot::AirQualityMetric::PM4, id(pm4).state)) {
+        return {};
+      }
+      return id(pm4).state;
+
+  - platform: template
+    id: ha_pm10
+    name: PM10
+    internal: false
+    update_interval: ${ha_sensor_update_interval}
+    unit_of_measurement: "µg/m³"
+    accuracy_decimals: 2
+    device_class: pm10
+    state_class: measurement
+    lambda: |-
+      const uint32_t now = millis();
+      if ((id(air_quality_warmup_until_ms) != 0 &&
+           static_cast<int32_t>(now - id(air_quality_warmup_until_ms)) < 0) ||
+          !id(pm10).has_state() ||
+          !AirDot::air_quality_metric_value_valid(AirDot::AirQualityMetric::PM10, id(pm10).state)) {
+        return {};
+      }
+      return id(pm10).state;
+
+  - platform: template
+    id: ha_air_temperature
+    name: Temperature
+    internal: false
+    update_interval: ${ha_sensor_update_interval}
+    unit_of_measurement: "°C"
+    accuracy_decimals: 2
+    device_class: temperature
+    state_class: measurement
+    lambda: |-
+      const uint32_t now = millis();
+      if ((id(air_quality_warmup_until_ms) != 0 &&
+           static_cast<int32_t>(now - id(air_quality_warmup_until_ms)) < 0) ||
+          !id(air_temperature).has_state() ||
+          !std::isfinite(id(air_temperature).state) ||
+          id(air_temperature).state < -40.0f ||
+          id(air_temperature).state > 85.0f) {
+        return {};
+      }
+      return id(air_temperature).state;
+
+  - platform: template
+    id: ha_air_humidity
+    name: Humidity
+    internal: false
+    update_interval: ${ha_sensor_update_interval}
+    unit_of_measurement: "%"
+    accuracy_decimals: 2
+    device_class: humidity
+    state_class: measurement
+    lambda: |-
+      const uint32_t now = millis();
+      if ((id(air_quality_warmup_until_ms) != 0 &&
+           static_cast<int32_t>(now - id(air_quality_warmup_until_ms)) < 0) ||
+          !id(air_humidity).has_state() ||
+          !std::isfinite(id(air_humidity).state) ||
+          id(air_humidity).state < 0.0f ||
+          id(air_humidity).state > 100.0f) {
+        return {};
+      }
+      return id(air_humidity).state;
+
+  - platform: template
+    id: ha_voc
+    name: VOC Index
+    internal: false
+    update_interval: ${ha_sensor_update_interval}
+    force_update: true
+    unit_of_measurement: index
+    accuracy_decimals: 0
+    icon: mdi:molecule
+    state_class: measurement
+    lambda: |-
+      const uint32_t now = millis();
+      if ((id(air_quality_warmup_until_ms) != 0 &&
+           static_cast<int32_t>(now - id(air_quality_warmup_until_ms)) < 0) ||
+          !id(voc).has_state() ||
+          !AirDot::air_quality_metric_value_valid(AirDot::AirQualityMetric::VOC, id(voc).state)) {
+        return {};
+      }
+      return id(voc).state;
+
+  - platform: template
+    id: ha_nox_index
+    name: NOx Index
+    internal: false
+    update_interval: ${ha_sensor_update_interval}
+    force_update: true
+    unit_of_measurement: index
+    accuracy_decimals: 0
+    icon: mdi:molecule
+    state_class: measurement
+    lambda: |-
+      const uint32_t now = millis();
+      if ((id(air_quality_warmup_until_ms) != 0 &&
+           static_cast<int32_t>(now - id(air_quality_warmup_until_ms)) < 0) ||
+          !id(nox).has_state()) {
+        return {};
+      }
+      const float nox_index = AirDot::normalize_nox_index(id(nox).state);
+      if (!AirDot::air_quality_metric_value_valid(AirDot::AirQualityMetric::NOX, nox_index)) {
+        return {};
+      }
+      return nox_index;
+
+  - platform: template
+    id: ha_co2
+    name: CO2
+    internal: false
+    update_interval: ${ha_sensor_update_interval}
+    unit_of_measurement: ppm
+    accuracy_decimals: 0
+    device_class: carbon_dioxide
+    state_class: measurement
+    lambda: |-
+      const uint32_t now = millis();
+      if ((id(air_quality_warmup_until_ms) != 0 &&
+           static_cast<int32_t>(now - id(air_quality_warmup_until_ms)) < 0) ||
+          !id(co2).has_state() ||
+          !AirDot::air_quality_metric_value_valid(AirDot::AirQualityMetric::CO2, id(co2).state)) {
+        return {};
+      }
+      return id(co2).state;

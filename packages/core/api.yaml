@@ -1,0 +1,55 @@
+api:
+  id: home_assistant_api
+  reboot_timeout: 0s
+  actions:
+    - action: show_display_alert
+      variables:
+        title: string
+        message: string
+        duration_seconds: int
+        sound_enabled: bool
+        sound_duration_ms: int
+      then:
+        - if:
+            condition:
+              lambda: "return !AirDot::onboarding::setup_or_onboarding_active(id(setup_ap_active), id(setup_portal_active), id(onboarding_ui_active));"
+            then:
+              - script.execute: ui_stop_display_alert_sound
+              - lambda: |-
+                  id(ui_alert_title) = AirDot::sanitize_alert_text(title, 64);
+                  id(ui_alert_message) = AirDot::sanitize_alert_text(message, 240);
+
+                  uint32_t seconds = 10;
+                  if (duration_seconds >= 0)
+                    seconds = static_cast<uint32_t>(duration_seconds > 3600 ? 3600 : duration_seconds);
+                  id(ui_alert_until_ms) = seconds == 0 ? 0 : millis() + seconds * 1000UL;
+              - if:
+                  condition:
+                    lambda: |-
+                      if (!sound_enabled || sound_duration_ms <= 0)
+                        return false;
+                      const uint32_t now = millis();
+                      const bool warmup_active =
+                        id(air_quality_warmup_until_ms) != 0 &&
+                        static_cast<int32_t>(now - id(air_quality_warmup_until_ms)) < 0;
+                      if (warmup_active) {
+                        return false;
+                      }
+
+                      const auto air_quality_profile = AirDot::onboarding::load_air_quality_profile();
+                      const int level = AirDot::sanitized_air_quality_level(
+                        air_quality_profile, id(pm25).state, id(pm10).state, id(voc).state, id(nox).state, id(co2).state);
+                      return !(level >= 4 && AirDot::onboarding::load_audio_alerts_enabled());
+                  then:
+                    - script.execute:
+                        id: ui_play_display_alert_sound
+                        duration_ms: !lambda |-
+                          return sound_duration_ms > 30000 ? 30000 : sound_duration_ms;
+              - script.execute: ui_show_display_alert
+
+    - action: clear_display_alert
+      then:
+        - script.execute: ui_hide_display_alert
+
+mdns:
+  id: home_assistant_mdns

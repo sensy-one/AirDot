@@ -1,0 +1,117 @@
+script:
+  - id: ui_show_next_page
+    mode: restart
+    then:
+      - lambda: |-
+          const uint32_t now_ms = millis();
+          const uint32_t snooze_until_ms = now_ms + 30000UL;
+          const auto air_quality_profile = AirDot::onboarding::load_air_quality_profile();
+          const int air_quality_level = AirDot::sanitized_air_quality_level(
+            air_quality_profile, id(pm25).state, id(pm10).state, id(voc).state, id(nox).state, id(co2).state);
+          if (air_quality_level >= 4) {
+            id(air_quality_hazard_sound_snooze_until_ms) = snooze_until_ms;
+            id(air_quality_hazard_last_chirp_ms) = 0;
+            id(hazard_alert_chirp).stop();
+            id(alert_buzzer_pwm).turn_off();
+          }
+
+          const bool hazard_focus_pending_or_active =
+            id(air_quality_hazard_focus_hazard_since_ms) != 0 ||
+            id(air_quality_hazard_focus_metric) != -1 ||
+            id(air_quality_hazard_focus_clear_since_ms) != 0 ||
+            id(air_quality_hazard_focus_status_since_ms) != 0;
+          if (hazard_focus_pending_or_active) {
+            const int return_page = id(air_quality_hazard_focus_return_page);
+            id(air_quality_hazard_focus_snooze_until_ms) = snooze_until_ms;
+            id(air_quality_hazard_focus_metric) = -1;
+            id(air_quality_hazard_focus_last_switch_ms) = 0;
+            id(air_quality_hazard_focus_hazard_since_ms) = 0;
+            id(air_quality_hazard_focus_clear_since_ms) = 0;
+            id(air_quality_hazard_focus_status_since_ms) = 0;
+            id(air_quality_hazard_focus_return_page) = -1;
+            if (return_page == -1) {
+              id(air_quality_summary_page)->get_parent()->show_page(
+                id(air_quality_summary_page)->index, LV_SCREEN_LOAD_ANIM_NONE, 0);
+            } else {
+              id(air_quality_summary_page)->get_parent()->show_page(
+                return_page, LV_SCREEN_LOAD_ANIM_NONE, 0);
+            }
+            return;
+          }
+
+          const bool manual_time_available =
+              AirDot::onboarding::load_manual_time_enabled() &&
+              id(sntp_time).utcnow().is_valid();
+          const bool time_page_available =
+              manual_time_available ||
+              (AirDot::onboarding::has_saved_wifi_settings() &&
+               (AirDot::onboarding::load_time_server_enabled() ||
+                AirDot::onboarding::load_weather_enabled()));
+
+          if (id(air_quality_summary_page)->is_showing()) {
+            if (time_page_available) {
+              id(time_page)->get_parent()->show_page(
+                id(time_page)->index, LV_SCREEN_LOAD_ANIM_NONE, 0);
+            } else {
+              id(pm1_history_page)->get_parent()->show_page(
+                id(pm1_history_page)->index, LV_SCREEN_LOAD_ANIM_NONE, 0);
+            }
+            return;
+          }
+          if (id(time_page)->is_showing()) {
+            id(pm1_history_page)->get_parent()->show_page(
+              id(pm1_history_page)->index, LV_SCREEN_LOAD_ANIM_NONE, 0);
+            return;
+          }
+          if (id(pm1_history_page)->is_showing()) {
+            id(pm25_history_page)->get_parent()->show_page(
+              id(pm25_history_page)->index, LV_SCREEN_LOAD_ANIM_NONE, 0);
+            return;
+          }
+          if (id(pm25_history_page)->is_showing()) {
+            id(pm4_history_page)->get_parent()->show_page(
+              id(pm4_history_page)->index, LV_SCREEN_LOAD_ANIM_NONE, 0);
+            return;
+          }
+          if (id(pm4_history_page)->is_showing()) {
+            id(pm10_history_page)->get_parent()->show_page(
+              id(pm10_history_page)->index, LV_SCREEN_LOAD_ANIM_NONE, 0);
+            return;
+          }
+          if (id(pm10_history_page)->is_showing()) {
+            id(co2_history_page)->get_parent()->show_page(
+              id(co2_history_page)->index, LV_SCREEN_LOAD_ANIM_NONE, 0);
+            return;
+          }
+          if (id(co2_history_page)->is_showing()) {
+            id(voc_history_page)->get_parent()->show_page(
+              id(voc_history_page)->index, LV_SCREEN_LOAD_ANIM_NONE, 0);
+            return;
+          }
+          if (id(voc_history_page)->is_showing()) {
+            id(nox_history_page)->get_parent()->show_page(
+              id(nox_history_page)->index, LV_SCREEN_LOAD_ANIM_NONE, 0);
+            return;
+          }
+          if (id(nox_history_page)->is_showing()) {
+            id(temp_history_page)->get_parent()->show_page(
+              id(temp_history_page)->index, LV_SCREEN_LOAD_ANIM_NONE, 0);
+            return;
+          }
+          if (id(temp_history_page)->is_showing()) {
+            id(hum_history_page)->get_parent()->show_page(
+              id(hum_history_page)->index, LV_SCREEN_LOAD_ANIM_NONE, 0);
+            return;
+          }
+          if (id(hum_history_page)->is_showing()) {
+            id(pressure_history_page)->get_parent()->show_page(
+              id(pressure_history_page)->index, LV_SCREEN_LOAD_ANIM_NONE, 0);
+            return;
+          }
+          if (id(pressure_history_page)->is_showing()) {
+            id(lux_history_page)->get_parent()->show_page(
+              id(lux_history_page)->index, LV_SCREEN_LOAD_ANIM_NONE, 0);
+            return;
+          }
+          id(air_quality_summary_page)->get_parent()->show_page(
+            id(air_quality_summary_page)->index, LV_SCREEN_LOAD_ANIM_NONE, 0);

@@ -1,0 +1,175 @@
+globals:
+  - id: outdoor_latitude
+    type: float
+    restore_value: false
+    initial_value: "0"
+  - id: outdoor_longitude
+    type: float
+    restore_value: false
+    initial_value: "0"
+  - id: outdoor_location_valid
+    type: bool
+    restore_value: false
+    initial_value: "false"
+  - id: outdoor_weather_temperature_c
+    type: float
+    restore_value: false
+    initial_value: "0"
+  - id: outdoor_weather_humidity_percent
+    type: float
+    restore_value: false
+    initial_value: "0"
+  - id: outdoor_weather_pressure_hpa
+    type: float
+    restore_value: false
+    initial_value: "0"
+  - id: outdoor_weather_high_temperature_c
+    type: float
+    restore_value: false
+    initial_value: "0"
+  - id: outdoor_weather_low_temperature_c
+    type: float
+    restore_value: false
+    initial_value: "0"
+  - id: outdoor_weather_code
+    type: int
+    restore_value: false
+    initial_value: "-1"
+  - id: outdoor_weather_valid
+    type: bool
+    restore_value: false
+    initial_value: "false"
+
+script:
+  - id: weather_refresh_location
+    mode: restart
+    then:
+      - if:
+          condition:
+            lambda: "return AirDot::onboarding::weather_runtime_allowed(id(setup_ap_active), id(setup_portal_active), id(onboarding_ui_active));"
+          then:
+            - lambda: |-
+                if (AirDot::onboarding::has_custom_weather_location()) {
+                  id(ui_refresh_time_weather_page).execute();
+                }
+            - delay: 12s
+            - if:
+                condition:
+                  lambda: "return AirDot::onboarding::weather_runtime_allowed(id(setup_ap_active), id(setup_portal_active), id(onboarding_ui_active));"
+                then:
+                  - lambda: |-
+                      bool started = false;
+                      const bool custom_location = AirDot::onboarding::has_custom_weather_location();
+                      if (custom_location) {
+                        started = AirDot::time_weather::start_open_meteo_geocoding_request(
+                            AirDot::onboarding::weather_location_city());
+                      } else {
+                        started = AirDot::time_weather::start_ipwhois_location_request();
+                      }
+                      if (started || custom_location) {
+                        id(ui_refresh_time_weather_page).execute();
+                      }
+
+interval:
+  - interval: 1s
+    then:
+      - lambda: |-
+          float latitude = 0.0f;
+          float longitude = 0.0f;
+          const bool weather_enabled = AirDot::onboarding::load_weather_enabled();
+          std::string custom_city;
+          if (weather_enabled) {
+            custom_city = AirDot::onboarding::weather_location_city();
+          }
+          const bool custom_location = weather_enabled && !custom_city.empty();
+          const bool runtime_weather_allowed =
+              AirDot::onboarding::weather_runtime_allowed(
+                  id(setup_ap_active), id(setup_portal_active), id(onboarding_ui_active));
+          const bool geocoding_matches =
+              AirDot::time_weather::open_meteo_geocoding_request_matches(custom_city);
+          const int geocoding_result = AirDot::time_weather::consume_open_meteo_geocoding_result(latitude, longitude);
+          if (!weather_enabled) {
+            id(outdoor_location_valid) = false;
+            id(outdoor_weather_valid) = false;
+            id(outdoor_weather_code) = -1;
+          } else if (geocoding_result == 1 && custom_location && geocoding_matches) {
+            id(outdoor_latitude) = latitude;
+            id(outdoor_longitude) = longitude;
+            id(outdoor_location_valid) = true;
+            if (runtime_weather_allowed) {
+              AirDot::time_weather::start_open_meteo_weather_request(latitude, longitude);
+            }
+          } else if (geocoding_result != 0 && custom_location) {
+            if (runtime_weather_allowed && !geocoding_matches)
+              id(weather_refresh_location).execute();
+          }
+
+          const int location_result = AirDot::time_weather::consume_ipwhois_location_result(latitude, longitude);
+          if (weather_enabled && location_result == 1 && !custom_location) {
+            id(outdoor_latitude) = latitude;
+            id(outdoor_longitude) = longitude;
+            id(outdoor_location_valid) = true;
+            if (runtime_weather_allowed) {
+              AirDot::time_weather::start_open_meteo_weather_request(latitude, longitude);
+            }
+          } else if (weather_enabled && location_result == -1 && !custom_location) {
+            if (!id(outdoor_location_valid)) {
+              id(outdoor_weather_valid) = false;
+              id(outdoor_weather_code) = -1;
+            }
+          }
+
+          float temperature_c = 0.0f;
+          float humidity_percent = 0.0f;
+          float pressure_hpa = 0.0f;
+          float high_temperature_c = 0.0f;
+          float low_temperature_c = 0.0f;
+          int weather_code = -1;
+          const int weather_result =
+              AirDot::time_weather::consume_open_meteo_weather_result(
+                  temperature_c, humidity_percent, pressure_hpa,
+                  high_temperature_c, low_temperature_c, weather_code);
+          const bool weather_matches_current_location =
+              id(outdoor_location_valid) &&
+              AirDot::time_weather::open_meteo_weather_request_matches(
+                  id(outdoor_latitude), id(outdoor_longitude));
+          if (weather_enabled && weather_result == 1 && weather_matches_current_location) {
+            id(outdoor_weather_temperature_c) = temperature_c;
+            id(outdoor_weather_humidity_percent) = humidity_percent;
+            id(outdoor_weather_pressure_hpa) = pressure_hpa;
+            id(outdoor_weather_high_temperature_c) = high_temperature_c;
+            id(outdoor_weather_low_temperature_c) = low_temperature_c;
+            id(outdoor_weather_code) = weather_code;
+            id(outdoor_weather_valid) = true;
+          } else if (weather_result != 0) {
+            if (runtime_weather_allowed && !weather_matches_current_location && id(outdoor_location_valid)) {
+              AirDot::time_weather::start_open_meteo_weather_request(
+                  id(outdoor_latitude), id(outdoor_longitude));
+            }
+          }
+      - script.execute: ui_refresh_time_weather_page
+  - interval: 15min
+    then:
+      - if:
+          condition:
+            and:
+              - lambda: "return AirDot::onboarding::weather_runtime_allowed(id(setup_ap_active), id(setup_portal_active), id(onboarding_ui_active));"
+              - lambda: "return id(outdoor_location_valid);"
+              - lambda: |-
+                  if (!AirDot::onboarding::has_custom_weather_location())
+                    return true;
+                  return AirDot::time_weather::open_meteo_geocoding_request_matches(
+                      AirDot::onboarding::weather_location_city());
+          then:
+            - lambda: |-
+                AirDot::time_weather::start_open_meteo_weather_request(
+                  id(outdoor_latitude), id(outdoor_longitude));
+  - interval: 30min
+    then:
+      - if:
+          condition:
+            lambda: "return AirDot::onboarding::weather_runtime_allowed(id(setup_ap_active), id(setup_portal_active), id(onboarding_ui_active));"
+          then:
+            - lambda: |-
+                if (!id(outdoor_location_valid))
+                  id(weather_refresh_location).execute();

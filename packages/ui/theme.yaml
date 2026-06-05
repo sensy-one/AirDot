@@ -1,0 +1,111 @@
+script:
+  - id: ui_apply_display_theme
+    mode: restart
+    then:
+      - lambda: |-
+          const auto background = AirDot::display_background_color();
+          const auto text = AirDot::display_text_color();
+
+          auto set_background = [&](auto *widget) {
+            lv_obj_t *obj = AirDot::lv_obj(widget);
+            if (obj == nullptr)
+              return;
+            lv_obj_set_style_bg_color(obj, background, LV_PART_MAIN);
+            lv_obj_set_style_bg_opa(obj, LV_OPA_COVER, LV_PART_MAIN);
+            lv_obj_invalidate(obj);
+          };
+
+          auto set_text = [&](auto *label) {
+            AirDot::set_text_color(label, text);
+          };
+
+          auto apply_history = [&](auto *page, auto *title, auto *max_label, auto *empty_label,
+                                   auto *min_label, auto *current_label, auto *unit_label) {
+            set_background(page);
+            set_text(title);
+            set_text(max_label);
+            set_text(empty_label);
+            set_text(min_label);
+            set_text(current_label);
+            set_text(unit_label);
+          };
+
+          set_background(id(air_quality_summary_page));
+          set_text(id(air_quality_summary_connection_label));
+          set_text(id(air_quality_summary_temperature_label));
+          set_text(id(air_quality_summary_temperature_unit_label));
+          set_text(id(air_quality_summary_humidity_label));
+          set_text(id(air_quality_summary_humidity_unit_label));
+          set_text(id(air_quality_summary_pressure_label));
+          set_text(id(air_quality_summary_pressure_unit_label));
+          set_text(id(air_quality_summary_status_label));
+          set_text(id(air_quality_summary_action_label));
+          set_text(id(air_quality_summary_pm25_text_label));
+          set_text(id(air_quality_summary_co2_text_label));
+          set_text(id(air_quality_summary_voc_text_label));
+          set_text(id(air_quality_summary_pm10_text_label));
+          set_text(id(air_quality_summary_nox_text_label));
+
+          set_background(id(time_page));
+          set_text(id(time_page_connection_label));
+          set_text(id(time_page_outdoor_temperature_label));
+          set_text(id(time_page_outdoor_temperature_unit_label));
+          set_text(id(time_page_outdoor_humidity_label));
+          set_text(id(time_page_outdoor_humidity_unit_label));
+          set_text(id(time_page_outdoor_pressure_label));
+          set_text(id(time_page_outdoor_pressure_unit_label));
+          set_text(id(time_page_placeholder_label));
+          set_text(id(time_page_24h_hour_tens_label));
+          set_text(id(time_page_24h_hour_ones_label));
+          set_text(id(time_page_24h_colon_label));
+          set_text(id(time_page_24h_minute_tens_label));
+          set_text(id(time_page_24h_minute_ones_label));
+          set_text(id(time_page_12h_hour_tens_label));
+          set_text(id(time_page_12h_hour_ones_label));
+          set_text(id(time_page_12h_colon_label));
+          set_text(id(time_page_12h_minute_tens_label));
+          set_text(id(time_page_12h_minute_ones_label));
+          set_text(id(time_page_suffix_label));
+          set_text(id(time_page_date_label));
+          set_text(id(time_page_weather_label));
+          set_text(id(time_page_weather_high_low_label));
+
+          apply_history(
+            id(pm1_history_page), id(pm1_history_title_label), id(pm1_history_max_label),
+            id(pm1_history_empty_label), id(pm1_history_min_label), id(pm1_current_value_label), id(pm1_unit_label));
+          apply_history(
+            id(pm25_history_page), id(pm25_history_title_label), id(pm25_history_max_label),
+            id(pm25_history_empty_label), id(pm25_history_min_label), id(pm25_current_value_label), id(pm25_unit_label));
+          apply_history(
+            id(pm4_history_page), id(pm4_history_title_label), id(pm4_history_max_label),
+            id(pm4_history_empty_label), id(pm4_history_min_label), id(pm4_current_value_label), id(pm4_unit_label));
+          apply_history(
+            id(pm10_history_page), id(pm10_history_title_label), id(pm10_history_max_label),
+            id(pm10_history_empty_label), id(pm10_history_min_label), id(pm10_current_value_label), id(pm10_unit_label));
+          apply_history(
+            id(co2_history_page), id(co2_history_title_label), id(co2_history_max_label),
+            id(co2_history_empty_label), id(co2_history_min_label), id(co2_current_value_label), id(co2_unit_label));
+          apply_history(
+            id(voc_history_page), id(voc_history_title_label), id(voc_history_max_label),
+            id(voc_history_empty_label), id(voc_history_min_label), id(voc_current_value_label), id(voc_unit_label));
+          apply_history(
+            id(nox_history_page), id(nox_history_title_label), id(nox_history_max_label),
+            id(nox_history_empty_label), id(nox_history_min_label), id(nox_current_value_label), id(nox_unit_label));
+          apply_history(
+            id(temp_history_page), id(temp_history_title_label), id(temp_history_max_label),
+            id(temp_history_empty_label), id(temp_history_min_label), id(temp_current_value_label), id(temp_unit_label));
+          apply_history(
+            id(hum_history_page), id(hum_history_title_label), id(hum_history_max_label),
+            id(hum_history_empty_label), id(hum_history_min_label), id(hum_current_value_label), id(hum_unit_label));
+          apply_history(
+            id(pressure_history_page), id(pressure_history_title_label), id(pressure_history_max_label),
+            id(pressure_history_empty_label), id(pressure_history_min_label), id(pressure_current_value_label),
+            id(pressure_unit_label));
+          apply_history(
+            id(lux_history_page), id(lux_history_title_label), id(lux_history_max_label),
+            id(lux_history_empty_label), id(lux_history_min_label), id(lux_current_value_label), id(lux_unit_label));
+
+          set_background(id(modal_overlay_layer));
+          set_text(id(modal_overlay_title_label));
+          set_text(id(modal_overlay_body_label));
+          set_text(id(modal_overlay_primary_button_label));

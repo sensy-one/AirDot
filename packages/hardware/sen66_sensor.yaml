@@ -1,0 +1,162 @@
+sensor:
+  - platform: sen6x
+    id: sen66_air_quality_sensor
+    type: SEN66
+    update_interval: ${sensor_air_quality_update_interval}
+    pm_1_0:
+      id: pm1
+      name: PM1
+      internal: true
+      device_class: pm1
+      on_value:
+        then:
+          - lambda: |-
+                static AirDot::SensorHistoryGraph history;
+                const auto air_quality_profile = AirDot::onboarding::load_air_quality_profile();
+                AirDot::update_high_bad_history(
+                  history, id(pm1_current_value_label), id(pm1_history_line),
+                  id(pm1_history_min_label), id(pm1_history_max_label), id(pm1_history_empty_label), x, "%.1f",
+                  ${ui_pm1_graph_min_ugm3}, ${ui_pm1_graph_max_ugm3},
+                  AirDot::metric_status_thresholds(air_quality_profile, AirDot::AirQualityMetric::PM1));
+    pm_2_5:
+      id: pm25
+      name: PM2.5
+      internal: true
+      device_class: pm25
+      on_value:
+        then:
+          - lambda: |-
+                static AirDot::SensorHistoryGraph history;
+                const auto air_quality_profile = AirDot::onboarding::load_air_quality_profile();
+                AirDot::update_high_bad_history(
+                  history, id(pm25_current_value_label), id(pm25_history_line),
+                  id(pm25_history_min_label), id(pm25_history_max_label), id(pm25_history_empty_label), x, "%.1f",
+                  ${ui_pm25_graph_min_ugm3}, ${ui_pm25_graph_max_ugm3},
+                  AirDot::metric_status_thresholds(air_quality_profile, AirDot::AirQualityMetric::PM25));
+          - script.execute: ui_refresh_air_quality_summary
+    pm_4_0:
+      id: pm4
+      name: PM4
+      internal: true
+      device_class: pm4
+      on_value:
+        then:
+          - lambda: |-
+                static AirDot::SensorHistoryGraph history;
+                const auto air_quality_profile = AirDot::onboarding::load_air_quality_profile();
+                AirDot::update_high_bad_history(
+                  history, id(pm4_current_value_label), id(pm4_history_line),
+                  id(pm4_history_min_label), id(pm4_history_max_label), id(pm4_history_empty_label), x, "%.1f",
+                  ${ui_pm4_graph_min_ugm3}, ${ui_pm4_graph_max_ugm3},
+                  AirDot::metric_status_thresholds(air_quality_profile, AirDot::AirQualityMetric::PM4));
+    pm_10_0:
+      id: pm10
+      name: PM10
+      internal: true
+      device_class: pm10
+      on_value:
+        then:
+          - lambda: |-
+                static AirDot::SensorHistoryGraph history;
+                const auto air_quality_profile = AirDot::onboarding::load_air_quality_profile();
+                AirDot::update_high_bad_history(
+                  history, id(pm10_current_value_label), id(pm10_history_line),
+                  id(pm10_history_min_label), id(pm10_history_max_label), id(pm10_history_empty_label), x, "%.1f",
+                  ${ui_pm10_graph_min_ugm3}, ${ui_pm10_graph_max_ugm3},
+                  AirDot::metric_status_thresholds(air_quality_profile, AirDot::AirQualityMetric::PM10));
+          - script.execute: ui_refresh_air_quality_summary
+    temperature:
+      id: air_temperature
+      name: Temperature
+      internal: true
+      device_class: temperature
+      on_value:
+        then:
+          - lambda: |-
+              static AirDot::SensorHistoryGraph history;
+              static AirDot::onboarding::UnitSystem last_unit_system = AirDot::onboarding::UNIT_SYSTEM_METRIC;
+              static bool unit_system_initialized = false;
+              const auto unit_system = AirDot::onboarding::load_unit_system();
+              if (!unit_system_initialized || last_unit_system != unit_system) {
+                history.reset();
+                last_unit_system = unit_system;
+                unit_system_initialized = true;
+              }
+              const float temperature_display_value = AirDot::onboarding::display_temperature_c(x, unit_system);
+              lv_label_set_text(id(temp_unit_label), AirDot::onboarding::temperature_unit_text(unit_system));
+              AirDot::update_plain_history(
+                history, id(temp_current_value_label), id(temp_history_line),
+                id(temp_history_min_label), id(temp_history_max_label), id(temp_history_empty_label),
+                temperature_display_value, "%.1f",
+                AirDot::temperature_metric_color());
+              AirDot::set_formatted_label(
+                id(air_quality_summary_temperature_label), temperature_display_value, "%.0f");
+              lv_label_set_text(
+                id(air_quality_summary_temperature_unit_label), AirDot::onboarding::temperature_unit_text(unit_system));
+          - script.execute: ui_refresh_air_quality_summary
+    humidity:
+      id: air_humidity
+      name: Humidity
+      internal: true
+      device_class: humidity
+      on_value:
+        then:
+          - lambda: |-
+              static AirDot::SensorHistoryGraph history;
+              AirDot::update_plain_history(
+                history, id(hum_current_value_label), id(hum_history_line),
+                id(hum_history_min_label), id(hum_history_max_label), id(hum_history_empty_label), x, "%.1f",
+                AirDot::humidity_metric_color());
+              AirDot::set_formatted_label(id(air_quality_summary_humidity_label), x, "%.0f");
+          - script.execute: ui_refresh_air_quality_summary
+    voc:
+      id: voc
+      name: VOC Index
+      internal: true
+      icon: mdi:molecule
+      on_value:
+        then:
+          - lambda: |-
+                static AirDot::SensorHistoryGraph history;
+                const auto air_quality_profile = AirDot::onboarding::load_air_quality_profile();
+                AirDot::update_high_bad_history(
+                  history, id(voc_current_value_label), id(voc_history_line),
+                  id(voc_history_min_label), id(voc_history_max_label), id(voc_history_empty_label), x, "%.0f",
+                  ${ui_voc_graph_min_index}, ${ui_voc_graph_max_index},
+                  AirDot::metric_status_thresholds(air_quality_profile, AirDot::AirQualityMetric::VOC));
+          - script.execute: ui_refresh_air_quality_summary
+    nox:
+      id: nox
+      name: NOx Index
+      internal: true
+      device_class: aqi
+      filters:
+        - lambda: |-
+            return AirDot::normalize_nox_index(x);
+      on_value:
+        then:
+          - lambda: |-
+                static AirDot::SensorHistoryGraph history;
+                const auto air_quality_profile = AirDot::onboarding::load_air_quality_profile();
+                AirDot::update_high_bad_history(
+                  history, id(nox_current_value_label), id(nox_history_line),
+                  id(nox_history_min_label), id(nox_history_max_label), id(nox_history_empty_label), x, "%.0f",
+                  ${ui_nox_graph_min_index}, ${ui_nox_graph_max_index},
+                  AirDot::metric_status_thresholds(air_quality_profile, AirDot::AirQualityMetric::NOX));
+          - script.execute: ui_refresh_air_quality_summary
+    co2:
+      id: co2
+      name: CO2
+      internal: true
+      device_class: carbon_dioxide
+      on_value:
+        then:
+          - lambda: |-
+                static AirDot::SensorHistoryGraph history;
+                const auto air_quality_profile = AirDot::onboarding::load_air_quality_profile();
+                AirDot::update_high_bad_history(
+                  history, id(co2_current_value_label), id(co2_history_line),
+                  id(co2_history_min_label), id(co2_history_max_label), id(co2_history_empty_label), x, "%.0f",
+                  ${ui_co2_graph_min_ppm}, ${ui_co2_graph_max_ppm},
+                  AirDot::metric_status_thresholds(air_quality_profile, AirDot::AirQualityMetric::CO2));
+          - script.execute: ui_refresh_air_quality_summary

@@ -1,0 +1,307 @@
+globals:
+  - id: page_button_pressed_at_ms
+    type: uint32_t
+    restore_value: false
+    initial_value: "0"
+  - id: page_button_press_duration_ms
+    type: uint32_t
+    restore_value: false
+    initial_value: "0"
+  - id: page_button_wake_only_release
+    type: int
+    restore_value: false
+    initial_value: "0"
+  - id: page_button_factory_reset_started
+    type: int
+    restore_value: false
+    initial_value: "0"
+  - id: page_button_long_press_handled
+    type: int
+    restore_value: false
+    initial_value: "0"
+  - id: display_sleep_wake_until_ms
+    type: uint32_t
+    restore_value: false
+    initial_value: "0"
+
+script:
+  - id: page_button_factory_reset_hold
+    mode: restart
+    then:
+      - delay: 7s
+      - if:
+          condition:
+            lambda: "return id(page_button_pressed_at_ms) != 0;"
+          then:
+            - lambda: |-
+                id(page_button_factory_reset_started) = 1;
+                id(display_sleep_wake_until_ms) = 0;
+                id(display_panel).set_screen_powered(true);
+                AirDot::onboarding::apply_display_brightness(
+                  id(display_backlight), id(ambient_light_sensor).state,
+                  ${display_auto_dim_min_lux}, ${display_auto_dim_max_lux},
+                  ${display_auto_dim_min_brightness});
+                const auto ui_language = AirDot::onboarding::load_ui_language();
+                const auto countdown_text = AirDot::factory_reset_countdown_text(ui_language);
+                std::string body = countdown_text.body == nullptr ? "" : countdown_text.body;
+                const std::string token("{seconds}");
+                const size_t position = body.find(token);
+                if (position != std::string::npos)
+                  body.replace(position, token.size(), "3");
+                std::string button_text;
+                const size_t split = body.find("\n\n");
+                if (split != std::string::npos) {
+                  button_text = body.substr(split + 2);
+                  body = body.substr(0, split);
+                }
+                const auto title_font = id(ui_font_modal_title);
+                const auto body_font = id(ui_font_small);
+                lv_obj_set_style_text_font(id(modal_overlay_title_label), title_font, LV_PART_MAIN);
+                lv_obj_set_style_text_font(id(modal_overlay_body_label), body_font, LV_PART_MAIN);
+                lv_obj_set_style_text_font(id(modal_overlay_primary_button_left_bracket_label), body_font, LV_PART_MAIN);
+                lv_obj_set_style_text_font(id(modal_overlay_primary_button_label), body_font, LV_PART_MAIN);
+                lv_obj_set_style_text_font(id(modal_overlay_primary_button_right_bracket_label), body_font, LV_PART_MAIN);
+                lv_obj_set_style_pad_row(id(modal_overlay_content_stack), 24, LV_PART_MAIN);
+                lv_label_set_text(id(modal_overlay_primary_button_left_bracket_label), "");
+                lv_label_set_text(id(modal_overlay_primary_button_right_bracket_label), "");
+                lv_obj_add_flag(id(modal_overlay_primary_button_left_bracket_label), LV_OBJ_FLAG_HIDDEN);
+                lv_obj_add_flag(id(modal_overlay_primary_button_right_bracket_label), LV_OBJ_FLAG_HIDDEN);
+                lv_label_set_text(id(modal_overlay_title_label), countdown_text.title);
+                lv_label_set_text(id(modal_overlay_body_label), body.c_str());
+                const std::string button_display =
+                  button_text.empty() ? std::string() : std::string("[ ") + button_text + " ]";
+                lv_label_set_text(id(modal_overlay_primary_button_label), button_display.c_str());
+                lv_obj_clear_flag(id(modal_overlay_primary_button_group), LV_OBJ_FLAG_HIDDEN);
+                const auto text_color = AirDot::display_text_color();
+                AirDot::set_text_color(id(modal_overlay_title_label), text_color);
+                AirDot::set_text_color(id(modal_overlay_body_label), text_color);
+                AirDot::set_text_color(id(modal_overlay_primary_button_label), text_color);
+                AirDot::set_text_color(id(modal_overlay_primary_button_left_bracket_label), text_color);
+                AirDot::set_text_color(id(modal_overlay_primary_button_right_bracket_label), text_color);
+                lv_obj_clear_flag(id(modal_overlay_layer), LV_OBJ_FLAG_HIDDEN);
+            - component.update: display_panel
+      - delay: 1s
+      - if:
+          condition:
+            lambda: "return id(page_button_pressed_at_ms) != 0;"
+          then:
+            - lambda: |-
+                const auto ui_language = AirDot::onboarding::load_ui_language();
+                const auto countdown_text = AirDot::factory_reset_countdown_text(ui_language);
+                std::string body = countdown_text.body == nullptr ? "" : countdown_text.body;
+                const std::string token("{seconds}");
+                const size_t position = body.find(token);
+                if (position != std::string::npos)
+                  body.replace(position, token.size(), "2");
+                std::string button_text;
+                const size_t split = body.find("\n\n");
+                if (split != std::string::npos) {
+                  button_text = body.substr(split + 2);
+                  body = body.substr(0, split);
+                }
+                lv_label_set_text(id(modal_overlay_title_label), countdown_text.title);
+                lv_label_set_text(id(modal_overlay_body_label), body.c_str());
+                const std::string button_display =
+                  button_text.empty() ? std::string() : std::string("[ ") + button_text + " ]";
+                lv_label_set_text(id(modal_overlay_primary_button_label), button_display.c_str());
+                lv_obj_clear_flag(id(modal_overlay_primary_button_group), LV_OBJ_FLAG_HIDDEN);
+            - component.update: display_panel
+      - delay: 1s
+      - if:
+          condition:
+            lambda: "return id(page_button_pressed_at_ms) != 0;"
+          then:
+            - lambda: |-
+                const auto ui_language = AirDot::onboarding::load_ui_language();
+                const auto countdown_text = AirDot::factory_reset_countdown_text(ui_language);
+                std::string body = countdown_text.body == nullptr ? "" : countdown_text.body;
+                const std::string token("{seconds}");
+                const size_t position = body.find(token);
+                if (position != std::string::npos)
+                  body.replace(position, token.size(), "1");
+                std::string button_text;
+                const size_t split = body.find("\n\n");
+                if (split != std::string::npos) {
+                  button_text = body.substr(split + 2);
+                  body = body.substr(0, split);
+                }
+                lv_label_set_text(id(modal_overlay_title_label), countdown_text.title);
+                lv_label_set_text(id(modal_overlay_body_label), body.c_str());
+                const std::string button_display =
+                  button_text.empty() ? std::string() : std::string("[ ") + button_text + " ]";
+                lv_label_set_text(id(modal_overlay_primary_button_label), button_display.c_str());
+                lv_obj_clear_flag(id(modal_overlay_primary_button_group), LV_OBJ_FLAG_HIDDEN);
+            - component.update: display_panel
+      - delay: 1s
+      - if:
+          condition:
+            lambda: "return id(page_button_pressed_at_ms) != 0;"
+          then:
+            - lambda: |-
+                AirDot::onboarding::factory_reset_preferences_and_reboot();
+
+  - id: page_button_long_press_hold
+    mode: restart
+    then:
+      - delay: 800ms
+      - if:
+          condition:
+            lambda: |-
+              return id(page_button_pressed_at_ms) != 0 &&
+                  id(page_button_factory_reset_started) == 0 &&
+                  id(page_button_wake_only_release) == 0 &&
+                  id(page_button_long_press_handled) == 0;
+          then:
+            - lambda: "id(page_button_long_press_handled) = 1;"
+            - if:
+                condition:
+                  lambda: "return id(ui_alert_active) != 0;"
+                then:
+                  - script.execute: ui_hide_display_alert
+                else:
+                  - if:
+                      condition:
+                        lambda: "return id(onboarding_ui_active) != 0;"
+                      then:
+                        - script.execute: onboarding_activate_selected_action
+                      else:
+                        - script.execute:
+                            id: ui_show_onboarding_overlay
+                            wake_backlight: true
+                            first_run: false
+
+  - id: display_wake_from_sleep_button
+    mode: restart
+    then:
+      - lambda: |-
+          const auto now = id(sntp_time).utcnow();
+          const bool sleep_window_active =
+            now.is_valid() &&
+            AirDot::onboarding::screen_off_window_active_at_utc(static_cast<uint32_t>(now.timestamp));
+          if (!sleep_window_active && id(display_panel).is_screen_powered()) {
+            id(display_sleep_wake_until_ms) = 0;
+            return;
+          }
+
+          id(display_sleep_wake_until_ms) = millis() + 10000UL;
+          id(display_panel).set_screen_powered(true);
+          AirDot::onboarding::apply_display_brightness(
+            id(display_backlight), id(ambient_light_sensor).state,
+            ${display_auto_dim_min_lux}, ${display_auto_dim_max_lux},
+            ${display_auto_dim_min_brightness});
+      - if:
+          condition:
+            lambda: "return id(display_sleep_wake_until_ms) != 0;"
+          then:
+            - component.update: display_panel
+
+interval:
+  - interval: 500ms
+    then:
+      - lambda: |-
+          const uint32_t wake_until_ms = id(display_sleep_wake_until_ms);
+          if (wake_until_ms == 0 ||
+              id(page_button_pressed_at_ms) != 0 ||
+              static_cast<int32_t>(millis() - wake_until_ms) < 0) {
+            return;
+          }
+
+          id(display_sleep_wake_until_ms) = 0;
+          const auto now = id(sntp_time).utcnow();
+          const bool setup_or_onboarding_active =
+            AirDot::onboarding::setup_or_onboarding_active(
+              id(setup_ap_active), id(setup_portal_active), id(onboarding_ui_active));
+          if (now.is_valid() &&
+              AirDot::onboarding::screen_off_window_active_at_utc(static_cast<uint32_t>(now.timestamp)) &&
+              id(ui_alert_active) == 0 &&
+              !setup_or_onboarding_active) {
+            id(display_backlight).turn_off().perform();
+            id(display_panel).set_screen_powered(false);
+          }
+
+binary_sensor:
+  - platform: gpio
+    id: page_button
+    name: Page Button
+    internal: true
+    pin:
+      number: ${button_page_pin}
+      mode:
+        input: true
+        pullup: true
+      inverted: true
+    filters:
+      - delayed_on: 30ms
+      - delayed_off: 30ms
+    on_press:
+      then:
+        - lambda: |-
+            id(page_button_pressed_at_ms) = millis();
+            id(page_button_press_duration_ms) = 0;
+            id(page_button_factory_reset_started) = 0;
+            id(page_button_long_press_handled) = 0;
+            const auto now = id(sntp_time).utcnow();
+            id(page_button_wake_only_release) =
+              now.is_valid() &&
+              AirDot::onboarding::screen_off_window_active_at_utc(static_cast<uint32_t>(now.timestamp)) &&
+              !id(display_panel).is_screen_powered();
+        - script.execute: page_button_factory_reset_hold
+        - script.execute: page_button_long_press_hold
+        - script.execute: display_wake_from_sleep_button
+    on_release:
+      then:
+        - script.stop: page_button_factory_reset_hold
+        - script.stop: page_button_long_press_hold
+        - lambda: |-
+            const uint32_t pressed_at = id(page_button_pressed_at_ms);
+            id(page_button_pressed_at_ms) = 0;
+            id(page_button_press_duration_ms) = pressed_at == 0 ? 0 : millis() - pressed_at;
+        - script.execute: display_wake_from_sleep_button
+        - if:
+            condition:
+              lambda: "return id(page_button_factory_reset_started) != 0;"
+            then:
+              - lambda: |-
+                  id(page_button_factory_reset_started) = 0;
+                  id(page_button_wake_only_release) = 0;
+                  id(page_button_long_press_handled) = 0;
+              - if:
+                  condition:
+                    lambda: "return id(onboarding_ui_active) != 0;"
+                  then:
+                    - script.execute: ui_refresh_onboarding_overlay
+                  else:
+                    - lvgl.widget.hide: modal_overlay_layer
+              - component.update: display_panel
+            else:
+              - if:
+                  condition:
+                    lambda: "return id(page_button_wake_only_release) != 0;"
+                  then:
+                    - lambda: |-
+                        id(page_button_wake_only_release) = 0;
+                        id(page_button_long_press_handled) = 0;
+                  else:
+                    - if:
+                        condition:
+                          lambda: "return id(page_button_long_press_handled) != 0;"
+                        then:
+                          - lambda: "id(page_button_long_press_handled) = 0;"
+                        else:
+                          - if:
+                              condition:
+                                lambda: "return id(ui_alert_active) != 0;"
+                              then:
+                                - script.execute: ui_hide_display_alert
+                              else:
+                                - if:
+                                    condition:
+                                      lambda: "return id(page_button_press_duration_ms) >= 50;"
+                                    then:
+                                      - if:
+                                          condition:
+                                            lambda: "return id(onboarding_ui_active) == 0;"
+                                          then:
+                                            - script.execute: ui_show_next_page
+                                          else:
+                                            - script.execute: onboarding_short_press_action

@@ -1,0 +1,79 @@
+lvgl:
+  displays:
+    - display_panel
+  byte_order: little_endian
+  buffer_size: 25%
+  update_interval: 100ms
+  default_font: ui_font_large
+  theme:
+    dark_mode: true
+  top_layer: !include ../../ui/pages/onboarding_overlay.yaml
+  pages:
+    - !include ../../ui/pages/air_quality_summary.yaml
+    - !include ../../ui/pages/time_weather.yaml
+    - !include
+      file: ../../ui/pages/sensor_history.yaml
+      vars:
+        metric: pm1
+        title: "PM₁"
+        unit: "µg/m³"
+    - !include
+      file: ../../ui/pages/sensor_history.yaml
+      vars:
+        metric: pm25
+        title: "PM₂"
+        unit: "µg/m³"
+    - !include
+      file: ../../ui/pages/sensor_history.yaml
+      vars:
+        metric: pm4
+        title: "PM₄"
+        unit: "µg/m³"
+    - !include
+      file: ../../ui/pages/sensor_history.yaml
+      vars:
+        metric: pm10
+        title: "PM₁₀"
+        unit: "µg/m³"
+    - !include
+      file: ../../ui/pages/sensor_history.yaml
+      vars:
+        metric: co2
+        title: "CO₂"
+        unit: ppm
+    - !include
+      file: ../../ui/pages/sensor_history.yaml
+      vars:
+        metric: voc
+        title: VOC
+        unit: index
+    - !include
+      file: ../../ui/pages/sensor_history.yaml
+      vars:
+        metric: nox
+        title: NOx
+        unit: index
+    - !include
+      file: ../../ui/pages/sensor_history.yaml
+      vars:
+        metric: temp
+        title: TEMP
+        unit: "°C"
+    - !include
+      file: ../../ui/pages/sensor_history.yaml
+      vars:
+        metric: hum
+        title: RH
+        unit: "%"
+    - !include
+      file: ../../ui/pages/sensor_history.yaml
+      vars:
+        metric: pressure
+        title: PRESS
+        unit: hPa
+    - !include
+      file: ../../ui/pages/sensor_history.yaml
+      vars:
+        metric: lux
+        title: LIGHT
+        unit: lx

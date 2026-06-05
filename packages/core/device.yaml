@@ -1,0 +1,120 @@
+esphome:
+  name: ${device_name}
+  name_add_mac_suffix: true
+  friendly_name: ${device_friendly_name}
+  project:
+    name: ${device_project_name}
+    version: ${device_firmware_version}
+  # min_version: 2026.4.3
+  platformio_options:
+    extra_scripts:
+      - pre:../../../scripts/patch_esphome_network_backends.py
+    build_flags:
+      - -DAIRDOT_DEFAULT_MQTT_TOPIC_PREFIX=\"${mqtt_default_topic_prefix}\"
+      - -DAIRDOT_DEFAULT_SEN66_TEMPERATURE_OFFSET_C=${sen66_temperature_offset_c}
+  includes:
+    - includes/airdot/ui/sensor_history_graph.h
+    - includes/airdot/generated/i18n_texts.h
+    - includes/airdot/air_quality/classification.h
+    - includes/airdot/ui/display_runtime.h
+    - includes/airdot/network/connectivity.h
+    - includes/airdot/network/time_client.h
+    - includes/airdot/network/weather_client.h
+    - includes/airdot/network/time_weather_client.h
+    - includes/airdot/hardware/sen66_commands.h
+    - includes/airdot/setup/setup_settings.h
+    - includes/airdot/setup/setup_runtime.h
+    - includes/airdot/setup/setup_page_renderer.h
+    - includes/airdot/setup/setup_portal.h
+  on_boot:
+    - priority: 205
+      then:
+        - lambda: |-
+            AirDot::onboarding::prepare_home_assistant_before_api_setup(
+              id(home_assistant_api),
+              id(home_assistant_mdns),
+              id(ha_ambient_light),
+              id(ha_pressure),
+              id(ha_pm1),
+              id(ha_pm25),
+              id(ha_pm4),
+              id(ha_pm10),
+              id(ha_air_temperature),
+              id(ha_air_humidity),
+              id(ha_voc),
+              id(ha_nox_index),
+              id(ha_co2));
+    - priority: -100
+      then:
+        - lambda: |-
+            id(air_quality_warmup_until_ms) =
+              millis() + static_cast<uint32_t>(${sensor_warmup_seconds}) * 1000UL;
+            id(air_quality_warmup_reported) = 0;
+            id(alert_buzzer_pwm).turn_off();
+            AirDot::onboarding::register_setup_handler(
+              &id(setup_portal_active),
+              &id(setup_portal_saved),
+              &id(setup_portal_last_activity_ms),
+              &id(setup_pending_wifi_save),
+              &id(setup_pending_wifi_ssid),
+              &id(setup_pending_wifi_password),
+              &id(setup_pending_sen66_co2_calibration),
+              &id(setup_pending_sen66_co2_reference_ppm),
+              &id(setup_firmware_update_active));
+            AirDot::onboarding::prepare_runtime_wifi_scan_cache();
+            AirDot::onboarding::apply_home_assistant_runtime_settings(
+              id(home_assistant_api),
+              id(home_assistant_mdns),
+              id(ha_ambient_light),
+              id(ha_pressure),
+              id(ha_pm1),
+              id(ha_pm25),
+              id(ha_pm4),
+              id(ha_pm10),
+              id(ha_air_temperature),
+              id(ha_air_humidity),
+              id(ha_voc),
+              id(ha_nox_index),
+              id(ha_co2));
+            if (!AirDot::onboarding::load_time_server_enabled() ||
+                AirDot::onboarding::load_manual_time_enabled()) {
+              AirDot::time_weather::stop_sntp_sync();
+            }
+        - if:
+            condition:
+              lambda: "return !AirDot::onboarding::load_first_run_onboarding_complete();"
+            then:
+              - script.execute:
+                  id: ui_show_onboarding_overlay
+                  wake_backlight: true
+                  first_run: true
+        - if:
+            condition:
+              lambda: "return AirDot::onboarding::has_saved_wifi_settings();"
+            then:
+              - wifi.enable:
+        - delay: 500ms
+        - component.update: display_panel
+        - script.execute: ui_apply_display_theme
+        - component.update: barometric_pressure_sensor
+        - component.update: sen66_air_quality_sensor
+        - if:
+            condition:
+              lambda: "return !AirDot::onboarding::load_first_run_onboarding_complete();"
+            then:
+              - delay: 500ms
+              - component.update: display_panel
+              - lambda: |-
+                  AirDot::onboarding::apply_display_brightness(
+                    id(display_backlight), id(ambient_light_sensor).state,
+                    ${display_auto_dim_min_lux}, ${display_auto_dim_max_lux},
+                    ${display_auto_dim_min_brightness});
+            else:
+              - lambda: |-
+                  AirDot::onboarding::apply_display_brightness(
+                    id(display_backlight), id(ambient_light_sensor).state,
+                    ${display_auto_dim_min_lux}, ${display_auto_dim_max_lux},
+                    ${display_auto_dim_min_brightness});
+        - script.execute: ui_refresh_air_quality_summary
+        - delay: 2s
+        - script.execute: sen66_apply_temperature_offset

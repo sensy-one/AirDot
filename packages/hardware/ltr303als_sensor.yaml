@@ -1,0 +1,69 @@
+sensor:
+  - platform: ltr303als
+    id: ambient_light_sensor
+    name: Light
+    internal: true
+    address: 0x29
+    update_interval: ${sensor_lux_update_interval}
+    window_correction: ${sensor_lux_window_correction}
+    on_value:
+      then:
+        - lambda: |-
+            static AirDot::SensorHistoryGraph history;
+            AirDot::update_plain_history(
+              history, id(lux_current_value_label), id(lux_history_line),
+              id(lux_history_min_label), id(lux_history_max_label), id(lux_history_empty_label), x, "%.0f",
+              AirDot::light_metric_color());
+
+            const auto now = id(sntp_time).utcnow();
+            const auto air_quality_profile = AirDot::onboarding::load_air_quality_profile();
+            const uint32_t now_ms = millis();
+            const bool warmup_active =
+              id(air_quality_warmup_until_ms) != 0 &&
+              static_cast<int32_t>(now_ms - id(air_quality_warmup_until_ms)) < 0;
+            const int air_quality_level = warmup_active ? -1 : AirDot::sanitized_air_quality_level(
+              air_quality_profile, id(pm25).state, id(pm10).state, id(voc).state, id(nox).state, id(co2).state);
+            const bool setup_or_onboarding_active =
+              AirDot::onboarding::setup_or_onboarding_active(
+                id(setup_ap_active), id(setup_portal_active), id(onboarding_ui_active));
+            if (id(setup_firmware_update_active) > 0) {
+              id(display_backlight).turn_off().perform();
+              id(display_panel).set_screen_powered(false);
+              return;
+            }
+            const bool display_sleep_button_wake_active =
+              id(page_button_pressed_at_ms) != 0 ||
+              (id(display_sleep_wake_until_ms) != 0 &&
+               static_cast<int32_t>(now_ms - id(display_sleep_wake_until_ms)) < 0);
+            const bool hazard_focus_snoozed =
+              id(air_quality_hazard_focus_snooze_until_ms) != 0 &&
+              static_cast<int32_t>(now_ms - id(air_quality_hazard_focus_snooze_until_ms)) < 0;
+            const bool hazard_focus_pending_or_active =
+              id(air_quality_hazard_focus_hazard_since_ms) != 0 ||
+              id(air_quality_hazard_focus_metric) != -1 ||
+              id(air_quality_hazard_focus_clear_since_ms) != 0 ||
+              id(air_quality_hazard_focus_status_since_ms) != 0;
+            const bool wake_for_hazard_focus =
+              (air_quality_level >= 4 || hazard_focus_pending_or_active) &&
+              AirDot::onboarding::load_hazard_focus_mode_enabled() &&
+              !setup_or_onboarding_active &&
+              !hazard_focus_snoozed;
+            const bool wake_for_display_alert =
+              id(ui_alert_active) != 0 &&
+              AirDot::onboarding::load_display_alert_wake_screen_enabled() &&
+              !setup_or_onboarding_active;
+            if (!setup_or_onboarding_active &&
+                now.is_valid() &&
+                AirDot::onboarding::screen_off_window_active_at_utc(static_cast<uint32_t>(now.timestamp)) &&
+                !wake_for_hazard_focus &&
+                !wake_for_display_alert &&
+                !display_sleep_button_wake_active) {
+              id(display_backlight).turn_off().perform();
+              id(display_panel).set_screen_powered(false);
+              return;
+            }
+            id(display_panel).set_screen_powered(true);
+
+            AirDot::onboarding::apply_display_brightness(
+              id(display_backlight), x, ${display_auto_dim_min_lux}, ${display_auto_dim_max_lux},
+              ${display_auto_dim_min_brightness});

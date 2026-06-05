@@ -1,0 +1,79 @@
+globals:
+  - id: air_quality_hazard_last_chirp_ms
+    type: uint32_t
+    restore_value: false
+    initial_value: "0"
+  - id: air_quality_hazard_sound_snooze_until_ms
+    type: uint32_t
+    restore_value: false
+    initial_value: "0"
+
+script:
+  - id: ui_play_display_alert_sound
+    mode: restart
+    parameters:
+      duration_ms: int
+    then:
+      - if:
+          condition:
+            lambda: |-
+              const uint32_t now = millis();
+              const bool warmup_active =
+                id(air_quality_warmup_until_ms) != 0 &&
+                static_cast<int32_t>(now - id(air_quality_warmup_until_ms)) < 0;
+              const bool setup_or_onboarding_active =
+                AirDot::onboarding::setup_or_onboarding_active(
+                  id(setup_ap_active), id(setup_portal_active), id(onboarding_ui_active));
+              if (duration_ms <= 0 || warmup_active || setup_or_onboarding_active) {
+                return false;
+              }
+              return true;
+          then:
+            - output.ledc.set_frequency:
+                id: alert_buzzer_pwm
+                frequency: 2700Hz
+            - output.set_level:
+                id: alert_buzzer_pwm
+                level: 50%
+            - delay: !lambda |-
+                return duration_ms;
+            - output.turn_off: alert_buzzer_pwm
+
+  - id: ui_stop_display_alert_sound
+    mode: restart
+    then:
+      - script.stop: ui_play_display_alert_sound
+      - if:
+          condition:
+            lambda: "return !id(hazard_alert_chirp).is_running();"
+          then:
+            - output.turn_off: alert_buzzer_pwm
+
+  - id: hazard_alert_chirp
+    mode: single
+    then:
+      - if:
+          condition:
+            lambda: |-
+              const uint32_t now = millis();
+              const bool warmup_active =
+                id(air_quality_warmup_until_ms) != 0 &&
+                static_cast<int32_t>(now - id(air_quality_warmup_until_ms)) < 0;
+              const bool setup_or_onboarding_active =
+                AirDot::onboarding::setup_or_onboarding_active(
+                  id(setup_ap_active), id(setup_portal_active), id(onboarding_ui_active));
+              if (warmup_active || setup_or_onboarding_active ||
+                  !AirDot::onboarding::load_audio_alerts_enabled()) {
+                return false;
+              }
+              return true;
+          then:
+            - script.stop: ui_play_display_alert_sound
+            - output.ledc.set_frequency:
+                id: alert_buzzer_pwm
+                frequency: 2700Hz
+            - output.set_level:
+                id: alert_buzzer_pwm
+                level: 50%
+            - delay: 150ms
+            - output.turn_off: alert_buzzer_pwm

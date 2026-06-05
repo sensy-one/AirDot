@@ -1,0 +1,19 @@
+output:
+  - platform: ledc
+    id: display_backlight_pwm
+    pin: ${display_backlight_pin}
+    frequency: 20000Hz
+  - platform: ledc
+    id: alert_buzzer_pwm
+    pin: ${alert_buzzer_pin}
+    frequency: 2700Hz
+
+light:
+  - platform: monochromatic
+    id: display_backlight
+    name: Display Backlight
+    internal: true
+    output: display_backlight_pwm
+    restore_mode: ALWAYS_OFF
+    default_transition_length: 300ms
+    gamma_correct: 1.0

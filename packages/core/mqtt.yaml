@@ -1,0 +1,16 @@
+mqtt:
+  id: mqtt_client
+  broker: 127.0.0.1
+  port: 1883
+  enable_on_boot: false
+  discovery: true
+  discovery_unique_id_generator: mac
+  discovery_object_id_generator: device_name
+  discover_ip: false
+  clean_session: true
+  topic_prefix: ${mqtt_default_topic_prefix}
+  birth_message:
+  will_message:
+  shutdown_message:
+  log_topic:
+  reboot_timeout: 0s

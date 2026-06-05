@@ -1,0 +1,188 @@
+globals:
+  - id: air_quality_warmup_until_ms
+    type: uint32_t
+    restore_value: false
+    initial_value: "0"
+  - id: air_quality_warmup_reported
+    type: int
+    restore_value: false
+    initial_value: "0"
+script:
+  - id: ui_refresh_air_quality_summary
+    mode: restart
+    then:
+      - lambda: |-
+          const auto unit_system = AirDot::onboarding::load_unit_system();
+          const auto air_quality_profile = AirDot::onboarding::load_air_quality_profile();
+          const auto ui_language = AirDot::onboarding::load_ui_language();
+          const auto history_text = AirDot::history_text(ui_language);
+          lv_label_set_text(id(pm1_history_title_label), history_text.pm1_title);
+          lv_label_set_text(id(pm25_history_title_label), history_text.pm25_title);
+          lv_label_set_text(id(pm4_history_title_label), history_text.pm4_title);
+          lv_label_set_text(id(pm10_history_title_label), history_text.pm10_title);
+          lv_label_set_text(id(co2_history_title_label), history_text.co2_title);
+          lv_label_set_text(id(voc_history_title_label), history_text.voc_title);
+          lv_label_set_text(id(nox_history_title_label), history_text.nox_title);
+          const int16_t history_max_label_offset = -8;
+          lv_obj_set_style_text_font(
+            id(temp_history_title_label),
+            id(ui_font_large),
+            LV_PART_MAIN);
+          lv_obj_set_style_text_font(
+            id(hum_history_title_label),
+            id(ui_font_large),
+            LV_PART_MAIN);
+          lv_obj_set_style_text_font(
+            id(pressure_history_title_label),
+            id(ui_font_large),
+            LV_PART_MAIN);
+          lv_obj_set_style_text_font(
+            id(lux_history_title_label),
+            id(ui_font_large),
+            LV_PART_MAIN);
+          const auto history_stat_font = id(ui_font_small);
+          lv_obj_set_style_text_font(id(pm1_history_min_label), history_stat_font, LV_PART_MAIN);
+          lv_obj_set_style_text_font(id(pm1_history_max_label), history_stat_font, LV_PART_MAIN);
+          lv_obj_set_style_text_font(id(pm25_history_min_label), history_stat_font, LV_PART_MAIN);
+          lv_obj_set_style_text_font(id(pm25_history_max_label), history_stat_font, LV_PART_MAIN);
+          lv_obj_set_style_text_font(id(pm4_history_min_label), history_stat_font, LV_PART_MAIN);
+          lv_obj_set_style_text_font(id(pm4_history_max_label), history_stat_font, LV_PART_MAIN);
+          lv_obj_set_style_text_font(id(pm10_history_min_label), history_stat_font, LV_PART_MAIN);
+          lv_obj_set_style_text_font(id(pm10_history_max_label), history_stat_font, LV_PART_MAIN);
+          lv_obj_set_style_text_font(id(co2_history_min_label), history_stat_font, LV_PART_MAIN);
+          lv_obj_set_style_text_font(id(co2_history_max_label), history_stat_font, LV_PART_MAIN);
+          lv_obj_set_style_text_font(id(voc_history_min_label), history_stat_font, LV_PART_MAIN);
+          lv_obj_set_style_text_font(id(voc_history_max_label), history_stat_font, LV_PART_MAIN);
+          lv_obj_set_style_text_font(id(nox_history_min_label), history_stat_font, LV_PART_MAIN);
+          lv_obj_set_style_text_font(id(nox_history_max_label), history_stat_font, LV_PART_MAIN);
+          lv_obj_set_style_text_font(id(temp_history_min_label), history_stat_font, LV_PART_MAIN);
+          lv_obj_set_style_text_font(id(temp_history_max_label), history_stat_font, LV_PART_MAIN);
+          lv_obj_set_style_text_font(id(hum_history_min_label), history_stat_font, LV_PART_MAIN);
+          lv_obj_set_style_text_font(id(hum_history_max_label), history_stat_font, LV_PART_MAIN);
+          lv_obj_set_style_text_font(id(pressure_history_min_label), history_stat_font, LV_PART_MAIN);
+          lv_obj_set_style_text_font(id(pressure_history_max_label), history_stat_font, LV_PART_MAIN);
+          lv_obj_set_style_text_font(id(lux_history_min_label), history_stat_font, LV_PART_MAIN);
+          lv_obj_set_style_text_font(id(lux_history_max_label), history_stat_font, LV_PART_MAIN);
+          lv_obj_set_style_translate_y(id(temp_history_max_label), history_max_label_offset, LV_PART_MAIN);
+          lv_obj_set_style_translate_y(id(hum_history_max_label), history_max_label_offset, LV_PART_MAIN);
+          lv_obj_set_style_translate_y(id(pressure_history_max_label), history_max_label_offset, LV_PART_MAIN);
+          lv_obj_set_style_translate_y(id(lux_history_max_label), history_max_label_offset, LV_PART_MAIN);
+          lv_label_set_text(id(temp_history_title_label), history_text.temperature_title);
+          lv_label_set_text(id(hum_history_title_label), history_text.humidity_title);
+          lv_label_set_text(id(pressure_history_title_label), history_text.pressure_title);
+          lv_label_set_text(id(lux_history_title_label), history_text.light_title);
+          AirDot::set_history_placeholder_labels(id(pm1_history_min_label), id(pm1_history_max_label), history_text);
+          AirDot::set_history_placeholder_labels(id(pm25_history_min_label), id(pm25_history_max_label), history_text);
+          AirDot::set_history_placeholder_labels(id(pm4_history_min_label), id(pm4_history_max_label), history_text);
+          AirDot::set_history_placeholder_labels(id(pm10_history_min_label), id(pm10_history_max_label), history_text);
+          AirDot::set_history_placeholder_labels(id(co2_history_min_label), id(co2_history_max_label), history_text);
+          AirDot::set_history_placeholder_labels(id(voc_history_min_label), id(voc_history_max_label), history_text);
+          AirDot::set_history_placeholder_labels(id(nox_history_min_label), id(nox_history_max_label), history_text);
+          AirDot::set_history_placeholder_labels(id(temp_history_min_label), id(temp_history_max_label), history_text);
+          AirDot::set_history_placeholder_labels(id(hum_history_min_label), id(hum_history_max_label), history_text);
+          AirDot::set_history_placeholder_labels(
+            id(pressure_history_min_label), id(pressure_history_max_label), history_text);
+          AirDot::set_history_placeholder_labels(id(lux_history_min_label), id(lux_history_max_label), history_text);
+          AirDot::set_formatted_label(
+            id(air_quality_summary_temperature_label),
+            AirDot::onboarding::display_temperature_c(id(air_temperature).state, unit_system), "%.0f");
+          lv_label_set_text(
+            id(air_quality_summary_temperature_unit_label), AirDot::onboarding::temperature_unit_text(unit_system));
+          AirDot::set_formatted_label(id(air_quality_summary_humidity_label), id(air_humidity).state, "%.0f");
+          AirDot::set_formatted_label(
+            id(air_quality_summary_pressure_label),
+            AirDot::onboarding::display_pressure_pa(id(pressure).state, unit_system),
+            AirDot::onboarding::pressure_format(unit_system));
+          lv_label_set_text(
+            id(air_quality_summary_pressure_unit_label), AirDot::onboarding::pressure_unit_text(unit_system));
+          const bool wifi_connected = esphome::wifi::global_wifi_component != nullptr &&
+            esphome::wifi::global_wifi_component->is_connected();
+          lv_label_set_text(
+            id(air_quality_summary_connection_label),
+            AirDot::connection_location_text(false, ui_language));
+          lv_obj_set_style_text_font(
+            id(air_quality_summary_connection_label), id(ui_font_small),
+            LV_PART_MAIN);
+          AirDot::set_text_color(
+            id(air_quality_summary_connection_indicator_label),
+            wifi_connected ? AirDot::color(0x20, 0xE8, 0x40) : AirDot::color(0xFF, 0x2B, 0x2B));
+
+          const uint32_t now = millis();
+          const bool warmup_active =
+            id(air_quality_warmup_until_ms) != 0 &&
+            static_cast<int32_t>(now - id(air_quality_warmup_until_ms)) < 0;
+          if (!warmup_active && id(air_quality_warmup_until_ms) != 0 &&
+              id(air_quality_warmup_reported) == 0) {
+            id(air_quality_warmup_reported) = 1;
+          }
+
+          const int level = warmup_active ? -1 : AirDot::sanitized_air_quality_level(
+            air_quality_profile, id(pm25).state, id(pm10).state, id(voc).state, id(nox).state, id(co2).state);
+          lv_obj_set_style_text_font(
+            id(air_quality_summary_status_label), id(ui_font_status),
+            LV_PART_MAIN);
+          lv_obj_set_style_text_font(
+            id(air_quality_summary_action_label), id(ui_font_action),
+            LV_PART_MAIN);
+          if (warmup_active) {
+            AirDot::set_value_placeholder_spacing(id(air_quality_summary_status_label), true);
+            AirDot::set_value_placeholder_spacing(id(air_quality_summary_action_label), true);
+            lv_label_set_text(id(air_quality_summary_status_label), "--");
+            lv_label_set_text(id(air_quality_summary_action_label), "--");
+          } else if (level < 0) {
+            AirDot::set_value_placeholder_spacing(id(air_quality_summary_status_label), true);
+            AirDot::set_value_placeholder_spacing(id(air_quality_summary_action_label), true);
+            lv_label_set_text(id(air_quality_summary_status_label), "--");
+            lv_label_set_text(id(air_quality_summary_action_label), "--");
+          } else {
+            const auto text = AirDot::air_quality_text(level, ui_language);
+            AirDot::set_value_placeholder_spacing(id(air_quality_summary_status_label), false);
+            AirDot::set_value_placeholder_spacing(id(air_quality_summary_action_label), false);
+            lv_label_set_text(id(air_quality_summary_status_label), text.status);
+            lv_label_set_text(id(air_quality_summary_action_label), text.action);
+          }
+          AirDot::set_text_color(
+            id(air_quality_summary_status_label), AirDot::air_quality_status_color(level));
+          const bool setup_or_onboarding_active =
+            AirDot::onboarding::setup_or_onboarding_active(
+              id(setup_ap_active), id(setup_portal_active), id(onboarding_ui_active));
+          const bool hazard_sound_snoozed =
+            id(air_quality_hazard_sound_snooze_until_ms) != 0 &&
+            static_cast<int32_t>(now - id(air_quality_hazard_sound_snooze_until_ms)) < 0;
+          if (id(air_quality_hazard_sound_snooze_until_ms) != 0 && !hazard_sound_snoozed) {
+            id(air_quality_hazard_sound_snooze_until_ms) = 0;
+          }
+          if (level >= 4 && !warmup_active && AirDot::onboarding::load_audio_alerts_enabled() &&
+              !setup_or_onboarding_active && !hazard_sound_snoozed) {
+            if (id(ui_play_display_alert_sound).is_running() ||
+                id(air_quality_hazard_last_chirp_ms) == 0 ||
+                static_cast<uint32_t>(now - id(air_quality_hazard_last_chirp_ms)) >= 3000UL) {
+              id(air_quality_hazard_last_chirp_ms) = now;
+              id(hazard_alert_chirp).execute();
+            }
+          } else {
+            id(air_quality_hazard_last_chirp_ms) = 0;
+          }
+
+          AirDot::set_text_color(
+            id(air_quality_summary_pm25_indicator_label),
+            AirDot::metric_color(air_quality_profile, AirDot::AirQualityMetric::PM25, id(pm25).state));
+          AirDot::set_text_color(
+            id(air_quality_summary_co2_indicator_label),
+            AirDot::metric_color(air_quality_profile, AirDot::AirQualityMetric::CO2, id(co2).state));
+          AirDot::set_text_color(
+            id(air_quality_summary_voc_indicator_label),
+            AirDot::metric_color(air_quality_profile, AirDot::AirQualityMetric::VOC, id(voc).state));
+          AirDot::set_text_color(
+            id(air_quality_summary_pm10_indicator_label),
+            AirDot::metric_color(air_quality_profile, AirDot::AirQualityMetric::PM10, id(pm10).state));
+          AirDot::set_text_color(
+            id(air_quality_summary_nox_indicator_label),
+            AirDot::metric_color(air_quality_profile, AirDot::AirQualityMetric::NOX, id(nox).state));
+
+      - script.execute: ui_update_hazard_focus
+
+interval:
+  - interval: 1s
+    then:
+      - script.execute: ui_refresh_air_quality_summary

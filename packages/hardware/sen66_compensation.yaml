@@ -1,0 +1,41 @@
+globals:
+  - id: sen66_pressure_hpa_sent
+    type: int
+    restore_value: false
+    initial_value: "0"
+
+script:
+  - id: sen66_apply_temperature_offset
+    mode: single
+    then:
+      - lambda: |-
+          AirDot::sen66_apply_temperature_offset(
+            id(sen66_air_quality_sensor),
+            AirDot::onboarding::load_sen66_temperature_offset_c(),
+            ${sen66_temperature_offset_slope},
+            ${sen66_temperature_offset_time_constant_s},
+            ${sen66_temperature_offset_slot});
+
+  - id: sen66_force_co2_calibration
+    mode: single
+    parameters:
+      reference_ppm: int
+    then:
+      - lambda: |-
+          id(sen66_air_quality_sensor).stop_poller();
+          id(sen66_air_quality_sensor).cancel_timeout(1);
+          AirDot::sen66_stop_measurement(id(sen66_air_quality_sensor));
+      - delay: 1200ms
+      - lambda: |-
+          int bounded_reference = reference_ppm;
+          if (bounded_reference < 400)
+            bounded_reference = 400;
+          if (bounded_reference > 2000)
+            bounded_reference = 2000;
+
+          int16_t correction_ppm = 0;
+          AirDot::sen66_perform_forced_co2_recalibration(
+              id(sen66_air_quality_sensor), static_cast<uint16_t>(bounded_reference), correction_ppm);
+      - lambda: |-
+          AirDot::sen66_start_measurement(id(sen66_air_quality_sensor));
+          id(sen66_air_quality_sensor).start_poller();

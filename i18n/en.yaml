@@ -1,0 +1,239 @@
+language:
+  id: 0
+  code: en
+  label: English
+
+setup_page:
+  html_title: Set up AirDot
+  hero_title: Set up AirDot
+  hero_body: Set up your connection, time, display, and integrations.
+
+  saved: Settings saved
+
+  network_title: Connection
+  network_note: Choose a Wi-Fi network or use AirDot without Wi-Fi.
+  wifi_ssid_label: Wi-Fi network
+  wifi_password_label: Wi-Fi password
+  wifi_password_placeholder: Enter password
+  offline_option: Continue without Wi-Fi
+  no_networks: No Wi-Fi networks found
+
+  integrations_title: Integrations
+  integrations_note: Connect AirDot to Home Assistant or an MQTT server.
+
+  ha_discovery_title: Home Assistant
+  ha_discovery_description: Make AirDot automatically discoverable in Home Assistant.
+
+  mqtt_title: MQTT
+  mqtt_description: Send measurement data to an MQTT server.
+  mqtt_broker_label: Server
+  mqtt_broker_placeholder: 192.168.1.10
+  mqtt_port_label: Port
+  mqtt_username_label: Username
+  mqtt_password_label: Password
+  mqtt_topic_prefix_label: Topic prefix
+  optional_placeholder: Optional
+  publishing_interval_label: Publish interval
+
+  air_quality_title: Air quality
+  air_quality_note: Choose the guideline AirDot uses to assess air quality.
+  air_quality_profile_label: Guideline
+
+  sensor_calibration_title: Sensor calibration
+  sensor_calibration_note: Adjust the built-in temperature reading.
+  sen66_temperature_offset_label: SEN66 reads high by
+  sen66_co2_reference_label: CO2 baseline
+  sen66_co2_calibration_title: Force CO2 baseline calibration
+  sen66_co2_calibration_description: Place AirDot in fresh outdoor air for at least 3 minutes, then save.
+
+  alerts_title: Alerts
+  alerts_note: Set when AirDot should alert you.
+
+  display_alert_wake_screen_title: Wake screen
+  display_alert_wake_screen_description: Turn on the display when Home Assistant sends an alert.
+
+  audio_alerts_title: Sound alerts
+  audio_alerts_description: Play a warning tone when a measurement reaches a dangerous level.
+
+  hazard_focus_title: Focus on critical values
+  hazard_focus_description: Automatically show the chart for the sensor with the highest risk level.
+
+  firmware_title: Firmware update
+  firmware_note: Select an OTA .bin file for the AirDot firmware update.
+  firmware_file_label: Firmware file
+  firmware_select_button: Choose firmware file
+  firmware_upload_button: Update firmware
+  firmware_success: Update successful
+  firmware_no_file: Select a firmware file first
+  firmware_failed: Update failed
+
+  time_title: Time
+  time_note: Set date, time, and time format.
+
+  time_server_title: Date and time
+  time_server_description: Let AirDot update the time automatically or set date and time yourself.
+  time_source_label: Time setting
+  time_source_network_label: Automatic
+  time_source_manual_label: Manual
+
+  manual_time_label: Date and time
+
+  time_format_label: Time format
+  time_24h_label: 24-hour
+  time_12h_label: 12-hour
+
+  night_screen_off_title: Night mode
+  night_screen_off_description: Turn off the display during the selected hours.
+
+  weather_title: Weather
+  weather_note: Show local outdoor weather on the display.
+
+  weather_sync_title: Weather updates
+  weather_sync_description: Use automatic location detection or choose a location yourself.
+  weather_location_mode_label: Location
+  weather_location_ip_label: Automatic
+  weather_location_manual_label: Manual
+  weather_location_city_label: City
+  weather_location_city_placeholder: New York
+
+  display_title: Display
+  display_note: Set language, units, brightness, and appearance.
+
+  language_label: Language
+  units_label: Units
+  metric_label: Metric
+  imperial_label: Imperial
+
+  brightness_label: Brightness
+  brightness_low: Low
+  brightness_medium: Medium
+  brightness_high: High
+
+  dark_mode_title: Dark mode
+  dark_mode_description: Use a dark display theme.
+
+  adaptive_brightness_title: Automatic brightness
+  adaptive_brightness_description: Adjust brightness automatically based on ambient light.
+
+  save_button: Save
+  footer_note: Hold the action button to open setup again later.
+
+air_quality:
+  balanced:
+    status: GOOD
+    action: No action needed
+  moderate:
+    status: MODERATE
+    action: Monitor the values
+  poor:
+    status: POOR
+    action: Ventilate the room
+  unhealthy:
+    status: UNHEALTHY
+    action: Limit exposure
+  hazardous:
+    status: CRITICAL
+    action: Act immediately
+
+factory_reset:
+  factory_reset_countdown:
+    title: Factory reset
+    body: |-
+      Keep holding to
+      reset AirDot.
+
+      Reset in {seconds}...
+connection:
+  indoor: Indoor
+  outdoor: Outdoor
+
+weather:
+  clear: Clear
+  cloudy: Cloudy
+  fog: Fog
+  drizzle: Drizzle
+  freezing_drizzle: Freezing drizzle
+  rain: Rain
+  freezing_rain: Freezing rain
+  snow: Snow
+  snow_grains: Snow grains
+  rain_showers: Rain showers
+  snow_showers: Snow showers
+  thunderstorm: Thunderstorm
+  thunderstorm_hail: Thunderstorm with hail
+  high_label: H
+  low_label: L
+
+notification:
+  fallback: Notification
+  dismiss: Close
+
+date:
+  format: "{weekday} {month} {day}"
+  weekdays:
+    sunday: SUN
+    monday: MON
+    tuesday: TUE
+    wednesday: WED
+    thursday: THU
+    friday: FRI
+    saturday: SAT
+  months:
+    january: JAN
+    february: FEB
+    march: MAR
+    april: APR
+    may: MAY
+    june: JUN
+    july: JUL
+    august: AUG
+    september: SEP
+    october: OCT
+    november: NOV
+    december: DEC
+
+history:
+  pm1_title: PM₁
+  pm25_title: PM₂
+  pm4_title: PM₄
+  pm10_title: PM₁₀
+  co2_title: CO₂
+  voc_title: VOC
+  nox_title: NOx
+  temperature_title: TEMP
+  humidity_title: RH
+  pressure_title: PRESS
+  light_title: LIGHT
+  min_pattern: "{value} min"
+  max_pattern: "{value} max"
+
+onboarding:
+  setup_language:
+    title: Choose language
+    body: |-
+      Press briefly to switch.
+      Hold to confirm.
+  setup_connect:
+    title: Set up AirDot
+    body: |-
+      Open Wi-Fi on your phone
+      and choose AirDot-XXXXXX.
+
+      Then open your browser
+      and go to 192.168.4.1.
+    button_0: Later
+    button_0_reopen: Back
+
+  setup_applying:
+    title: Connecting
+    body: |-
+      AirDot is applying your settings
+      and connecting.
+    button_0: Please wait…
+
+  setup_complete:
+    title: AirDot is set up
+    body: |-
+      You can now track
+      your air quality.
+    countdown: Overview opens in {seconds}…

@@ -1,0 +1,8 @@
+network:
+  enable_ipv6: true
+  min_ipv6_addr_count: 0
+
+http_request:
+  id: ipwhois_http_request
+  timeout: 6s
+  verify_ssl: true

@@ -1,0 +1,37 @@
+font:
+  - file: "gfonts://Roboto"
+    id: ui_font_large
+    size: 48
+    glyphs: "-.0123456789CDEFGHIKLMNOPRSTUVx₀₁₂₄"
+  - file: "gfonts://Roboto"
+    id: ui_font_metric_unit
+    size: 26
+    glyphs: "%/CFHPadeghilmnpx°³µ"
+  - file: "gfonts://Roboto"
+    id: ui_font_small
+    size: 26
+    glyphs: &alert_font_glyphs
+      - ' !"#$%&''()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_`abcdefghijklmnopqrstuvwxyz{|}~'
+      - '¡¢£¤¥¦§¨©ª«¬­®¯°±²³´µ¶·¸¹º»¼½¾¿ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖ×ØÙÚÛÜÝÞßàáâãäåæçèéêëìíîïðñòóôõö÷øùúûüýþÿ'
+      - 'ĀāĂăĄąĆćĈĉĊċČčĎďĐđĒēĔĕĖėĘęĚěĜĝĞğĠġĢģĤĥĦħĨĩĪīĬĭĮįİıĲĳĴĵĶķĸĹĺĻļĽľĿŀŁłŃńŅņŇňŉŊŋŌōŎŏŐőŒœŔŕŖŗŘřŚśŜŝŞşŠšŢţŤťŦŧŨũŪūŬŭŮůŰűŲųŴŵŶŷŸŹźŻżŽžſ'
+      - '‐‑–—―‗‘’‚‛“”„†‡•‥…‧‰′″‹›‼⁄₣₤₦₧₨₩₪₫€₱₹₺₼₽℅ℓ№™Ω℮■◊○●⁰⁴⁵⁶⁷⁸⁹⁺⁻⁼⁽⁾ⁿ₀₁₂₃₄₅₆₇₈₉₊₋₌₍₎'
+  - file: "gfonts://Roboto"
+    id: ui_font_modal_title
+    size: 31
+    glyphs: *alert_font_glyphs
+  - file: "gfonts://Roboto"
+    id: ui_font_status
+    size: 52
+    glyphs: " -0123456789:ABCDEFGHIKLMNOPQRSTUVWYZÄ"
+  - file: "gfonts://Roboto"
+    id: ui_font_action
+    size: 26
+    glyphs: " -0123456789ABCDEFGHIJKLMNOPRSTUVWYZabcdefghijklmnoprstuvwxyzÄÉÛäèéöü’"
+  - file: "gfonts://Roboto"
+    id: ui_font_time_suffix
+    size: 20
+    glyphs: "AMP"
+  - file: "gfonts://Roboto"
+    id: ui_font_summary_unit
+    size: 26
+    glyphs: "CFHPaghin%°"

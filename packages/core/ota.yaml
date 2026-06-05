@@ -1,0 +1,8 @@
+ota:
+  - platform: esphome
+  - platform: web_server
+
+safe_mode:
+  boot_is_good_after: 90s
+  num_attempts: 5
+  reboot_timeout: 10min

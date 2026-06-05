@@ -1,0 +1,34 @@
+substitutions: !include substitutions.yaml
+
+packages:
+  core_platform: !include packages/core/platform.yaml
+  core_logging: !include packages/core/logging.yaml
+  core_device: !include packages/core/device.yaml
+  core_network: !include packages/core/network.yaml
+  core_wifi: !include packages/core/wifi.yaml
+  core_api: !include packages/core/api.yaml
+  core_ota: !include packages/core/ota.yaml
+  core_mqtt: !include packages/core/mqtt.yaml
+
+  hardware_display_outputs: !include packages/hardware/display_outputs.yaml
+  hardware_display_panel: !include packages/hardware/display_panel.yaml
+  hardware_page_button: !include packages/hardware/page_button.yaml
+  hardware_ltr303als_sensor: !include packages/hardware/ltr303als_sensor.yaml
+  hardware_spa06_sensor: !include packages/hardware/spa06_sensor.yaml
+  hardware_sen66_sensor: !include packages/hardware/sen66_sensor.yaml
+  hardware_sen66_compensation: !include packages/hardware/sen66_compensation.yaml
+
+  integration_published_sensors: !include packages/integrations/published_sensors.yaml
+
+  ui_fonts: !include packages/ui/fonts.yaml
+  ui_theme: !include packages/ui/theme.yaml
+  ui_pages: !include packages/ui/pages.yaml
+  ui_navigation: !include packages/ui/navigation.yaml
+  ui_sound_alerts: !include packages/ui/sound_alerts.yaml
+  ui_hazard_focus: !include packages/ui/hazard_focus.yaml
+  ui_time_weather_page: !include packages/ui/time_weather_page.yaml
+
+  feature_setup_portal: !include packages/features/setup_portal.yaml
+  feature_time_sync: !include packages/features/time_sync.yaml
+  feature_weather: !include packages/features/weather.yaml
+  feature_air_quality: !include packages/features/air_quality.yaml

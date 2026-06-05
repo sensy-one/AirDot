@@ -1,0 +1,27 @@
+esp32:
+  board: esp32-s3-devkitc-1
+  variant: esp32s3
+  flash_size: 16MB
+  framework:
+    type: esp-idf
+    sdkconfig_options:
+      CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG: "y"
+      CONFIG_ESP_CONSOLE_SECONDARY_NONE: "y"
+
+external_components:
+  - source:
+      type: local
+      path: components
+    components:
+      - nhd_2_1_480480af_asxp
+      - ltr303als
+
+psram:
+  mode: octal
+  speed: 80MHz
+
+i2c:
+  scl: GPIO4
+  sda: GPIO5
+  scan: false
+  frequency: 50kHz

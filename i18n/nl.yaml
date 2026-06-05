@@ -1,0 +1,239 @@
+language:
+  id: 2
+  code: nl
+  label: Nederlands
+
+setup_page:
+  html_title: AirDot instellen
+  hero_title: AirDot instellen
+  hero_body: Stel je verbinding, tijd, schermweergave en koppelingen in.
+
+  saved: Instellingen opgeslagen
+
+  network_title: Verbinding
+  network_note: Kies een wifi-netwerk of gebruik AirDot zonder wifi.
+  wifi_ssid_label: Wifi-netwerk
+  wifi_password_label: Wifi-wachtwoord
+  wifi_password_placeholder: Vul het wachtwoord in
+  offline_option: Zonder wifi doorgaan
+  no_networks: Geen wifi-netwerken gevonden
+
+  integrations_title: Koppelingen
+  integrations_note: Koppel AirDot aan Home Assistant of een MQTT-server.
+
+  ha_discovery_title: Home Assistant
+  ha_discovery_description: Maak AirDot automatisch vindbaar in Home Assistant.
+
+  mqtt_title: MQTT
+  mqtt_description: Verstuur meetgegevens naar een MQTT-server.
+  mqtt_broker_label: Server
+  mqtt_broker_placeholder: 192.168.1.10
+  mqtt_port_label: Poort
+  mqtt_username_label: Gebruikersnaam
+  mqtt_password_label: Wachtwoord
+  mqtt_topic_prefix_label: Topic-prefix
+  optional_placeholder: Optioneel
+  publishing_interval_label: Publicatie-interval
+
+  air_quality_title: Luchtkwaliteit
+  air_quality_note: Kies welke richtlijn AirDot gebruikt om de luchtkwaliteit te beoordelen.
+  air_quality_profile_label: Richtlijn
+
+  sensor_calibration_title: Sensorkalibratie
+  sensor_calibration_note: Pas de interne temperatuurmeting aan.
+  sen66_temperature_offset_label: SEN66 meet te hoog met
+  sen66_co2_reference_label: CO2-baseline
+  sen66_co2_calibration_title: Forceer CO2-baselinekalibratie
+  sen66_co2_calibration_description: Zet AirDot minstens 3 minuten in frisse buitenlucht en sla daarna op.
+
+  alerts_title: Meldingen
+  alerts_note: Stel in wanneer je een waarschuwing ontvangt.
+
+  display_alert_wake_screen_title: Scherm wakker maken
+  display_alert_wake_screen_description: Zet het scherm aan wanneer Home Assistant een melding stuurt.
+
+  audio_alerts_title: Geluidswaarschuwingen
+  audio_alerts_description: Speel een waarschuwingstoon af wanneer een meting een gevaarlijk niveau bereikt.
+
+  hazard_focus_title: Focus bij kritieke waarden
+  hazard_focus_description: Toon automatisch de grafiek van de sensor met het hoogste risiconiveau.
+
+  firmware_title: Firmware update
+  firmware_note: Selecteer een OTA .bin-bestand voor de firmware update van AirDot.
+  firmware_file_label: Firmwarebestand
+  firmware_select_button: Kies firmwarebestand
+  firmware_upload_button: Firmware updaten
+  firmware_success: Update gelukt
+  firmware_no_file: Kies eerst een firmwarebestand
+  firmware_failed: Update niet gelukt
+
+  time_title: Tijd
+  time_note: Stel datum, tijd en tijdnotatie in.
+
+  time_server_title: Datum en tijd
+  time_server_description: Laat AirDot de tijd automatisch bijwerken of stel datum en tijd zelf in.
+  time_source_label: Tijdinstelling
+  time_source_network_label: Automatisch
+  time_source_manual_label: Handmatig
+
+  manual_time_label: Datum en tijd
+
+  time_format_label: Tijdnotatie
+  time_24h_label: 24 uur
+  time_12h_label: 12 uur
+
+  night_screen_off_title: Nachtstand
+  night_screen_off_description: Schakel het scherm uit tijdens de ingestelde uren.
+
+  weather_title: Weer
+  weather_note: Toon het lokale buitenweer op het scherm.
+
+  weather_sync_title: Weerupdates
+  weather_sync_description: Gebruik automatische locatiebepaling of kies zelf een plaats.
+  weather_location_mode_label: Locatie
+  weather_location_ip_label: Automatisch
+  weather_location_manual_label: Handmatig
+  weather_location_city_label: Plaats
+  weather_location_city_placeholder: Amsterdam
+
+  display_title: Scherm
+  display_note: Stel taal, eenheden, helderheid en weergave in.
+
+  language_label: Taal
+  units_label: Eenheden
+  metric_label: Metrisch
+  imperial_label: Imperiaal
+
+  brightness_label: Helderheid
+  brightness_low: Laag
+  brightness_medium: Gemiddeld
+  brightness_high: Hoog
+
+  dark_mode_title: Donkere modus
+  dark_mode_description: Gebruik een donkere schermweergave.
+
+  adaptive_brightness_title: Automatische helderheid
+  adaptive_brightness_description: Pas de helderheid automatisch aan op basis van het omgevingslicht.
+
+  save_button: Opslaan
+  footer_note: Open deze setup later opnieuw door de actieknop ingedrukt te houden.
+
+air_quality:
+  balanced:
+    status: GOED
+    action: Geen actie nodig
+  moderate:
+    status: MATIG
+    action: Houd de waarden in de gaten
+  poor:
+    status: SLECHT
+    action: Ventileer de ruimte
+  unhealthy:
+    status: ONGEZOND
+    action: Beperk blootstelling
+  hazardous:
+    status: KRITIEK
+    action: Neem direct actie
+
+factory_reset:
+  factory_reset_countdown:
+    title: Fabrieksreset
+    body: |-
+      Blijf vasthouden om
+      AirDot te resetten.
+
+      Reset over {seconds}...
+connection:
+  indoor: Binnen
+  outdoor: Buiten
+
+weather:
+  clear: Helder
+  cloudy: Bewolkt
+  fog: Mist
+  drizzle: Motregen
+  freezing_drizzle: Lichte ijzel
+  rain: Regen
+  freezing_rain: IJzel
+  snow: Sneeuw
+  snow_grains: Sneeuwkorrels
+  rain_showers: Regenbuien
+  snow_showers: Sneeuwbuien
+  thunderstorm: Onweer
+  thunderstorm_hail: Onweer met hagel
+  high_label: H
+  low_label: L
+
+notification:
+  fallback: Melding
+  dismiss: Sluiten
+
+date:
+  format: "{weekday} {day} {month}"
+  weekdays:
+    sunday: ZO
+    monday: MA
+    tuesday: DI
+    wednesday: WO
+    thursday: DO
+    friday: VR
+    saturday: ZA
+  months:
+    january: JAN
+    february: FEB
+    march: MRT
+    april: APR
+    may: MEI
+    june: JUN
+    july: JUL
+    august: AUG
+    september: SEP
+    october: OKT
+    november: NOV
+    december: DEC
+
+history:
+  pm1_title: PM₁
+  pm25_title: PM₂
+  pm4_title: PM₄
+  pm10_title: PM₁₀
+  co2_title: CO₂
+  voc_title: VOC
+  nox_title: NOx
+  temperature_title: TEMP
+  humidity_title: RV
+  pressure_title: DRUK
+  light_title: LICHT
+  min_pattern: "{value} min"
+  max_pattern: "{value} max"
+
+onboarding:
+  setup_language:
+    title: Kies je taal
+    body: |-
+      Druk kort om te wisselen.
+      Houd ingedrukt om te bevestigen.
+  setup_connect:
+    title: Stel AirDot in
+    body: |-
+      Open wifi op je telefoon
+      en kies AirDot-XXXXXX.
+
+      Open daarna je browser
+      en ga naar 192.168.4.1.
+    button_0: Later
+    button_0_reopen: Terug
+
+  setup_applying:
+    title: Verbinding maken
+    body: |-
+      AirDot past je instellingen toe
+      en maakt verbinding.
+    button_0: Even geduld…
+
+  setup_complete:
+    title: AirDot is ingesteld
+    body: |-
+      Je kunt je luchtkwaliteit
+      nu volgen.
+    countdown: Overzicht opent over {seconds}…

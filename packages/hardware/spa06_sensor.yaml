@@ -1,0 +1,35 @@
+sensor:
+  - platform: spa06_i2c
+    id: barometric_pressure_sensor
+    address: 0x76
+    update_interval: ${sensor_environment_update_interval}
+    pressure:
+      id: pressure
+      name: Pressure
+      internal: true
+      on_value:
+        then:
+          - lambda: |-
+              static AirDot::SensorHistoryGraph history;
+              static AirDot::onboarding::UnitSystem last_unit_system = AirDot::onboarding::UNIT_SYSTEM_METRIC;
+              static bool unit_system_initialized = false;
+              const auto unit_system = AirDot::onboarding::load_unit_system();
+              if (!unit_system_initialized || last_unit_system != unit_system) {
+                history.reset();
+                last_unit_system = unit_system;
+                unit_system_initialized = true;
+              }
+              const float pressure_display_value = AirDot::onboarding::display_pressure_pa(x, unit_system);
+              const char *pressure_display_format = AirDot::onboarding::pressure_format(unit_system);
+              lv_label_set_text(id(pressure_unit_label), AirDot::onboarding::pressure_unit_text(unit_system));
+              AirDot::update_plain_history(
+                history, id(pressure_current_value_label), id(pressure_history_line),
+                id(pressure_history_min_label), id(pressure_history_max_label), id(pressure_history_empty_label),
+                pressure_display_value, pressure_display_format,
+                AirDot::pressure_metric_color());
+              AirDot::set_formatted_label(
+                id(air_quality_summary_pressure_label), pressure_display_value, pressure_display_format);
+              lv_label_set_text(
+                id(air_quality_summary_pressure_unit_label), AirDot::onboarding::pressure_unit_text(unit_system));
+              AirDot::update_sen66_ambient_pressure(id(sen66_air_quality_sensor), x, id(sen66_pressure_hpa_sent));
+          - script.execute: ui_refresh_air_quality_summary

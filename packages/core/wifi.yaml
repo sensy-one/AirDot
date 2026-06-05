@@ -1,0 +1,52 @@
+wifi:
+  enable_on_boot: false
+  power_save_mode: none
+  reboot_timeout: 0s
+  on_connect:
+    then:
+      - lambda: |-
+          if (id(setup_wifi_validation_active) != 0) {
+            id(setup_wifi_validation_active) = 0;
+            id(setup_wifi_connect_deadline_ms) = 0;
+            id(setup_wifi_last_error) = 0;
+            AirDot::onboarding::discard_setup_wifi_backup();
+          }
+          AirDot::onboarding::note_wifi_connected();
+      - if:
+          condition:
+            lambda: "return !AirDot::onboarding::setup_or_onboarding_active(id(setup_ap_active), id(setup_portal_active), id(onboarding_ui_active));"
+          then:
+            - if:
+                condition:
+                  lambda: "return AirDot::onboarding::load_weather_enabled();"
+                then:
+                  - lambda: |-
+                      AirDot::time_weather::reset_ipwhois_ipv6_location_probe();
+                  - script.execute: weather_refresh_location
+            - if:
+                condition:
+                  lambda: "return AirDot::onboarding::load_time_server_enabled() && !AirDot::onboarding::load_manual_time_enabled();"
+                then:
+                  - script.execute: time_sync_from_network
+                else:
+                  - lambda: |-
+                      AirDot::time_weather::stop_sntp_sync();
+            - delay: 2s
+            - if:
+                condition:
+                  lambda: "return AirDot::onboarding::online_runtime_available(id(setup_ap_active), id(setup_portal_active), id(onboarding_ui_active));"
+                then:
+                  - lambda: |-
+                      AirDot::onboarding::apply_mqtt_settings(id(mqtt_client));
+          else:
+            - lambda: |-
+                AirDot::onboarding::pause_mqtt_for_network_change(id(mqtt_client));
+  on_disconnect:
+    then:
+      - lambda: |-
+          AirDot::onboarding::note_wifi_disconnected();
+          AirDot::onboarding::pause_mqtt_for_network_change(id(mqtt_client));
+  ap:
+    ap_timeout: 0s
+
+web_server_base:

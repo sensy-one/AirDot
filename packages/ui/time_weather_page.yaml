@@ -1,0 +1,156 @@
+script:
+  - id: ui_refresh_time_weather_page
+    mode: single
+    then:
+      - lambda: |-
+          const auto unit_system = AirDot::onboarding::load_unit_system();
+          const auto ui_language = AirDot::onboarding::load_ui_language();
+          const bool weather_enabled = AirDot::onboarding::load_weather_enabled();
+          const bool wifi_connected = esphome::wifi::global_wifi_component != nullptr &&
+              esphome::wifi::global_wifi_component->is_connected();
+          lv_label_set_text(
+              id(time_page_connection_label),
+              AirDot::connection_location_text(true, ui_language));
+          lv_obj_set_style_text_font(
+              id(time_page_connection_label), id(ui_font_small),
+              LV_PART_MAIN);
+          lv_label_set_text(
+              id(time_page_outdoor_temperature_unit_label),
+              AirDot::onboarding::temperature_unit_text(unit_system));
+          lv_label_set_text(
+              id(time_page_outdoor_pressure_unit_label),
+              AirDot::onboarding::pressure_unit_text(unit_system));
+          if (weather_enabled && id(outdoor_weather_valid)) {
+            AirDot::set_formatted_label(
+              id(time_page_outdoor_temperature_label),
+              AirDot::onboarding::display_temperature_c(id(outdoor_weather_temperature_c), unit_system), "%.0f");
+            AirDot::set_formatted_label(
+              id(time_page_outdoor_humidity_label), id(outdoor_weather_humidity_percent), "%.0f");
+            AirDot::set_formatted_label(
+              id(time_page_outdoor_pressure_label),
+              AirDot::onboarding::display_pressure_pa(id(outdoor_weather_pressure_hpa) * 100.0f, unit_system),
+              AirDot::onboarding::pressure_format(unit_system));
+          } else {
+            AirDot::set_value_placeholder_spacing(id(time_page_outdoor_temperature_label), true);
+            lv_label_set_text(id(time_page_outdoor_temperature_label), AirDot::VALUE_PLACEHOLDER_TEXT);
+            AirDot::set_value_placeholder_spacing(id(time_page_outdoor_humidity_label), true);
+            lv_label_set_text(id(time_page_outdoor_humidity_label), AirDot::VALUE_PLACEHOLDER_TEXT);
+            AirDot::set_value_placeholder_spacing(id(time_page_outdoor_pressure_label), true);
+            lv_label_set_text(id(time_page_outdoor_pressure_label), AirDot::VALUE_PLACEHOLDER_TEXT);
+          }
+          const int weather_code = weather_enabled && id(outdoor_weather_valid) ? id(outdoor_weather_code) : -1;
+          const bool weather_placeholder = AirDot::weather_code_group(weather_code) < 0;
+          AirDot::set_value_placeholder_spacing(id(time_page_weather_label), weather_placeholder);
+          lv_label_set_text(
+              id(time_page_weather_label),
+              weather_placeholder ? AirDot::VALUE_PLACEHOLDER_TEXT : AirDot::weather_text(weather_code, ui_language));
+          char high_text[16];
+          char low_text[16];
+          if (weather_enabled && id(outdoor_weather_valid) && std::isfinite(id(outdoor_weather_high_temperature_c))) {
+            std::snprintf(
+                high_text, sizeof(high_text), "%.0f",
+                AirDot::onboarding::display_temperature_c(id(outdoor_weather_high_temperature_c), unit_system));
+          } else {
+            std::snprintf(high_text, sizeof(high_text), "%s", AirDot::VALUE_PLACEHOLDER_TEXT);
+          }
+          if (weather_enabled && id(outdoor_weather_valid) && std::isfinite(id(outdoor_weather_low_temperature_c))) {
+            std::snprintf(
+                low_text, sizeof(low_text), "%.0f",
+                AirDot::onboarding::display_temperature_c(id(outdoor_weather_low_temperature_c), unit_system));
+          } else {
+            std::snprintf(low_text, sizeof(low_text), "%s", AirDot::VALUE_PLACEHOLDER_TEXT);
+          }
+          char high_low_text[40];
+          const char *temperature_unit = AirDot::onboarding::temperature_unit_text(unit_system);
+          const bool high_low_placeholder =
+              std::strcmp(high_text, AirDot::VALUE_PLACEHOLDER_TEXT) == 0 ||
+              std::strcmp(low_text, AirDot::VALUE_PLACEHOLDER_TEXT) == 0;
+          AirDot::set_value_placeholder_spacing(id(time_page_weather_high_low_label), high_low_placeholder);
+          std::snprintf(
+              high_low_text, sizeof(high_low_text), "%s %s %s  %s %s %s",
+              AirDot::weather_high_temperature_label(ui_language), high_text, temperature_unit,
+              AirDot::weather_low_temperature_label(ui_language), low_text, temperature_unit);
+          lv_label_set_text(id(time_page_weather_high_low_label), high_low_text);
+          AirDot::set_text_color(
+              id(time_page_connection_indicator_label),
+              wifi_connected ? AirDot::color(0x20, 0xE8, 0x40) : AirDot::color(0xFF, 0x2B, 0x2B));
+
+          const bool has_time_zone_offset = AirDot::onboarding::has_time_zone_offset_minutes();
+          auto now = id(sntp_time).utcnow();
+
+          if (now.is_valid() && has_time_zone_offset) {
+            const int16_t offset_minutes =
+                AirDot::onboarding::time_zone_offset_minutes_for_utc(static_cast<uint32_t>(now.timestamp));
+            now = esphome::ESPTime::from_epoch_utc(now.timestamp + static_cast<time_t>(offset_minutes) * 60);
+          }
+
+          if (!now.is_valid() || !has_time_zone_offset) {
+            lv_obj_clear_flag(id(time_page_placeholder_label), LV_OBJ_FLAG_HIDDEN);
+            lv_obj_add_flag(id(time_page_24h_group), LV_OBJ_FLAG_HIDDEN);
+            lv_obj_add_flag(id(time_page_12h_group), LV_OBJ_FLAG_HIDDEN);
+            lv_obj_clear_flag(id(time_page_date_label), LV_OBJ_FLAG_HIDDEN);
+            lv_obj_set_style_text_font(id(time_page_date_label), id(ui_font_action), LV_PART_MAIN);
+            lv_obj_set_style_translate_x(id(time_page_date_label), 0, LV_PART_MAIN);
+            AirDot::set_value_placeholder_spacing(id(time_page_date_label), true);
+            lv_label_set_text(id(time_page_date_label), AirDot::VALUE_PLACEHOLDER_TEXT);
+            return;
+          }
+
+          lv_obj_add_flag(id(time_page_placeholder_label), LV_OBJ_FLAG_HIDDEN);
+          lv_obj_clear_flag(id(time_page_date_label), LV_OBJ_FLAG_HIDDEN);
+          lv_obj_set_style_text_font(id(time_page_date_label), id(ui_font_action), LV_PART_MAIN);
+          lv_obj_set_style_translate_x(id(time_page_date_label), 0, LV_PART_MAIN);
+          AirDot::set_value_placeholder_spacing(id(time_page_date_label), false);
+
+          const std::string date_text = AirDot::date_text(
+              now.day_of_week, now.day_of_month, now.month, now.year, ui_language);
+          lv_label_set_text(id(time_page_date_label), date_text.c_str());
+
+          int hour = now.hour;
+          const bool time_format_12h = AirDot::onboarding::load_time_format() == AirDot::onboarding::TIME_FORMAT_12H;
+          if (time_format_12h) {
+            lv_obj_add_flag(id(time_page_24h_group), LV_OBJ_FLAG_HIDDEN);
+            lv_obj_clear_flag(id(time_page_12h_group), LV_OBJ_FLAG_HIDDEN);
+            hour = now.hour % 12;
+            if (hour == 0)
+              hour = 12;
+            lv_label_set_text(id(time_page_suffix_label), now.hour >= 12 ? "PM" : "AM");
+          } else {
+            lv_obj_clear_flag(id(time_page_24h_group), LV_OBJ_FLAG_HIDDEN);
+            lv_obj_add_flag(id(time_page_12h_group), LV_OBJ_FLAG_HIDDEN);
+          }
+
+          char digit[2] = {'0', '\0'};
+          digit[0] = static_cast<char>('0' + (hour / 10));
+          if (time_format_12h) {
+            lv_label_set_text(id(time_page_12h_hour_tens_label), digit);
+          } else {
+            lv_label_set_text(id(time_page_24h_hour_tens_label), digit);
+          }
+          digit[0] = static_cast<char>('0' + (hour % 10));
+          if (time_format_12h) {
+            lv_label_set_text(id(time_page_12h_hour_ones_label), digit);
+          } else {
+            lv_label_set_text(id(time_page_24h_hour_ones_label), digit);
+          }
+          digit[0] = static_cast<char>('0' + (now.minute / 10));
+          if (time_format_12h) {
+            lv_label_set_text(id(time_page_12h_minute_tens_label), digit);
+          } else {
+            lv_label_set_text(id(time_page_24h_minute_tens_label), digit);
+          }
+          digit[0] = static_cast<char>('0' + (now.minute % 10));
+          if (time_format_12h) {
+            lv_label_set_text(id(time_page_12h_minute_ones_label), digit);
+          } else {
+            lv_label_set_text(id(time_page_24h_minute_ones_label), digit);
+          }
+
+          auto digit_weight = [](int value) -> int {
+            static constexpr int weights[10] = {30, 15, 29, 29, 30, 29, 29, 27, 30, 29};
+            return weights[value < 0 || value > 9 ? 0 : value];
+          };
+          const int digits[4] = {hour / 10, hour % 10, now.minute / 10, now.minute % 10};
+          const int colon_offset = std::clamp((digit_weight(digits[1]) - digit_weight(digits[2])) / 4, -6, 6);
+          lv_obj_set_style_translate_x(id(time_page_12h_colon_label), colon_offset, LV_PART_MAIN);
+          lv_obj_set_style_translate_x(id(time_page_24h_colon_label), colon_offset, LV_PART_MAIN);
