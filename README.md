@@ -234,7 +234,7 @@ For the best air-quality readings, place AirDot where room air can naturally rea
 Recommended placement:
 
 - In the room where you want to monitor air quality.
-- On an open shelf, desk, or wall mount with free airflow.
+- On an open shelf, desk etc. with free airflow.
 - Away from direct sunlight.
 - Away from heaters, radiators, lamps, and other heat sources.
 - Away from direct airflow from HVAC vents, fans, or open windows.
