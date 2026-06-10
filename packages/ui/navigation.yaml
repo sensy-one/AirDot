@@ -47,11 +47,18 @@ script:
               (AirDot::onboarding::has_saved_wifi_settings() &&
                (AirDot::onboarding::load_time_server_enabled() ||
                 AirDot::onboarding::load_weather_enabled()));
+          const bool flight_radar_page_available =
+              AirDot::onboarding::has_saved_wifi_settings() &&
+              AirDot::onboarding::load_flight_radar_enabled();
 
           if (id(air_quality_summary_page)->is_showing()) {
             if (time_page_available) {
               id(time_page)->get_parent()->show_page(
                 id(time_page)->index, LV_SCREEN_LOAD_ANIM_NONE, 0);
+            } else if (flight_radar_page_available) {
+              id(flight_radar_page)->get_parent()->show_page(
+                id(flight_radar_page)->index, LV_SCREEN_LOAD_ANIM_NONE, 0);
+              id(flight_radar_request_update).execute();
             } else {
               id(pm1_history_page)->get_parent()->show_page(
                 id(pm1_history_page)->index, LV_SCREEN_LOAD_ANIM_NONE, 0);
@@ -59,6 +66,17 @@ script:
             return;
           }
           if (id(time_page)->is_showing()) {
+            if (flight_radar_page_available) {
+              id(flight_radar_page)->get_parent()->show_page(
+                id(flight_radar_page)->index, LV_SCREEN_LOAD_ANIM_NONE, 0);
+              id(flight_radar_request_update).execute();
+            } else {
+              id(pm1_history_page)->get_parent()->show_page(
+                id(pm1_history_page)->index, LV_SCREEN_LOAD_ANIM_NONE, 0);
+            }
+            return;
+          }
+          if (id(flight_radar_page)->is_showing()) {
             id(pm1_history_page)->get_parent()->show_page(
               id(pm1_history_page)->index, LV_SCREEN_LOAD_ANIM_NONE, 0);
             return;

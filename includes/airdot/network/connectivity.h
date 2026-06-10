@@ -44,8 +44,8 @@ enum class Service : uint8_t {
   MQTT,
   HOME_ASSISTANT,
   WEATHER_LOCATION,
-  WEATHER_GEOCODING,
   WEATHER,
+  FLIGHT_RADAR,
   TIME_SYNC,
   COUNT,
 };
@@ -394,12 +394,6 @@ inline bool is_valid_http_url(const std::string &url) {
 
   const auto parsed = normalize_host_port_input(authority, 80, 80);
   return parsed.host_valid && parsed.port_valid;
-}
-
-inline ValidationResult validate_weather_location(bool custom_location, const std::string &city) {
-  (void) custom_location;
-  (void) city;
-  return ok_result();
 }
 
 inline ValidationResult validate_ntp_server(const std::string &server) {

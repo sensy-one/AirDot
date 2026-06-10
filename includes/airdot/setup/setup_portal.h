@@ -48,6 +48,11 @@ class SetupHandler : public AsyncWebHandler {
 
     char url_buf[AsyncWebServerRequest::URL_BUF_SIZE];
     const auto url = request->url_to(url_buf);
+    if (this->saved_redirect_pending_ && this->saved_redirect_started_ms_ != 0 &&
+        static_cast<uint32_t>(millis() - this->saved_redirect_started_ms_) > 120000UL) {
+      this->saved_redirect_pending_ = false;
+      this->saved_redirect_started_ms_ = 0;
+    }
 
     if (url == "/firmware-update-start") {
       if (this->firmware_update_active_ != nullptr)
@@ -65,8 +70,23 @@ class SetupHandler : public AsyncWebHandler {
 
     if (request->method() == HTTP_POST) {
       this->save_(request);
-      this->prepare_setup_page_();
-      SetupPageRenderer::send_page(request, true);
+      this->saved_redirect_pending_ = true;
+      this->saved_redirect_started_ms_ = millis();
+      if (this->saved_redirect_started_ms_ == 0)
+        this->saved_redirect_started_ms_ = 1;
+      this->send_saved_redirect_(request);
+      return;
+    }
+
+    if (this->saved_redirect_pending_) {
+      if (url != "/") {
+        this->send_saved_redirect_(request);
+        return;
+      }
+
+      this->send_saved_page_(request);
+      this->saved_redirect_pending_ = false;
+      this->saved_redirect_started_ms_ = 0;
       if (this->saved_ != nullptr)
         *this->saved_ = 1;
       if (this->active_ != nullptr)
@@ -116,12 +136,38 @@ class SetupHandler : public AsyncWebHandler {
     httpd_resp_send(*request, content, content != nullptr ? HTTPD_RESP_USE_STRLEN : 0);
   }
 
+  static void send_saved_page_(AsyncWebServerRequest *request) {
+    send_setup_response_(
+        request, "200 OK", "text/html; charset=utf-8",
+        "<!doctype html><html><head><meta charset='utf-8'>"
+        "<meta name='viewport' content='width=device-width,initial-scale=1'>"
+        "<style>html,body{margin:0;min-height:100%;background:#000}</style>"
+        "</head><body></body></html>");
+  }
+
+  static void send_saved_redirect_(AsyncWebServerRequest *request) {
+    if (request == nullptr)
+      return;
+
+    httpd_resp_set_status(*request, "303 See Other");
+    httpd_resp_set_type(*request, "text/plain; charset=utf-8");
+    httpd_resp_set_hdr(*request, "Location", "/");
+    httpd_resp_set_hdr(*request, "Accept-Ranges", "none");
+    httpd_resp_set_hdr(*request, "Access-Control-Allow-Origin", "*");
+    httpd_resp_set_hdr(*request, "Cache-Control", "no-store");
+    httpd_resp_set_hdr(*request, "Connection", "close");
+    httpd_resp_send(*request, "", 0);
+  }
+
   static std::string selected_wifi_ssid_(AsyncWebServerRequest *request) {
     if (request == nullptr)
       return {};
-    return request->hasArg("wifi_ssid_select")
-               ? bounded_arg_(request, "wifi_ssid_select", MAX_WIFI_SSID_LENGTH)
-               : bounded_arg_(request, "wifi_ssid", MAX_WIFI_SSID_LENGTH);
+    if (request->hasArg("wifi_ssid_select")) {
+      const std::string selected = bounded_arg_(request, "wifi_ssid_select", MAX_WIFI_SSID_LENGTH);
+      if (!selected.empty())
+        return selected;
+    }
+    return bounded_arg_(request, "wifi_ssid", MAX_WIFI_SSID_LENGTH);
   }
 
   void save_(AsyncWebServerRequest *request) {
@@ -140,11 +186,23 @@ class SetupHandler : public AsyncWebHandler {
     const bool mqtt_enabled = wifi_enabled && request->hasArg("mqtt_enabled");
     const auto selected_ui_language =
         ui_language_from_value(bounded_arg_(request, "ui_language", MAX_UI_LANGUAGE_VALUE_LENGTH));
+    const auto &stored_flight_radar_settings = load_flight_radar_settings();
+    const bool flight_radar_enabled = wifi_enabled && request->hasArg("flight_radar_enabled");
+    const uint8_t flight_radar_range_km = request->hasArg("flight_radar_range_km")
+                                              ? parse_flight_radar_range_km_(
+                                                    bounded_arg_(request, "flight_radar_range_km", 3),
+                                                    stored_flight_radar_settings.range_km)
+                                              : stored_flight_radar_settings.range_km;
+    const bool flight_radar_military_only =
+        request->hasArg("flight_radar_traffic")
+            ? bounded_arg_(request, "flight_radar_traffic", 16) == "military"
+            : stored_flight_radar_settings.traffic_mode == FLIGHT_RADAR_TRAFFIC_MILITARY_ONLY;
 
     save_ui_language(selected_ui_language);
     save_time_server_enabled(time_server_enabled);
     save_manual_time_enabled(manual_time_valid);
     save_weather_enabled(weather_enabled);
+    save_flight_radar_settings(flight_radar_enabled, flight_radar_range_km, flight_radar_military_only);
     save_home_assistant_discovery_enabled(ha_discovery_enabled);
     save_unit_system(request->hasArg("units") && request->arg("units") == "imperial" ? UNIT_SYSTEM_IMPERIAL
                                                                                        : UNIT_SYSTEM_METRIC);
@@ -156,13 +214,22 @@ class SetupHandler : public AsyncWebHandler {
     } else if (!time_server_enabled) {
       AirDot::time_weather::stop_sntp_sync();
     }
-    if (weather_enabled) {
-      const std::string weather_location_mode = bounded_arg_(request, "weather_location_mode", 12);
-      const std::string weather_city = bounded_arg_(request, "weather_city", MAX_WEATHER_CITY_LENGTH);
-      const bool custom_weather_location =
-          (weather_location_mode == "manual" || weather_location_mode.empty()) && !trim_copy_(weather_city).empty();
-      save_weather_location_settings(custom_weather_location ? weather_city : "");
-    }
+    const auto &stored_location = load_location_settings();
+    const bool stored_location_valid =
+        location_e7_coordinates_are_valid(stored_location.latitude_e7, stored_location.longitude_e7);
+    int32_t exact_latitude_e7 = stored_location_valid ? stored_location.latitude_e7 : 0;
+    int32_t exact_longitude_e7 = stored_location_valid ? stored_location.longitude_e7 : 0;
+    const bool latitude_valid =
+        parse_location_coordinate_e7_(bounded_arg_(request, "location_latitude", 18), LATITUDE_MIN_E7,
+                                      LATITUDE_MAX_E7, exact_latitude_e7) ||
+        stored_location_valid;
+    const bool longitude_valid =
+        parse_location_coordinate_e7_(bounded_arg_(request, "location_longitude", 18), LONGITUDE_MIN_E7,
+                                      LONGITUDE_MAX_E7, exact_longitude_e7) ||
+        stored_location_valid;
+    save_location_settings_e7(
+        request->hasArg("exact_location_enabled") && latitude_valid && longitude_valid,
+        exact_latitude_e7, exact_longitude_e7);
     if ((time_server_enabled || manual_time_valid) && request->hasArg("time_zone_offset_schedule")) {
       const std::string time_zone_offset_schedule =
           bounded_arg_(request, "time_zone_offset_schedule", MAX_TIME_ZONE_OFFSET_SCHEDULE_LENGTH);
@@ -372,6 +439,71 @@ class SetupHandler : public AsyncWebHandler {
     return std::fabs(parsed);
   }
 
+  static bool parse_location_coordinate_e7_(const std::string &value, int32_t minimum_e7, int32_t maximum_e7,
+                                            int32_t &coordinate_e7) {
+    std::string normalized = trim_copy_(value);
+    if (normalized.empty())
+      return false;
+
+    size_t index = 0;
+    bool negative = false;
+    if (normalized[index] == '-') {
+      negative = true;
+      index++;
+    }
+    if (index >= normalized.size())
+      return false;
+
+    int64_t whole = 0;
+    uint8_t whole_digits = 0;
+    while (index < normalized.size() && normalized[index] >= '0' && normalized[index] <= '9') {
+      whole = whole * 10 + (normalized[index] - '0');
+      whole_digits++;
+      index++;
+    }
+    if (whole_digits == 0)
+      return false;
+
+    int64_t fraction = 0;
+    uint8_t fraction_digits = 0;
+    if (index < normalized.size() && (normalized[index] == '.' || normalized[index] == ',')) {
+      index++;
+      while (index < normalized.size() && normalized[index] >= '0' && normalized[index] <= '9') {
+        if (fraction_digits >= 7)
+          return false;
+        fraction = fraction * 10 + (normalized[index] - '0');
+        fraction_digits++;
+        index++;
+      }
+      if (fraction_digits == 0)
+        return false;
+    }
+    if (index != normalized.size())
+      return false;
+
+    while (fraction_digits < 7) {
+      fraction *= 10;
+      fraction_digits++;
+    }
+
+    int64_t e7 = whole * 10000000LL + fraction;
+    if (negative)
+      e7 = -e7;
+    if (e7 < minimum_e7 || e7 > maximum_e7)
+      return false;
+
+    coordinate_e7 = static_cast<int32_t>(e7);
+    return true;
+  }
+
+  static uint8_t parse_flight_radar_range_km_(const std::string &value, uint8_t fallback) {
+    char *end = nullptr;
+    const unsigned long parsed = std::strtoul(value.c_str(), &end, 10);
+    if (end == value.c_str() || end == nullptr || *end != '\0')
+      return normalize_flight_radar_range_km(fallback);
+    return normalize_flight_radar_range_km(static_cast<int>(parsed));
+  }
+
   static uint16_t parse_bounded_uint16_(const std::string &value, uint16_t fallback, uint16_t minimum,
                                         uint16_t maximum) {
     const std::string normalized = trim_copy_(value);
@@ -431,6 +563,8 @@ class SetupHandler : public AsyncWebHandler {
     *this->pending_wifi_ssid_ = ssid;
     *this->pending_wifi_password_ = password;
     *this->pending_wifi_save_ = ssid.empty() ? 0 : 1;
+    if (!ssid.empty())
+      note_runtime_wifi_settings_saved(ssid, password);
   }
 
   void send_translation_(AsyncWebServerRequest *request) {
@@ -445,6 +579,8 @@ class SetupHandler : public AsyncWebHandler {
   int *active_{nullptr};
   int *saved_{nullptr};
   uint32_t *last_activity_ms_{nullptr};
+  bool saved_redirect_pending_{false};
+  uint32_t saved_redirect_started_ms_{0};
   int *pending_wifi_save_{nullptr};
   std::string *pending_wifi_ssid_{nullptr};
   std::string *pending_wifi_password_{nullptr};

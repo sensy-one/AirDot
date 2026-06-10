@@ -11,6 +11,7 @@ lvgl:
   pages:
     - !include ../../ui/pages/air_quality_summary.yaml
     - !include ../../ui/pages/time_weather.yaml
+    - !include ../../ui/pages/flight_radar.yaml
     - !include
       file: ../../ui/pages/sensor_history.yaml
       vars:

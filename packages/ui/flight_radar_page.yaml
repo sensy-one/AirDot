@@ -1,0 +1,11 @@
+script:
+  - id: ui_refresh_flight_radar_page
+    mode: restart
+    then:
+      - lambda: |-
+          lv_obj_set_style_bg_color(
+              AirDot::lv_obj(id(flight_radar_page)),
+              AirDot::flight_radar::radar_background_color_(), LV_PART_MAIN);
+          lv_obj_set_style_bg_opa(AirDot::lv_obj(id(flight_radar_page)), LV_OPA_COVER, LV_PART_MAIN);
+          AirDot::flight_radar::refresh_radar_scope(
+              id(flight_radar_scope), id(ui_font_radar_tag), id(ui_font_small));

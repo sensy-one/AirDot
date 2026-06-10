@@ -97,6 +97,8 @@ script:
               return id(air_quality_summary_page)->index;
             if (id(time_page)->is_showing())
               return id(time_page)->index;
+            if (id(flight_radar_page)->is_showing())
+              return id(flight_radar_page)->index;
             if (id(pm1_history_page)->is_showing())
               return id(pm1_history_page)->index;
             if (id(pm25_history_page)->is_showing())

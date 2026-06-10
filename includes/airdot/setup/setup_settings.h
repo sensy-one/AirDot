@@ -1,7 +1,6 @@
 #pragma once
 
 #include <algorithm>
-#include <cctype>
 #include <cmath>
 #include <cstdio>
 #include <cstdint>
@@ -54,11 +53,20 @@ static constexpr uint32_t TIME_SERVER_PREF_KEY = 2918394838UL;
 static constexpr uint32_t SETUP_NETWORK_OPTIONS_PREF_KEY = 2918394839UL;
 static constexpr uint32_t DARK_MODE_PREF_KEY = 2918394840UL;
 static constexpr uint32_t FIRST_RUN_ONBOARDING_COMPLETE_PREF_KEY = 2918394841UL;
-static constexpr uint32_t WEATHER_LOCATION_PREF_KEY = 2918394842UL;
+static constexpr uint32_t LOCATION_PREF_KEY = 2918394847UL;
 static constexpr uint32_t MANUAL_TIME_PREF_KEY = 2918394843UL;
 static constexpr uint32_t WEATHER_SYNC_PREF_KEY = 2918394844UL;
 static constexpr uint32_t SEN66_TEMPERATURE_OFFSET_CENTI_C_PREF_KEY = 2918394845UL;
 static constexpr uint32_t DISPLAY_ALERT_WAKE_SCREEN_PREF_KEY = 2918394846UL;
+static constexpr int32_t LATITUDE_MIN_E7 = -900000000;
+static constexpr int32_t LATITUDE_MAX_E7 = 900000000;
+static constexpr int32_t LONGITUDE_MIN_E7 = -1800000000;
+static constexpr int32_t LONGITUDE_MAX_E7 = 1800000000;
+static constexpr uint32_t FLIGHT_RADAR_SETTINGS_PREF_KEY = 2918394848UL;
+static constexpr uint8_t FLIGHT_RADAR_RANGE_MIN_KM = 5;
+static constexpr uint8_t FLIGHT_RADAR_RANGE_DEFAULT_KM = 25;
+static constexpr uint8_t FLIGHT_RADAR_RANGE_MAX_KM = 50;
+static constexpr uint8_t FLIGHT_RADAR_RANGE_STEP_KM = 5;
 static constexpr int16_t TIME_ZONE_OFFSET_MINUTES_UNSET = 32767;
 static constexpr uint8_t TIME_ZONE_OFFSET_MAX_TRANSITIONS = 48;
 static constexpr int16_t SEN66_TEMPERATURE_OFFSET_MIN_CENTI_C = -2000;
@@ -76,7 +84,6 @@ static constexpr size_t MAX_MQTT_BROKER_LENGTH = 64;
 static constexpr size_t MAX_MQTT_USERNAME_LENGTH = 64;
 static constexpr size_t MAX_MQTT_PASSWORD_LENGTH = 64;
 static constexpr size_t MAX_MQTT_TOPIC_PREFIX_LENGTH = 64;
-static constexpr size_t MAX_WEATHER_CITY_LENGTH = 64;
 static constexpr size_t MAX_SETUP_NETWORK_OPTIONS = 32;
 
 struct NetworkOption {
@@ -210,17 +217,17 @@ inline std::string setup_connect_instruction_text(AirDot::UiLanguage language, b
   switch (language) {
     case AirDot::UiLanguage::NL:
       return std::string("Open wifi op je telefoon\nen kies ") + ssid +
-             ".\n\nOpen daarna je browser\nen ga naar 192.168.4.1.";
+             ".\n\nOpen daarna je browser\nen ga naar 192.168.4.1";
     case AirDot::UiLanguage::DE:
       return std::string("Öffne WLAN auf deinem Smartphone\nund wähle ") + ssid +
-             ".\n\nÖffne danach deinen Browser\nund gehe zu 192.168.4.1.";
+             ".\n\nÖffne danach deinen Browser\nund gehe zu 192.168.4.1";
     case AirDot::UiLanguage::FR:
       return std::string("Ouvrez le Wi-Fi sur votre téléphone\net choisissez ") + ssid +
-             ".\n\nOuvrez ensuite votre navigateur\net allez sur 192.168.4.1.";
+             ".\n\nOuvrez ensuite votre navigateur\net allez sur 192.168.4.1";
     case AirDot::UiLanguage::EN:
     default:
       return std::string("Open Wi-Fi on your phone\nand choose ") + ssid +
-             ".\n\nThen open your browser\nand go to 192.168.4.1.";
+             ".\n\nThen open your browser\nand go to 192.168.4.1";
   }
 }
 
@@ -278,19 +285,24 @@ struct MqttSettings {
   char topic_prefix[MAX_MQTT_TOPIC_PREFIX_LENGTH + 1]{};
 };
 
-struct WeatherLocationSettings {
-  char city[MAX_WEATHER_CITY_LENGTH + 1]{};
+struct LocationSettings {
+  uint8_t exact_enabled{0};
+  int32_t latitude_e7{0};
+  int32_t longitude_e7{0};
+  uint8_t reserved[7]{};
 };
 
-struct PreviousWeatherLocationPayload {
-  char city[MAX_WEATHER_CITY_LENGTH + 1]{};
-  char ignored_previous_bytes[3]{};
+enum FlightRadarTrafficMode : uint8_t {
+  FLIGHT_RADAR_TRAFFIC_ALL = 0,
+  FLIGHT_RADAR_TRAFFIC_MILITARY_ONLY = 1,
 };
 
-static_assert(sizeof(WeatherLocationSettings) == MAX_WEATHER_CITY_LENGTH + 1,
-              "Weather location settings must stay city-only");
-static_assert(sizeof(PreviousWeatherLocationPayload) == sizeof(WeatherLocationSettings) + 3,
-              "Previous weather location payload must keep the old NVS payload size for migration");
+struct FlightRadarSettings {
+  uint8_t enabled{1};
+  uint8_t range_km{FLIGHT_RADAR_RANGE_DEFAULT_KM};
+  uint8_t traffic_mode{FLIGHT_RADAR_TRAFFIC_ALL};
+  uint8_t reserved[5]{};
+};
 
 struct StoredNetworkOption {
   char ssid[MAX_WIFI_SSID_LENGTH + 1]{};
@@ -309,7 +321,8 @@ struct MqttBrokerInput {
 };
 
 inline const MqttSettings &load_mqtt_settings();
-inline const WeatherLocationSettings &load_weather_location_settings();
+inline const LocationSettings &load_location_settings();
+inline const FlightRadarSettings &load_flight_radar_settings();
 
 struct CachedTimeZoneOffsetSchedulePreference {
   TimeZoneOffsetSchedule value{};
@@ -325,8 +338,15 @@ struct CachedMqttSettingsPreference {
   esphome::ESPPreferenceObject preference{};
 };
 
-struct CachedWeatherLocationPreference {
-  WeatherLocationSettings value{};
+struct CachedLocationPreference {
+  LocationSettings value{};
+  bool loaded{false};
+  bool preference_ready{false};
+  esphome::ESPPreferenceObject preference{};
+};
+
+struct CachedFlightRadarPreference {
+  FlightRadarSettings value{1, FLIGHT_RADAR_RANGE_DEFAULT_KM, FLIGHT_RADAR_TRAFFIC_ALL, {}};
   bool loaded{false};
   bool preference_ready{false};
   esphome::ESPPreferenceObject preference{};
@@ -676,22 +696,56 @@ inline bool mqtt_settings_equal_(const MqttSettings &a, const MqttSettings &b) {
          fixed_string_(a.topic_prefix) == fixed_string_(b.topic_prefix);
 }
 
-inline std::string sanitize_weather_city_(const std::string &value) {
-  const std::string trimmed = trim_copy_(value);
-  std::string sanitized;
-  sanitized.reserve(std::min(trimmed.size(), MAX_WEATHER_CITY_LENGTH));
-  for (unsigned char c : trimmed) {
-    if (sanitized.size() >= MAX_WEATHER_CITY_LENGTH)
-      break;
-    if (c >= 0x20 && c != 0x7F)
-      sanitized += static_cast<char>(c);
-  }
-  return sanitized;
+inline bool location_coordinates_are_valid(float latitude, float longitude) {
+  return std::isfinite(latitude) && std::isfinite(longitude) &&
+         latitude >= -90.0f && latitude <= 90.0f &&
+         longitude >= -180.0f && longitude <= 180.0f;
 }
 
-inline void normalize_weather_location_settings_(WeatherLocationSettings &settings) {
-  settings.city[MAX_WEATHER_CITY_LENGTH] = '\0';
-  copy_limited_c_string_(settings.city, sizeof(settings.city), sanitize_weather_city_(settings.city));
+inline bool location_e7_coordinates_are_valid(int32_t latitude_e7, int32_t longitude_e7) {
+  return latitude_e7 >= LATITUDE_MIN_E7 && latitude_e7 <= LATITUDE_MAX_E7 &&
+         longitude_e7 >= LONGITUDE_MIN_E7 && longitude_e7 <= LONGITUDE_MAX_E7;
+}
+
+inline int32_t coordinate_to_e7_(double value) {
+  return static_cast<int32_t>(std::round(value * 10000000.0));
+}
+
+inline float coordinate_from_e7_(int32_t value) {
+  return static_cast<float>(value) / 10000000.0f;
+}
+
+inline void normalize_location_settings_(LocationSettings &settings) {
+  settings.exact_enabled =
+      settings.exact_enabled == 1 && location_e7_coordinates_are_valid(settings.latitude_e7, settings.longitude_e7)
+          ? 1
+          : 0;
+}
+
+inline uint8_t normalize_flight_radar_range_km(int value) {
+  if (value < FLIGHT_RADAR_RANGE_MIN_KM || value > FLIGHT_RADAR_RANGE_MAX_KM)
+    return FLIGHT_RADAR_RANGE_DEFAULT_KM;
+
+  const int offset = value - FLIGHT_RADAR_RANGE_MIN_KM;
+  const int steps = (offset + FLIGHT_RADAR_RANGE_STEP_KM / 2) / FLIGHT_RADAR_RANGE_STEP_KM;
+  return static_cast<uint8_t>(FLIGHT_RADAR_RANGE_MIN_KM + steps * FLIGHT_RADAR_RANGE_STEP_KM);
+}
+
+inline FlightRadarSettings default_flight_radar_settings_() {
+  FlightRadarSettings settings{};
+  settings.enabled = 1;
+  settings.range_km = FLIGHT_RADAR_RANGE_DEFAULT_KM;
+  settings.traffic_mode = FLIGHT_RADAR_TRAFFIC_ALL;
+  return settings;
+}
+
+inline void normalize_flight_radar_settings_(FlightRadarSettings &settings) {
+  settings.enabled = settings.enabled == 1 ? 1 : 0;
+  settings.range_km = normalize_flight_radar_range_km(settings.range_km);
+  settings.traffic_mode =
+      settings.traffic_mode == FLIGHT_RADAR_TRAFFIC_MILITARY_ONLY
+          ? FLIGHT_RADAR_TRAFFIC_MILITARY_ONLY
+          : FLIGHT_RADAR_TRAFFIC_ALL;
 }
 
 inline int16_t normalize_sen66_temperature_offset_centi_c_(int value) {
@@ -767,7 +821,7 @@ inline CachedUint8Preference &hazard_focus_mode_pref_() {
 }
 
 inline CachedUint8Preference &display_alert_wake_screen_pref_() {
-  static CachedUint8Preference cache{DISPLAY_ALERT_WAKE_SCREEN_PREF_KEY, 1, 1, false, false, {}};
+  static CachedUint8Preference cache{DISPLAY_ALERT_WAKE_SCREEN_PREF_KEY, 0, 0, false, false, {}};
   return cache;
 }
 
@@ -850,8 +904,13 @@ inline CachedMqttSettingsPreference &mqtt_settings_pref_() {
   return cache;
 }
 
-inline CachedWeatherLocationPreference &weather_location_pref_() {
-  static CachedWeatherLocationPreference cache{};
+inline CachedLocationPreference &location_pref_() {
+  static CachedLocationPreference cache{};
+  return cache;
+}
+
+inline CachedFlightRadarPreference &flight_radar_pref_() {
+  static CachedFlightRadarPreference cache{default_flight_radar_settings_(), false, false, {}};
   return cache;
 }
 
@@ -900,12 +959,20 @@ inline void prepare_mqtt_settings_preference_(CachedMqttSettingsPreference &cach
   cache.preference_ready = true;
 }
 
-inline void prepare_weather_location_preference_(CachedWeatherLocationPreference &cache) {
+inline void prepare_location_preference_(CachedLocationPreference &cache) {
   if (cache.preference_ready || esphome::global_preferences == nullptr)
     return;
 
-  cache.preference =
-      esphome::global_preferences->make_preference<WeatherLocationSettings>(WEATHER_LOCATION_PREF_KEY, true);
+  cache.preference = esphome::global_preferences->make_preference<LocationSettings>(LOCATION_PREF_KEY, true);
+  cache.preference_ready = true;
+}
+
+inline void prepare_flight_radar_preference_(CachedFlightRadarPreference &cache) {
+  if (cache.preference_ready || esphome::global_preferences == nullptr)
+    return;
+
+  cache.preference = esphome::global_preferences->make_preference<FlightRadarSettings>(
+      FLIGHT_RADAR_SETTINGS_PREF_KEY, true);
   cache.preference_ready = true;
 }
 
@@ -958,56 +1025,117 @@ inline void save_mqtt_settings(bool enabled, const std::string &broker, const st
   save_mqtt_settings(enabled, broker, port_valid ? port : 0, username, password, topic_prefix);
 }
 
-inline const WeatherLocationSettings &load_weather_location_settings() {
-  auto &cache = weather_location_pref_();
+inline const LocationSettings &load_location_settings() {
+  auto &cache = location_pref_();
   if (cache.loaded)
     return cache.value;
   if (esphome::global_preferences == nullptr)
     return cache.value;
 
-  prepare_weather_location_preference_(cache);
-  WeatherLocationSettings value{};
-  if (cache.preference.load(&value)) {
+  prepare_location_preference_(cache);
+  LocationSettings value{};
+  if (cache.preference.load(&value))
     cache.value = value;
-  } else {
+  else
     cache.value = {};
-    auto previous_preference =
-        esphome::global_preferences->make_preference<PreviousWeatherLocationPayload>(WEATHER_LOCATION_PREF_KEY, true);
-    PreviousWeatherLocationPayload previous_value{};
-    if (previous_preference.load(&previous_value)) {
-      copy_limited_c_string_(cache.value.city, sizeof(cache.value.city), sanitize_weather_city_(previous_value.city));
-      normalize_weather_location_settings_(cache.value);
-      cache.preference.save(&cache.value);
-      esphome::global_preferences->sync();
-    }
-  }
-  normalize_weather_location_settings_(cache.value);
+  normalize_location_settings_(cache.value);
   cache.loaded = true;
   return cache.value;
 }
 
-inline void save_weather_location_settings(const std::string &city) {
-  auto &cache = weather_location_pref_();
-  WeatherLocationSettings value{};
-  copy_limited_c_string_(value.city, sizeof(value.city), sanitize_weather_city_(city));
-  normalize_weather_location_settings_(value);
+inline void save_location_settings_e7(bool exact_enabled, int32_t latitude_e7, int32_t longitude_e7) {
+  auto &cache = location_pref_();
+  LocationSettings value{};
+  const bool coordinates_valid = location_e7_coordinates_are_valid(latitude_e7, longitude_e7);
+  if (coordinates_valid) {
+    value.latitude_e7 = latitude_e7;
+    value.longitude_e7 = longitude_e7;
+  }
+  if (exact_enabled && coordinates_valid)
+    value.exact_enabled = 1;
+  normalize_location_settings_(value);
 
   cache.value = value;
   cache.loaded = true;
   if (esphome::global_preferences == nullptr)
     return;
 
-  prepare_weather_location_preference_(cache);
+  prepare_location_preference_(cache);
   cache.preference.save(&cache.value);
   esphome::global_preferences->sync();
 }
 
-inline std::string weather_location_city() {
-  return fixed_string_(load_weather_location_settings().city);
+inline void save_location_settings(bool exact_enabled, float latitude, float longitude) {
+  save_location_settings_e7(exact_enabled, coordinate_to_e7_(latitude), coordinate_to_e7_(longitude));
 }
 
-inline bool has_custom_weather_location() {
-  return !weather_location_city().empty();
+inline bool load_exact_location(float &latitude, float &longitude) {
+  const auto &settings = load_location_settings();
+  if (settings.exact_enabled != 1)
+    return false;
+
+  const float stored_latitude = coordinate_from_e7_(settings.latitude_e7);
+  const float stored_longitude = coordinate_from_e7_(settings.longitude_e7);
+  if (!location_coordinates_are_valid(stored_latitude, stored_longitude))
+    return false;
+
+  latitude = stored_latitude;
+  longitude = stored_longitude;
+  return true;
+}
+
+inline bool exact_location_enabled() {
+  float latitude = 0.0f;
+  float longitude = 0.0f;
+  return load_exact_location(latitude, longitude);
+}
+
+inline const FlightRadarSettings &load_flight_radar_settings() {
+  auto &cache = flight_radar_pref_();
+  if (cache.loaded)
+    return cache.value;
+  if (esphome::global_preferences == nullptr)
+    return cache.value;
+
+  prepare_flight_radar_preference_(cache);
+  FlightRadarSettings value = default_flight_radar_settings_();
+  if (cache.preference.load(&value))
+    cache.value = value;
+  else
+    cache.value = default_flight_radar_settings_();
+  normalize_flight_radar_settings_(cache.value);
+  cache.loaded = true;
+  return cache.value;
+}
+
+inline bool load_flight_radar_enabled() {
+  return load_flight_radar_settings().enabled == 1;
+}
+
+inline uint8_t load_flight_radar_range_km() {
+  return load_flight_radar_settings().range_km;
+}
+
+inline bool load_flight_radar_military_only() {
+  return load_flight_radar_settings().traffic_mode == FLIGHT_RADAR_TRAFFIC_MILITARY_ONLY;
+}
+
+inline void save_flight_radar_settings(bool enabled, uint8_t range_km, bool military_only) {
+  auto &cache = flight_radar_pref_();
+  FlightRadarSettings value{};
+  value.enabled = enabled ? 1 : 0;
+  value.range_km = range_km;
+  value.traffic_mode = military_only ? FLIGHT_RADAR_TRAFFIC_MILITARY_ONLY : FLIGHT_RADAR_TRAFFIC_ALL;
+  normalize_flight_radar_settings_(value);
+
+  cache.value = value;
+  cache.loaded = true;
+  if (esphome::global_preferences == nullptr)
+    return;
+
+  prepare_flight_radar_preference_(cache);
+  cache.preference.save(&cache.value);
+  esphome::global_preferences->sync();
 }
 
 inline void erase_wifi_settings_(uint32_t key) {
@@ -1102,6 +1230,9 @@ inline void factory_reset_preferences_and_reboot() {
 }
 
 inline bool load_setup_page_wifi_settings(esphome::wifi::SavedWifiSettings &settings) {
+  if (load_wifi_settings_(RUNTIME_WIFI_PREF_KEY, settings))
+    return true;
+
   auto &backup = setup_wifi_backup_();
   if (backup.valid && backup.settings.ssid[0] != '\0') {
     settings = backup.settings;
@@ -1110,8 +1241,7 @@ inline bool load_setup_page_wifi_settings(esphome::wifi::SavedWifiSettings &sett
 
   if (load_wifi_settings_(SETUP_WIFI_BACKUP_PREF_KEY, settings))
     return true;
-
-  return load_wifi_settings_(RUNTIME_WIFI_PREF_KEY, settings);
+  return false;
 }
 
 inline void clear_pending_wifi_setup(int &setup_pending_wifi_save, std::string &setup_pending_wifi_ssid,

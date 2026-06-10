@@ -15,6 +15,7 @@ setup_page:
   wifi_ssid_label: Réseau Wi-Fi
   wifi_password_label: Mot de passe Wi-Fi
   wifi_password_placeholder: Saisissez le mot de passe
+  password_visibility_toggle_label: Afficher ou masquer le mot de passe
   offline_option: Continuer sans Wi-Fi
   no_networks: Aucun réseau Wi-Fi trouvé
 
@@ -85,16 +86,30 @@ setup_page:
   night_screen_off_title: Mode nuit
   night_screen_off_description: Éteignez l’écran pendant les heures définies.
 
+  location_title: Localisation
+  location_note: Définissez la position exacte utilisée pour la météo et le radar de vol.
+  exact_location_title: Position exacte
+  exact_location_description: Utilisez ces coordonnées pour la météo et le radar de vol.
+  location_latitude_label: Latitude
+  location_longitude_label: Longitude
+
+  flight_radar_title: Radar de vol
+  flight_radar_note: Définissez la portée et le trafic visible.
+  flight_radar_enabled_title: Radar de vol
+  flight_radar_enabled_description: Affichez le trafic aérien en direct sur l'écran radar.
+  flight_radar_range_label: Portée
+  flight_radar_traffic_label: Trafic
+  flight_radar_traffic_all_label: Tous les avions
+  flight_radar_traffic_military_label: Militaire seul
+
   weather_title: Météo
   weather_note: Affichez la météo extérieure locale à l’écran.
 
   weather_sync_title: Mises à jour météo
-  weather_sync_description: Utilisez la localisation automatique ou choisissez une ville.
+  weather_sync_description: Utilisez la détection automatique ou la position exacte configurée.
   weather_location_mode_label: Localisation
   weather_location_ip_label: Automatique
-  weather_location_manual_label: Manuel
-  weather_location_city_label: Ville
-  weather_location_city_placeholder: Paris
+  weather_location_manual_label: Position définie
 
   display_title: Écran
   display_note: Réglez la langue, les unités, la luminosité et l’affichage.
@@ -220,7 +235,7 @@ onboarding:
       et choisissez AirDot-XXXXXX.
 
       Ouvrez ensuite votre navigateur
-      et allez sur 192.168.4.1.
+      et allez sur 192.168.4.1
     button_0: Plus tard
     button_0_reopen: Retour
 

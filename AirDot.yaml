@@ -27,8 +27,10 @@ packages:
   ui_sound_alerts: !include packages/ui/sound_alerts.yaml
   ui_hazard_focus: !include packages/ui/hazard_focus.yaml
   ui_time_weather_page: !include packages/ui/time_weather_page.yaml
+  ui_flight_radar_page: !include packages/ui/flight_radar_page.yaml
 
   feature_setup_portal: !include packages/features/setup_portal.yaml
   feature_time_sync: !include packages/features/time_sync.yaml
   feature_weather: !include packages/features/weather.yaml
+  feature_flight_radar: !include packages/features/flight_radar.yaml
   feature_air_quality: !include packages/features/air_quality.yaml

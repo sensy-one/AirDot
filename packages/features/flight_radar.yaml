@@ -1,0 +1,77 @@
+globals:
+  - id: flight_radar_next_request_ms
+    type: uint32_t
+    restore_value: false
+    initial_value: "0"
+
+script:
+  - id: flight_radar_request_update
+    mode: restart
+    then:
+      - if:
+          condition:
+            lambda: |-
+              return AirDot::onboarding::online_runtime_available(
+                  id(setup_ap_active), id(setup_portal_active), id(onboarding_ui_active));
+          then:
+            - lambda: |-
+                if (AirDot::flight_radar::request_running())
+                  return;
+                const uint32_t now = millis();
+                if (!AirDot::onboarding::load_flight_radar_enabled())
+                  return;
+                if (!id(flight_radar_page)->is_showing())
+                  return;
+                if (id(flight_radar_next_request_ms) != 0 &&
+                    static_cast<int32_t>(now - id(flight_radar_next_request_ms)) < 0)
+                  return;
+
+                const uint8_t range_km = AirDot::onboarding::load_flight_radar_range_km();
+                const bool military_only = AirDot::onboarding::load_flight_radar_military_only();
+                float exact_latitude = 0.0f;
+                float exact_longitude = 0.0f;
+                if (AirDot::onboarding::load_exact_location(exact_latitude, exact_longitude)) {
+                  AirDot::flight_radar::start_airplanes_live_request(
+                      exact_latitude, exact_longitude, range_km, military_only);
+                } else if (id(outdoor_location_valid)) {
+                  AirDot::flight_radar::start_airplanes_live_request(
+                      id(outdoor_latitude), id(outdoor_longitude), range_km, military_only);
+                } else {
+                  AirDot::flight_radar::start_airplanes_live_for_current_location_request(range_km, military_only);
+                }
+                id(flight_radar_next_request_ms) =
+                    now + AirDot::flight_radar::FLIGHT_RADAR_REQUEST_INTERVAL_MS;
+            - script.execute: ui_refresh_flight_radar_page
+
+interval:
+  - interval: 250ms
+    then:
+      - if:
+          condition:
+            lambda: |-
+              if (!id(flight_radar_page)->is_showing())
+                return false;
+              AirDot::flight_radar::Snapshot snapshot;
+              return AirDot::flight_radar::consume_airplanes_live_result(snapshot) != 0;
+          then:
+            - script.execute: ui_refresh_flight_radar_page
+  - interval: 1s
+    then:
+      - if:
+          condition:
+            lambda: |-
+              if (!AirDot::onboarding::online_runtime_available(
+                      id(setup_ap_active), id(setup_portal_active), id(onboarding_ui_active))) {
+                return false;
+              }
+              if (!AirDot::onboarding::load_flight_radar_enabled())
+                return false;
+              if (AirDot::flight_radar::request_running())
+                return false;
+              if (!id(flight_radar_page)->is_showing())
+                return false;
+              const uint32_t now = millis();
+              return id(flight_radar_next_request_ms) == 0 ||
+                  static_cast<int32_t>(now - id(flight_radar_next_request_ms)) >= 0;
+          then:
+            - script.execute: flight_radar_request_update

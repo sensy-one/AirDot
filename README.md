@@ -4,7 +4,7 @@ The smart indoor air-quality display that works standalone, offline, or connecte
 
 ![AirDot banner](banner.png)
 
-AirDot combines real-time air-quality sensing, a sharp 480 x 480 color display, local setup, standalone operation, optional Home Assistant integration, optional MQTT publishing, time, weather, alerts, and on-device history pages in one compact ESPHome-powered device.
+AirDot combines real-time air-quality sensing, a sharp 480 x 480 color display, local setup, standalone operation, optional Home Assistant integration, optional MQTT publishing, time, weather, Flight Radar, alerts, and on-device history pages in one compact ESPHome-powered device.
 
 It is designed for users who want more than raw sensor values. AirDot shows the current room status, highlights the measurements that need attention, and gives clear actions such as monitoring, ventilating, limiting exposure, or acting immediately when air quality becomes critical.
 
@@ -13,18 +13,6 @@ It is designed for users who want more than raw sensor values. AirDot shows the 
 **Standalone first**
 
 AirDot works as a local air-quality display even without Wi-Fi. Sensor readings, status guidance, display pages, alerts, and history views are available directly on the device.
-
-**Optional Home Assistant and MQTT**
-
-When you want integration, AirDot can expose its measurements through ESPHome's native Home Assistant API and can be automatically discovered when Home Assistant discovery is enabled in the setup page. MQTT publishing is also available for users who prefer an MQTT-based setup.
-
-**Powered by ESP32-S3**
-
-AirDot runs on an ESP32-S3 platform with 16 MB flash and octal PSRAM, using the ESP-IDF framework for reliable networking, display rendering, OTA updates, and local runtime features.
-
-**480 x 480 color display**
-
-The round 480 x 480 display shows a live air-quality summary, local time, optional outdoor weather, and dedicated history pages for each sensor value. The display supports dark mode, manual brightness levels, and a night screen-off schedule.
 
 **Complete indoor air-quality monitoring**
 
@@ -44,29 +32,57 @@ AirDot uses a Sensirion SEN66 air-quality sensor to measure:
 
 AirDot includes a SPA06 barometric pressure sensor. The firmware uses this reading for SEN66 ambient pressure compensation and also publishes pressure as a measurement.
 
-**On-device air-quality guidance**
+**480 x 480 color display**
 
-AirDot classifies the current room condition into clear status levels:
+The round display shows a live air-quality summary, local time, outdoor weather, Flight Radar, and dedicated history pages for each sensor value. It supports dark mode, manual brightness levels, automatic brightness, and a night screen-off schedule.
 
-- Good
-- Moderate
-- Poor
-- Unhealthy
-- Critical
+**On-device guidance and history**
 
-The selected guideline can be changed in setup. Available profiles include Global WHO/EEA Strict, Europe EEA, North America US EPA 2024, UK DAQI 5, India NAQI 5, China CN AQI 5, and Australia NSW 1H.
+AirDot classifies the current room condition into clear status levels and gives practical guidance. Each sensor value has its own history page, so you can see how readings changed over time.
 
 **Critical value focus**
 
 When a measurement reaches a dangerous level, AirDot can automatically switch to the history page for the sensor with the highest risk. This helps you see what changed and decide what to do next.
 
+**Air-quality profiles**
+
+The selected guideline can be changed in setup. Available profiles include Global WHO/EEA Strict, Europe EEA, North America US EPA 2024, UK DAQI 5, India NAQI 5, China CN AQI 5, and Australia NSW 1H.
+
+**Time and weather**
+
+AirDot can show local time and outdoor weather on a dedicated display page. Weather can use automatic location or the shared exact latitude/longitude location configured in setup.
+
+**Flight Radar**
+
+AirDot can show nearby aircraft on a minimal radar-style page when Wi-Fi and location are configured. Standard aircraft follow the selected display theme, while military or priority traffic is highlighted in orange.
+
 **Audio and display alerts**
 
 The built-in buzzer can play warning tones when air quality becomes critical. Home Assistant can also send custom display alerts to AirDot, with optional sound and configurable duration.
 
+**Home Assistant integration**
+
+AirDot can expose its measurements through ESPHome's native Home Assistant API and can be automatically discovered when Home Assistant discovery is enabled in setup. Home Assistant can also send display alerts to the device.
+
+**MQTT publishing**
+
+MQTT publishing is available for users who prefer an MQTT-based setup. Broker, credentials, topic prefix, discovery, and publishing interval can be configured from the setup page.
+
 **Local setup portal**
 
-AirDot has its own setup flow. On first boot, the device first asks you to select a language. After that, AirDot shows the setup instructions and opens a local setup page where you can configure Wi-Fi, Home Assistant, MQTT, display preferences, time, weather, calibration, alerts, and firmware updates.
+AirDot has its own setup flow. On first boot, the device asks you to select a language, then opens a local setup page for Wi-Fi, location, Home Assistant, MQTT, display preferences, time, weather, Flight Radar, calibration, alerts, and firmware updates.
+
+**Sensor calibration**
+
+Temperature offset and forced CO2 baseline calibration can be configured from setup. This helps align readings with a trusted reference or recalibrate CO2 when the device is placed in fresh outdoor air.
+
+**Firmware updates**
+
+Firmware updates can be installed from the local setup page using OTA update files from the release page. Factory firmware can also be reinstalled through ESPHome Web if needed.
+
+**Powered by ESP32-S3**
+
+AirDot runs on an ESP32-S3 platform with 16 MB flash and octal PSRAM, using the ESP-IDF framework for reliable networking, display rendering, OTA updates, and local runtime features.
 
 ## From Power On to Setup
 
@@ -83,7 +99,7 @@ To configure AirDot:
 5. Connect to the AirDot setup network shown on the display, usually `airdot-xxxxxx`.
 6. Open a browser and go to `http://192.168.4.1`.
 7. Choose a 2.4 GHz Wi-Fi network, or continue without Wi-Fi.
-8. Configure Home Assistant, MQTT, time, weather, display, alerts, and calibration settings.
+8. Configure location, Home Assistant, MQTT, time, weather, Flight Radar, display, alerts, and calibration settings.
 9. Save the settings and wait while AirDot applies them.
 
 AirDot validates Wi-Fi after saving. If the connection fails, it returns to setup so you can correct the network or password.
@@ -100,6 +116,7 @@ Without Wi-Fi, these features are unavailable:
 - MQTT publishing
 - Automatic time sync
 - Weather updates
+- Flight Radar
 
 You can reopen setup later and add Wi-Fi when needed.
 
@@ -161,6 +178,7 @@ Available pages:
 
 - Air-quality summary
 - Time and weather
+- Flight Radar
 - PM1 history
 - PM2.5 history
 - PM4 history
@@ -173,7 +191,7 @@ Available pages:
 - Pressure history
 - Light history
 
-The time and weather page appears when time is available and either time sync or weather is enabled.
+The time and weather page appears when time is available and either time sync or weather is enabled. The Flight Radar page appears when Wi-Fi is configured and Flight Radar is enabled.
 
 ## Action Button
 
@@ -203,6 +221,17 @@ The setup page lets you configure:
 
 If night screen-off is enabled, AirDot needs a valid time source or manual time to know when the schedule is active.
 
+## Location
+
+AirDot can use a shared location for features that need an outdoor position.
+
+Location options:
+
+- Automatic location
+- Exact latitude and longitude
+
+Exact location can be enabled from setup when Wi-Fi is configured. When enabled, the same latitude and longitude can be used by Weather and Flight Radar.
+
 ## Time and Weather
 
 AirDot can show local time and outdoor weather on the display.
@@ -217,9 +246,23 @@ Weather options:
 
 - Disabled
 - Automatic location
-- Manual city
+- Exact location
 
 When weather is enabled, AirDot requests forecast data every 15 minutes after a valid location is available.
+
+## Flight Radar
+
+AirDot can show nearby aircraft on a dedicated radar page.
+
+Flight Radar options:
+
+- Disabled or enabled
+- Radar range
+- All aircraft or military-only traffic
+
+The radar uses the configured exact location when available. If exact location is not enabled, AirDot can use automatic location when Wi-Fi and internet access are available.
+
+The radar display is intentionally minimal: compass ticks, a north indicator, rotating aircraft markers, full callsigns, and connector lines. Standard aircraft use the display theme color, and military or priority aircraft are shown in orange.
 
 ## Air-Quality Warm-Up
 
@@ -234,7 +277,7 @@ For the best air-quality readings, place AirDot where room air can naturally rea
 Recommended placement:
 
 - In the room where you want to monitor air quality.
-- On an open shelf, desk etc. with free airflow.
+- On an open shelf, desk, or wall mount with free airflow.
 - Away from direct sunlight.
 - Away from heaters, radiators, lamps, and other heat sources.
 - Away from direct airflow from HVAC vents, fans, or open windows.
@@ -358,7 +401,14 @@ After reset, AirDot starts the setup access point again.
 - Make sure Wi-Fi is configured.
 - Make sure weather is enabled in setup.
 - For automatic location, confirm the network has internet access.
-- For manual location, check that the city name is valid.
+- For exact location, check that latitude and longitude are filled in correctly.
+
+**Flight Radar is missing**
+
+- Make sure Wi-Fi is configured.
+- Make sure Flight Radar is enabled in setup.
+- Check that a location is available through exact location or automatic location.
+- Confirm the selected radar range and traffic mode.
 
 **Measurements are missing in Home Assistant**
 
@@ -388,7 +438,7 @@ Depending on your settings, AirDot may connect to:
 
 - Home Assistant over your local network.
 - Your MQTT broker over your local network.
-- Online time and weather services when those features are enabled.
+- Online time, weather, and aircraft data services when those features are enabled.
 
 ## Let's Connect
 

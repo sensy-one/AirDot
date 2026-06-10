@@ -31,6 +31,7 @@ wifi:
                 else:
                   - lambda: |-
                       AirDot::time_weather::stop_sntp_sync();
+            - script.execute: flight_radar_request_update
             - delay: 2s
             - if:
                 condition:

@@ -1,0 +1,20 @@
+id: flight_radar_page
+bg_color: 0x000000
+bg_opa: COVER
+pad_all: 0
+scrollable: false
+scrollbar_mode: "OFF"
+
+widgets:
+  - obj:
+      id: flight_radar_scope
+      align: CENTER
+      width: 480
+      height: 480
+      bg_color: 0x000000
+      bg_opa: COVER
+      border_width: 0
+      radius: 0
+      pad_all: 0
+      scrollable: false
+      scrollbar_mode: "OFF"

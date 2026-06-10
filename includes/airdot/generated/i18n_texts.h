@@ -727,6 +727,7 @@ struct SetupPageText {
   const char *wifi_ssid_label;
   const char *wifi_password_label;
   const char *wifi_password_placeholder;
+  const char *password_visibility_toggle_label;
   const char *time_title;
   const char *time_note;
   const char *time_server_title;
@@ -764,6 +765,20 @@ struct SetupPageText {
   const char *publishing_interval_label;
   const char *audio_alerts_title;
   const char *audio_alerts_description;
+  const char *location_title;
+  const char *location_note;
+  const char *exact_location_title;
+  const char *exact_location_description;
+  const char *location_latitude_label;
+  const char *location_longitude_label;
+  const char *flight_radar_title;
+  const char *flight_radar_note;
+  const char *flight_radar_enabled_title;
+  const char *flight_radar_enabled_description;
+  const char *flight_radar_range_label;
+  const char *flight_radar_traffic_label;
+  const char *flight_radar_traffic_all_label;
+  const char *flight_radar_traffic_military_label;
   const char *weather_title;
   const char *weather_note;
   const char *weather_sync_title;
@@ -771,8 +786,6 @@ struct SetupPageText {
   const char *weather_location_mode_label;
   const char *weather_location_ip_label;
   const char *weather_location_manual_label;
-  const char *weather_location_city_label;
-  const char *weather_location_city_placeholder;
   const char *display_title;
   const char *display_note;
   const char *language_label;
@@ -888,6 +901,7 @@ inline SetupPageText setup_page_text(AirDot::UiLanguage language) {
         "Wi-Fi network",
         "Wi-Fi password",
         "Enter password",
+        "Show or hide password",
         "Time",
         "Set date, time, and time format.",
         "Date and time",
@@ -925,15 +939,27 @@ inline SetupPageText setup_page_text(AirDot::UiLanguage language) {
         "Publish interval",
         "Sound alerts",
         "Play a warning tone when a measurement reaches a dangerous level.",
+        "Location",
+        "Set the exact location used by weather and flight radar.",
+        "Exact location",
+        "Use these coordinates for weather and flight radar.",
+        "Latitude",
+        "Longitude",
+        "Flight radar",
+        "Set range and visible traffic.",
+        "Flight radar",
+        "Show live aircraft traffic on the radar screen.",
+        "Range",
+        "Traffic",
+        "All aircraft",
+        "Military only",
         "Weather",
         "Show local outdoor weather on the display.",
         "Weather updates",
-        "Use automatic location detection or choose a location yourself.",
+        "Use automatic detection or the configured exact location.",
         "Location",
         "Automatic",
-        "Manual",
-        "City",
-        "New York",
+        "Set location",
         "Display",
         "Set language, units, brightness, and appearance.",
         "Language",
@@ -979,6 +1005,7 @@ inline SetupPageText setup_page_text(AirDot::UiLanguage language) {
         "WLAN-Netzwerk",
         "WLAN-Passwort",
         "Passwort eingeben",
+        "Passwort anzeigen oder verbergen",
         "Zeit",
         "Stelle Datum, Uhrzeit und Zeitformat ein.",
         "Datum und Uhrzeit",
@@ -1016,15 +1043,27 @@ inline SetupPageText setup_page_text(AirDot::UiLanguage language) {
         "Sendeintervall",
         "Tonwarnungen",
         "Spiele einen Warnton ab, wenn eine Messung einen gefährlichen Wert erreicht.",
+        "Standort",
+        "Lege den genauen Standort für Wetter und Flugradar fest.",
+        "Genauer Standort",
+        "Verwende diese Koordinaten für Wetter und Flugradar.",
+        "Breitengrad",
+        "Längengrad",
+        "Flugradar",
+        "Lege Reichweite und sichtbaren Verkehr fest.",
+        "Flugradar",
+        "Zeige Live-Flugverkehr auf dem Radarschirm.",
+        "Reichweite",
+        "Verkehr",
+        "Alle Flugzeuge",
+        "Nur Militär",
         "Wetter",
         "Zeige das lokale Außenwetter auf dem Bildschirm.",
         "Wetterupdates",
-        "Nutze die automatische Standortbestimmung oder wähle selbst einen Ort.",
+        "Nutze die automatische Erkennung oder den eingestellten genauen Standort.",
         "Standort",
         "Automatisch",
-        "Manuell",
-        "Ort",
-        "Berlin",
+        "Eingestellter Standort",
         "Bildschirm",
         "Stelle Sprache, Einheiten, Helligkeit und Anzeige ein.",
         "Sprache",
@@ -1070,6 +1109,7 @@ inline SetupPageText setup_page_text(AirDot::UiLanguage language) {
         "Wifi-netwerk",
         "Wifi-wachtwoord",
         "Vul het wachtwoord in",
+        "Wachtwoord tonen of verbergen",
         "Tijd",
         "Stel datum, tijd en tijdnotatie in.",
         "Datum en tijd",
@@ -1107,15 +1147,27 @@ inline SetupPageText setup_page_text(AirDot::UiLanguage language) {
         "Publicatie-interval",
         "Geluidswaarschuwingen",
         "Speel een waarschuwingstoon af wanneer een meting een gevaarlijk niveau bereikt.",
+        "Locatie",
+        "Stel de exacte locatie in voor weer en vluchtradar.",
+        "Exacte locatie",
+        "Gebruik deze coördinaten voor weer en vluchtradar.",
+        "Breedtegraad",
+        "Lengtegraad",
+        "Vluchtradar",
+        "Stel bereik en zichtbaar verkeer in.",
+        "Vluchtradar",
+        "Toon live vliegtuigverkeer op het radarscherm.",
+        "Bereik",
+        "Verkeer",
+        "Alle vliegtuigen",
+        "Alleen militair",
         "Weer",
         "Toon het lokale buitenweer op het scherm.",
         "Weerupdates",
-        "Gebruik automatische locatiebepaling of kies zelf een plaats.",
+        "Gebruik automatische locatiebepaling of de ingestelde exacte locatie.",
         "Locatie",
         "Automatisch",
-        "Handmatig",
-        "Plaats",
-        "Amsterdam",
+        "Ingestelde locatie",
         "Scherm",
         "Stel taal, eenheden, helderheid en weergave in.",
         "Taal",
@@ -1161,6 +1213,7 @@ inline SetupPageText setup_page_text(AirDot::UiLanguage language) {
         "Réseau Wi-Fi",
         "Mot de passe Wi-Fi",
         "Saisissez le mot de passe",
+        "Afficher ou masquer le mot de passe",
         "Heure",
         "Réglez la date, l’heure et le format horaire.",
         "Date et heure",
@@ -1198,15 +1251,27 @@ inline SetupPageText setup_page_text(AirDot::UiLanguage language) {
         "Intervalle de publication",
         "Alertes sonores",
         "Émettez un signal d’alerte lorsqu’une mesure atteint un niveau dangereux.",
+        "Localisation",
+        "Définissez la position exacte utilisée pour la météo et le radar de vol.",
+        "Position exacte",
+        "Utilisez ces coordonnées pour la météo et le radar de vol.",
+        "Latitude",
+        "Longitude",
+        "Radar de vol",
+        "Définissez la portée et le trafic visible.",
+        "Radar de vol",
+        "Affichez le trafic aérien en direct sur l'écran radar.",
+        "Portée",
+        "Trafic",
+        "Tous les avions",
+        "Militaire seul",
         "Météo",
         "Affichez la météo extérieure locale à l’écran.",
         "Mises à jour météo",
-        "Utilisez la localisation automatique ou choisissez une ville.",
+        "Utilisez la détection automatique ou la position exacte configurée.",
         "Localisation",
         "Automatique",
-        "Manuel",
-        "Ville",
-        "Paris",
+        "Position définie",
         "Écran",
         "Réglez la langue, les unités, la luminosité et l’affichage.",
         "Langue",
@@ -1296,6 +1361,7 @@ inline void append_setup_page_translation_json(std::string &html, AirDot::UiLang
   append_json_field_(html, "wifi_ssid_label", text.wifi_ssid_label, first);
   append_json_field_(html, "wifi_password_label", text.wifi_password_label, first);
   append_json_field_(html, "wifi_password_placeholder", text.wifi_password_placeholder, first);
+  append_json_field_(html, "password_visibility_toggle_label", text.password_visibility_toggle_label, first);
   append_json_field_(html, "time_title", text.time_title, first);
   append_json_field_(html, "time_note", text.time_note, first);
   append_json_field_(html, "time_server_title", text.time_server_title, first);
@@ -1333,6 +1399,20 @@ inline void append_setup_page_translation_json(std::string &html, AirDot::UiLang
   append_json_field_(html, "publishing_interval_label", text.publishing_interval_label, first);
   append_json_field_(html, "audio_alerts_title", text.audio_alerts_title, first);
   append_json_field_(html, "audio_alerts_description", text.audio_alerts_description, first);
+  append_json_field_(html, "location_title", text.location_title, first);
+  append_json_field_(html, "location_note", text.location_note, first);
+  append_json_field_(html, "exact_location_title", text.exact_location_title, first);
+  append_json_field_(html, "exact_location_description", text.exact_location_description, first);
+  append_json_field_(html, "location_latitude_label", text.location_latitude_label, first);
+  append_json_field_(html, "location_longitude_label", text.location_longitude_label, first);
+  append_json_field_(html, "flight_radar_title", text.flight_radar_title, first);
+  append_json_field_(html, "flight_radar_note", text.flight_radar_note, first);
+  append_json_field_(html, "flight_radar_enabled_title", text.flight_radar_enabled_title, first);
+  append_json_field_(html, "flight_radar_enabled_description", text.flight_radar_enabled_description, first);
+  append_json_field_(html, "flight_radar_range_label", text.flight_radar_range_label, first);
+  append_json_field_(html, "flight_radar_traffic_label", text.flight_radar_traffic_label, first);
+  append_json_field_(html, "flight_radar_traffic_all_label", text.flight_radar_traffic_all_label, first);
+  append_json_field_(html, "flight_radar_traffic_military_label", text.flight_radar_traffic_military_label, first);
   append_json_field_(html, "weather_title", text.weather_title, first);
   append_json_field_(html, "weather_note", text.weather_note, first);
   append_json_field_(html, "weather_sync_title", text.weather_sync_title, first);
@@ -1340,8 +1420,6 @@ inline void append_setup_page_translation_json(std::string &html, AirDot::UiLang
   append_json_field_(html, "weather_location_mode_label", text.weather_location_mode_label, first);
   append_json_field_(html, "weather_location_ip_label", text.weather_location_ip_label, first);
   append_json_field_(html, "weather_location_manual_label", text.weather_location_manual_label, first);
-  append_json_field_(html, "weather_location_city_label", text.weather_location_city_label, first);
-  append_json_field_(html, "weather_location_city_placeholder", text.weather_location_city_placeholder, first);
   append_json_field_(html, "display_title", text.display_title, first);
   append_json_field_(html, "display_note", text.display_note, first);
   append_json_field_(html, "language_label", text.language_label, first);
@@ -1385,7 +1463,7 @@ inline ScreenContent screen_content(int screen, AirDot::UiLanguage language) {
         case 0:
           return {
             "Set up AirDot",
-            "Open Wi-Fi on your phone\nand choose AirDot-XXXXXX.\n\nThen open your browser\nand go to 192.168.4.1.",
+            "Open Wi-Fi on your phone\nand choose AirDot-XXXXXX.\n\nThen open your browser\nand go to 192.168.4.1",
             "Later",
             "Back",
             nullptr,
@@ -1421,7 +1499,7 @@ inline ScreenContent screen_content(int screen, AirDot::UiLanguage language) {
         case 0:
           return {
             "AirDot einrichten",
-            "Öffne WLAN auf deinem Smartphone\nund wähle AirDot-XXXXXX.\n\nÖffne danach deinen Browser\nund gehe zu 192.168.4.1.",
+            "Öffne WLAN auf deinem Smartphone\nund wähle AirDot-XXXXXX.\n\nÖffne danach deinen Browser\nund gehe zu 192.168.4.1",
             "Später",
             "zurück",
             nullptr,
@@ -1457,7 +1535,7 @@ inline ScreenContent screen_content(int screen, AirDot::UiLanguage language) {
         case 0:
           return {
             "Stel AirDot in",
-            "Open wifi op je telefoon\nen kies AirDot-XXXXXX.\n\nOpen daarna je browser\nen ga naar 192.168.4.1.",
+            "Open wifi op je telefoon\nen kies AirDot-XXXXXX.\n\nOpen daarna je browser\nen ga naar 192.168.4.1",
             "Later",
             "Terug",
             nullptr,
@@ -1493,7 +1571,7 @@ inline ScreenContent screen_content(int screen, AirDot::UiLanguage language) {
         case 0:
           return {
             "Configurer AirDot",
-            "Ouvrez le Wi-Fi sur votre téléphone\net choisissez AirDot-XXXXXX.\n\nOuvrez ensuite votre navigateur\net allez sur 192.168.4.1.",
+            "Ouvrez le Wi-Fi sur votre téléphone\net choisissez AirDot-XXXXXX.\n\nOuvrez ensuite votre navigateur\net allez sur 192.168.4.1",
             "Plus tard",
             "Retour",
             nullptr,

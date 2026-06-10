@@ -15,6 +15,16 @@ script:
             lv_obj_invalidate(obj);
           };
 
+          auto set_radar_background = [&](auto *widget) {
+            lv_obj_t *obj = AirDot::lv_obj(widget);
+            if (obj == nullptr)
+              return;
+            lv_obj_set_style_bg_color(
+                obj, AirDot::flight_radar::radar_background_color_(), LV_PART_MAIN);
+            lv_obj_set_style_bg_opa(obj, LV_OPA_COVER, LV_PART_MAIN);
+            lv_obj_invalidate(obj);
+          };
+
           auto set_text = [&](auto *label) {
             AirDot::set_text_color(label, text);
           };
@@ -69,6 +79,11 @@ script:
           set_text(id(time_page_date_label));
           set_text(id(time_page_weather_label));
           set_text(id(time_page_weather_high_low_label));
+
+          set_radar_background(id(flight_radar_page));
+          set_radar_background(id(flight_radar_scope));
+          AirDot::flight_radar::refresh_radar_scope(
+              id(flight_radar_scope), id(ui_font_radar_tag), id(ui_font_small));
 
           apply_history(
             id(pm1_history_page), id(pm1_history_title_label), id(pm1_history_max_label),

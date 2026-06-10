@@ -15,6 +15,7 @@ setup_page:
   wifi_ssid_label: Wifi-netwerk
   wifi_password_label: Wifi-wachtwoord
   wifi_password_placeholder: Vul het wachtwoord in
+  password_visibility_toggle_label: Wachtwoord tonen of verbergen
   offline_option: Zonder wifi doorgaan
   no_networks: Geen wifi-netwerken gevonden
 
@@ -85,16 +86,30 @@ setup_page:
   night_screen_off_title: Nachtstand
   night_screen_off_description: Schakel het scherm uit tijdens de ingestelde uren.
 
+  location_title: Locatie
+  location_note: Stel de exacte locatie in voor weer en vluchtradar.
+  exact_location_title: Exacte locatie
+  exact_location_description: Gebruik deze coördinaten voor weer en vluchtradar.
+  location_latitude_label: Breedtegraad
+  location_longitude_label: Lengtegraad
+
+  flight_radar_title: Vluchtradar
+  flight_radar_note: Stel bereik en zichtbaar verkeer in.
+  flight_radar_enabled_title: Vluchtradar
+  flight_radar_enabled_description: Toon live vliegtuigverkeer op het radarscherm.
+  flight_radar_range_label: Bereik
+  flight_radar_traffic_label: Verkeer
+  flight_radar_traffic_all_label: Alle vliegtuigen
+  flight_radar_traffic_military_label: Alleen militair
+
   weather_title: Weer
   weather_note: Toon het lokale buitenweer op het scherm.
 
   weather_sync_title: Weerupdates
-  weather_sync_description: Gebruik automatische locatiebepaling of kies zelf een plaats.
+  weather_sync_description: Gebruik automatische locatiebepaling of de ingestelde exacte locatie.
   weather_location_mode_label: Locatie
   weather_location_ip_label: Automatisch
-  weather_location_manual_label: Handmatig
-  weather_location_city_label: Plaats
-  weather_location_city_placeholder: Amsterdam
+  weather_location_manual_label: Ingestelde locatie
 
   display_title: Scherm
   display_note: Stel taal, eenheden, helderheid en weergave in.
@@ -220,7 +235,7 @@ onboarding:
       en kies AirDot-XXXXXX.
 
       Open daarna je browser
-      en ga naar 192.168.4.1.
+      en ga naar 192.168.4.1
     button_0: Later
     button_0_reopen: Terug
 

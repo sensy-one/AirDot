@@ -3,7 +3,7 @@ device_friendly_name: AirDot
 device_manufacturer: sensy-one
 device_model: AirDot
 device_project_name: sensy-one.AirDot
-device_firmware_version: "v1.0.0"
+device_firmware_version: "v1.1.0"
 
 display_backlight_pin: GPIO44
 alert_buzzer_pin: GPIO7

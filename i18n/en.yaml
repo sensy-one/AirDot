@@ -15,6 +15,7 @@ setup_page:
   wifi_ssid_label: Wi-Fi network
   wifi_password_label: Wi-Fi password
   wifi_password_placeholder: Enter password
+  password_visibility_toggle_label: Show or hide password
   offline_option: Continue without Wi-Fi
   no_networks: No Wi-Fi networks found
 
@@ -85,16 +86,30 @@ setup_page:
   night_screen_off_title: Night mode
   night_screen_off_description: Turn off the display during the selected hours.
 
+  location_title: Location
+  location_note: Set the exact location used by weather and flight radar.
+  exact_location_title: Exact location
+  exact_location_description: Use these coordinates for weather and flight radar.
+  location_latitude_label: Latitude
+  location_longitude_label: Longitude
+
+  flight_radar_title: Flight radar
+  flight_radar_note: Set range and visible traffic.
+  flight_radar_enabled_title: Flight radar
+  flight_radar_enabled_description: Show live aircraft traffic on the radar screen.
+  flight_radar_range_label: Range
+  flight_radar_traffic_label: Traffic
+  flight_radar_traffic_all_label: All aircraft
+  flight_radar_traffic_military_label: Military only
+
   weather_title: Weather
   weather_note: Show local outdoor weather on the display.
 
   weather_sync_title: Weather updates
-  weather_sync_description: Use automatic location detection or choose a location yourself.
+  weather_sync_description: Use automatic detection or the configured exact location.
   weather_location_mode_label: Location
   weather_location_ip_label: Automatic
-  weather_location_manual_label: Manual
-  weather_location_city_label: City
-  weather_location_city_placeholder: New York
+  weather_location_manual_label: Set location
 
   display_title: Display
   display_note: Set language, units, brightness, and appearance.
@@ -220,7 +235,7 @@ onboarding:
       and choose AirDot-XXXXXX.
 
       Then open your browser
-      and go to 192.168.4.1.
+      and go to 192.168.4.1
     button_0: Later
     button_0_reopen: Back
 

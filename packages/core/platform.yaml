@@ -7,6 +7,7 @@ esp32:
     sdkconfig_options:
       CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG: "y"
       CONFIG_ESP_CONSOLE_SECONDARY_NONE: "y"
+      CONFIG_MBEDTLS_EXTERNAL_MEM_ALLOC: "y"
 
 external_components:
   - source:

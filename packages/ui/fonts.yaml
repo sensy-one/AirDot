@@ -16,6 +16,10 @@ font:
       - 'ĀāĂăĄąĆćĈĉĊċČčĎďĐđĒēĔĕĖėĘęĚěĜĝĞğĠġĢģĤĥĦħĨĩĪīĬĭĮįİıĲĳĴĵĶķĸĹĺĻļĽľĿŀŁłŃńŅņŇňŉŊŋŌōŎŏŐőŒœŔŕŖŗŘřŚśŜŝŞşŠšŢţŤťŦŧŨũŪūŬŭŮůŰűŲųŴŵŶŷŸŹźŻżŽžſ'
       - '‐‑–—―‗‘’‚‛“”„†‡•‥…‧‰′″‹›‼⁄₣₤₦₧₨₩₪₫€₱₹₺₼₽℅ℓ№™Ω℮■◊○●⁰⁴⁵⁶⁷⁸⁹⁺⁻⁼⁽⁾ⁿ₀₁₂₃₄₅₆₇₈₉₊₋₌₍₎'
   - file: "gfonts://Roboto"
+    id: ui_font_radar_tag
+    size: 18
+    glyphs: " -./0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz●"
+  - file: "gfonts://Roboto"
     id: ui_font_modal_title
     size: 31
     glyphs: *alert_font_glyphs

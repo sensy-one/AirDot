@@ -2,6 +2,7 @@
 
 #include <cmath>
 #include <cstdio>
+#include <cstdint>
 #include <cstring>
 #include <string>
 #include <vector>
@@ -125,10 +126,27 @@ class SetupPageRenderer {
     const bool stored_mqtt_enabled = mqtt_settings.enabled == 1;
     const std::string mqtt_broker = fixed_string_(mqtt_settings.broker);
     const std::string mqtt_username = fixed_string_(mqtt_settings.username);
+    const std::string mqtt_password = fixed_string_(mqtt_settings.password);
     const std::string mqtt_topic_prefix = fixed_string_(mqtt_settings.topic_prefix);
-    const auto &weather_location = load_weather_location_settings();
-    const std::string weather_city = fixed_string_(weather_location.city);
-    const bool custom_weather_location = !weather_city.empty();
+    const auto &location_settings = load_location_settings();
+    const bool stored_location_coordinates_valid =
+        location_e7_coordinates_are_valid(location_settings.latitude_e7, location_settings.longitude_e7);
+    const bool exact_location_enabled =
+        location_settings.exact_enabled == 1 && stored_location_coordinates_valid;
+    const bool stored_location_has_value =
+        stored_location_coordinates_valid &&
+        (exact_location_enabled || location_settings.latitude_e7 != 0 || location_settings.longitude_e7 != 0);
+    const bool weather_manual_location_selected = exact_location_enabled && stored_location_has_value;
+    const std::string exact_location_latitude_value =
+        stored_location_has_value ? coordinate_input_value_(location_settings.latitude_e7) : "";
+    const std::string exact_location_longitude_value =
+        stored_location_has_value ? coordinate_input_value_(location_settings.longitude_e7) : "";
+    const auto &flight_radar_settings = load_flight_radar_settings();
+    const bool flight_radar_configured_enabled = flight_radar_settings.enabled == 1;
+    const bool flight_radar_military_only =
+        flight_radar_settings.traffic_mode == FLIGHT_RADAR_TRAFFIC_MILITARY_ONLY;
+    const uint8_t flight_radar_range_km = normalize_flight_radar_range_km(flight_radar_settings.range_km);
+    const std::string flight_radar_range_value = std::to_string(static_cast<unsigned>(flight_radar_range_km));
     char mqtt_port_value[6];
     std::snprintf(
         mqtt_port_value, sizeof(mqtt_port_value), "%u", static_cast<unsigned>(mqtt_settings.port));
@@ -137,6 +155,7 @@ class SetupPageRenderer {
     const std::string saved_wifi_ssid = has_wifi_settings ? fixed_string_(wifi_settings.ssid) : "";
     const std::string saved_wifi_password = has_wifi_settings ? fixed_string_(wifi_settings.password) : "";
     const bool wifi_configured = !saved_wifi_ssid.empty();
+    const bool flight_radar_active = wifi_configured && flight_radar_configured_enabled;
     const bool time_sync_enabled = stored_time_server_enabled || manual_time_enabled;
     const bool time_server_enabled = wifi_configured && stored_time_server_enabled && !manual_time_enabled;
     const bool manual_time_mode = time_sync_enabled && (manual_time_enabled || !wifi_configured);
@@ -331,15 +350,26 @@ class SetupPageRenderer {
       gap: 10px;
       margin-top: 18px;
     }
+    .coordinate-range {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap: 10px;
+      margin-top: 18px;
+    }
+    .coordinate-range .field { margin-top: 0; }
     .time-range[hidden] { display: none; }
+    .coordinate-range[hidden] { display: none; }
     .time-control { min-width: 0; }
+    .flight-radar-fields.is-disabled {
+      opacity: 0.56;
+    }
     .field[hidden],
     .toggle-row[hidden],
     .time-picker-control[hidden],
     .time-source-mode[hidden],
     .manual-time-fields[hidden],
-    .weather-location-mode[hidden],
-    .weather-location-fields[hidden] {
+    .exact-location-fields[hidden],
+    .weather-location-mode[hidden] {
       display: none;
     }
     .manual-time-fields {
@@ -435,6 +465,39 @@ class SetupPageRenderer {
       letter-spacing: 0;
     }
     .control-wrap { position: relative; }
+    .password-control {
+      position: relative;
+    }
+    .password-control input {
+      padding-right: 54px;
+    }
+    .password-toggle {
+      position: absolute;
+      right: 6px;
+      top: 50%;
+      display: grid;
+      place-items: center;
+      width: 40px;
+      height: 40px;
+      padding: 0;
+      border: 0;
+      border-radius: 12px;
+      color: rgba(245, 247, 251, 0.58);
+      background: transparent;
+      cursor: pointer;
+      transform: translateY(-50%);
+    }
+    .password-toggle svg {
+      width: 20px;
+      height: 20px;
+    }
+    .password-toggle.is-active {
+      color: var(--text);
+    }
+    .password-toggle:disabled {
+      opacity: 0.36;
+      cursor: not-allowed;
+    }
     .unit-input {
       position: relative;
     }
@@ -808,11 +871,20 @@ class SetupPageRenderer {
 )html";
     html += "                <label for=\"wifi_password\" data-i18n=\"wifi_password_label\">";
     html += text.wifi_password_label;
-    html += "</label>\n                <input id=\"wifi_password\" name=\"wifi_password\" type=\"password\" data-i18n-placeholder=\"wifi_password_placeholder\" placeholder=\"";
+    html += "</label>\n                <div class=\"password-control\">\n                  <input id=\"wifi_password\" name=\"wifi_password\" type=\"password\" data-i18n-placeholder=\"wifi_password_placeholder\" placeholder=\"";
     html += html_escape_(text.wifi_password_placeholder);
     html += R"html(" autocomplete="new-password" autocorrect="off" autocapitalize="none" spellcheck="false" maxlength="64" value=")html";
     html += html_escape_(saved_wifi_password);
     html += R"html(">
+                  <button class="password-toggle" type="button" data-password-toggle="wifi_password" data-i18n-aria-label="password_visibility_toggle_label" aria-label=")html";
+    html += html_escape_(text.password_visibility_toggle_label);
+    html += R"html(" aria-pressed="false">
+                    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                      <path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path>
+                      <path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path>
+                    </svg>
+                  </button>
+                </div>
               </div>
 
             </section>
@@ -926,9 +998,21 @@ class SetupPageRenderer {
     html += "                    <label for=\"mqtt_password\" data-i18n=\"mqtt_password_label\">";
     html += text.mqtt_password_label;
     html += R"html(</label>
-                    <input id="mqtt_password" name="mqtt_password" type="password" autocomplete="new-password" autocorrect="off" autocapitalize="none" spellcheck="false" maxlength="64" data-i18n-placeholder="optional_placeholder" placeholder=")html";
+                    <div class="password-control">
+                      <input id="mqtt_password" name="mqtt_password" type="password" autocomplete="new-password" autocorrect="off" autocapitalize="none" spellcheck="false" maxlength="64" data-i18n-placeholder="optional_placeholder" placeholder=")html";
     html += html_escape_(text.optional_placeholder);
+    html += R"html(" value=")html";
+    html += html_escape_(mqtt_password);
     html += R"html(">
+                      <button class="password-toggle" type="button" data-password-toggle="mqtt_password" data-i18n-aria-label="password_visibility_toggle_label" aria-label=")html";
+    html += html_escape_(text.password_visibility_toggle_label);
+    html += R"html(" aria-pressed="false">
+                        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                          <path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path>
+                          <path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path>
+                        </svg>
+                      </button>
+                    </div>
                   </div>
                 </div>
 
@@ -1340,6 +1424,84 @@ class SetupPageRenderer {
               </div>
             </section>
 
+            <section id="location_section" class="section)html";
+    if (!wifi_configured)
+      html += " is-disabled";
+    html += R"html(" aria-labelledby="location-title">
+              <div class="section-header">
+                <div>
+)html";
+    html += "                  <h2 id=\"location-title\" data-i18n=\"location_title\">";
+    html += text.location_title;
+    html += "</h2>\n                  <p class=\"section-note\" data-i18n=\"location_note\">";
+    html += text.location_note;
+    html += R"html(</p>
+                </div>
+              </div>
+
+              <div id="exact_location_row" class="toggle-row)html";
+    if (!wifi_configured)
+      html += " is-disabled";
+    html += R"html(">
+                <div class="toggle-copy">
+)html";
+    html += "                  <p class=\"toggle-title\" data-i18n=\"exact_location_title\">";
+    html += text.exact_location_title;
+    html += "</p>\n                  <p class=\"toggle-description\" data-i18n=\"exact_location_description\">";
+    html += text.exact_location_description;
+    html += R"html(</p>
+                </div>
+
+)html";
+    html += "                <label class=\"switch\" data-i18n-aria-label=\"exact_location_title\" aria-label=\"";
+    html += text.exact_location_title;
+    html += R"html(">
+)html";
+    html += "                  <input id=\"exact_location_enabled\" type=\"checkbox\" name=\"exact_location_enabled\" value=\"1\" aria-controls=\"exact_location_fields\"";
+    if (wifi_configured && exact_location_enabled)
+      html += " checked";
+    if (!wifi_configured)
+      html += " disabled";
+    html += R"html(>
+                  <span class="slider" aria-hidden="true"></span>
+                </label>
+              </div>
+
+              <div id="exact_location_fields" class="coordinate-range exact-location-fields")html";
+    if (!wifi_configured || !exact_location_enabled)
+      html += " hidden";
+    html += R"html(>
+                <div class="field">
+)html";
+    html += "                  <label for=\"location_latitude\" data-i18n=\"location_latitude_label\">";
+    html += text.location_latitude_label;
+    html += R"html(</label>
+                  <input id="location_latitude" name="location_latitude" type="text" inputmode="decimal" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false" enterkeyhint="next" maxlength="18" pattern="-?[0-9]{1,2}([.,][0-9]{1,7})?" value=")html";
+    html += html_escape_(exact_location_latitude_value);
+    html += "\"";
+    if (wifi_configured && exact_location_enabled)
+      html += " required";
+    if (!wifi_configured || !exact_location_enabled)
+      html += " disabled";
+    html += R"html(>
+                </div>
+                <div class="field">
+)html";
+    html += "                  <label for=\"location_longitude\" data-i18n=\"location_longitude_label\">";
+    html += text.location_longitude_label;
+    html += R"html(</label>
+                  <input id="location_longitude" name="location_longitude" type="text" inputmode="decimal" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false" enterkeyhint="done" maxlength="18" pattern="-?[0-9]{1,3}([.,][0-9]{1,7})?" value=")html";
+    html += html_escape_(exact_location_longitude_value);
+    html += "\"";
+    if (wifi_configured && exact_location_enabled)
+      html += " required";
+    if (!wifi_configured || !exact_location_enabled)
+      html += " disabled";
+    html += R"html(>
+                </div>
+              </div>
+            </section>
+
             <section id="weather_section" class="section)html";
     if (!wifi_configured)
       html += " is-disabled";
@@ -1374,7 +1536,7 @@ class SetupPageRenderer {
     html += text.weather_sync_title;
     html += R"html(">
 )html";
-    html += "                  <input id=\"weather_enabled\" type=\"checkbox\" name=\"weather_enabled\" value=\"1\" aria-controls=\"weather_location_mode weather_location_fields\" data-default-online=\"";
+    html += "                  <input id=\"weather_enabled\" type=\"checkbox\" name=\"weather_enabled\" value=\"1\" aria-controls=\"weather_location_mode\" data-default-online=\"";
     html += default_online_weather_enabled ? "1" : "0";
     html += "\"";
     if (weather_enabled)
@@ -1398,7 +1560,7 @@ class SetupPageRenderer {
     html += R"html(">
                   <label class="segment" for="weather_location_ip">
                     <input id="weather_location_ip" type="radio" name="weather_location_mode" value="ip")html";
-    if (!custom_weather_location)
+    if (!weather_manual_location_selected)
       html += " checked";
     if (!weather_enabled)
       html += " disabled";
@@ -1410,9 +1572,9 @@ class SetupPageRenderer {
                   </label>
                   <label class="segment" for="weather_location_manual">
                     <input id="weather_location_manual" type="radio" name="weather_location_mode" value="manual")html";
-    if (custom_weather_location)
+    if (weather_manual_location_selected)
       html += " checked";
-    if (!weather_enabled)
+    if (!weather_enabled || !stored_location_has_value)
       html += " disabled";
     html += R"html(>
 )html";
@@ -1422,25 +1584,108 @@ class SetupPageRenderer {
                   </label>
                 </div>
               </div>
+            </section>
 
-              <div id="weather_location_fields" class="field weather-location-fields")html";
-    if (!weather_enabled || !custom_weather_location)
-      html += " hidden";
+            <section id="flight_radar_section" class="section)html";
+    if (!wifi_configured)
+      html += " is-disabled";
+    html += R"html(" aria-labelledby="flight-radar-title">
+              <div class="section-header">
+                <div>
+)html";
+    html += "                  <h2 id=\"flight-radar-title\" data-i18n=\"flight_radar_title\">";
+    html += text.flight_radar_title;
+    html += "</h2>\n                  <p class=\"section-note\" data-i18n=\"flight_radar_note\">";
+    html += text.flight_radar_note;
+    html += R"html(</p>
+                </div>
+              </div>
+
+)html";
+    html += "              <div id=\"flight_radar_enabled_row\" class=\"toggle-row";
+    if (!wifi_configured)
+      html += " is-disabled";
+    html += R"html(">
+                <div class="toggle-copy">
+)html";
+    html += "                  <p class=\"toggle-title\" data-i18n=\"flight_radar_enabled_title\">";
+    html += text.flight_radar_enabled_title;
+    html += "</p>\n                  <p class=\"toggle-description\" data-i18n=\"flight_radar_enabled_description\">";
+    html += text.flight_radar_enabled_description;
+    html += R"html(</p>
+                </div>
+
+)html";
+    html += "                <label class=\"switch\" data-i18n-aria-label=\"flight_radar_enabled_title\" aria-label=\"";
+    html += text.flight_radar_enabled_title;
+    html += R"html(">
+)html";
+    html += "                  <input id=\"flight_radar_enabled\" type=\"checkbox\" name=\"flight_radar_enabled\" value=\"1\" aria-controls=\"flight_radar_fields\"";
+    if (flight_radar_active)
+      html += " checked";
+    if (!wifi_configured)
+      html += " disabled";
+    html += R"html(>
+                  <span class="slider" aria-hidden="true"></span>
+                </label>
+              </div>
+
+              <div id="flight_radar_fields" class="flight-radar-fields)html";
+    if (!flight_radar_active)
+      html += " is-disabled";
+    html += R"html(">
+                <div class="field">
+)html";
+    html += "                  <label for=\"flight_radar_range_km\" data-i18n=\"flight_radar_range_label\">";
+    html += text.flight_radar_range_label;
+    html += R"html(</label>
+                  <div class="control-wrap">
+                    <select id="flight_radar_range_km" name="flight_radar_range_km")html";
+    if (!flight_radar_active)
+      html += " disabled";
     html += R"html(>
 )html";
-    html += "                <label for=\"weather_city\" data-i18n=\"weather_location_city_label\">";
-    html += text.weather_location_city_label;
-    html += "</label>\n                <div class=\"control-wrap\">\n                  <input id=\"weather_city\" name=\"weather_city\" type=\"text\" maxlength=\"";
-    html += std::to_string(MAX_WEATHER_CITY_LENGTH);
-    html += "\" autocomplete=\"address-level2\" spellcheck=\"false\" data-i18n-placeholder=\"weather_location_city_placeholder\" placeholder=\"";
-    html += html_escape_(text.weather_location_city_placeholder);
-    html += "\" value=\"";
-    html += html_escape_(weather_city);
-    if (!weather_enabled || !custom_weather_location)
-      html += "\" disabled";
-    else
-      html += "\"";
+    html += flight_radar_range_options_(flight_radar_range_km, imperial_units);
+    html += R"html(
+                    </select>
+                    <svg class="chevron" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                      <path d="m5 7.5 5 5 5-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+                    </svg>
+                  </div>
+                </div>
+
+                <div class="field">
+)html";
+    html += "                  <label for=\"flight_radar_traffic_all\" data-i18n=\"flight_radar_traffic_label\">";
+    html += text.flight_radar_traffic_label;
+    html += "</label>\n                  <div class=\"segmented\" role=\"radiogroup\" data-i18n-aria-label=\"flight_radar_traffic_label\" aria-label=\"";
+    html += text.flight_radar_traffic_label;
+    html += R"html(">
+                    <label class="segment" for="flight_radar_traffic_all">
+                      <input id="flight_radar_traffic_all" type="radio" name="flight_radar_traffic" value="all")html";
+    if (!flight_radar_military_only)
+      html += " checked";
+    if (!flight_radar_active)
+      html += " disabled";
     html += R"html(>
+)html";
+    html += "                      <span data-i18n=\"flight_radar_traffic_all_label\">";
+    html += text.flight_radar_traffic_all_label;
+    html += R"html(</span>
+                    </label>
+                    <label class="segment" for="flight_radar_traffic_military">
+                      <input id="flight_radar_traffic_military" type="radio" name="flight_radar_traffic" value="military")html";
+    if (flight_radar_military_only)
+      html += " checked";
+    if (!flight_radar_active)
+      html += " disabled";
+    html += R"html(>
+)html";
+    html += "                      <span data-i18n=\"flight_radar_traffic_military_label\">";
+    html += text.flight_radar_traffic_military_label;
+    html += R"html(</span>
+                    </label>
+                  </div>
                 </div>
               </div>
             </section>
@@ -1648,6 +1893,7 @@ class SetupPageRenderer {
             const wifiSelect = document.getElementById("wifi_ssid_select");
             const wifiHidden = document.getElementById("wifi_ssid");
             const wifiPassword = document.getElementById("wifi_password");
+            const passwordToggleButtons = Array.from(document.querySelectorAll("[data-password-toggle]"));
             const timeServerRow = document.getElementById("time_server_row");
             const timeServerInput = document.getElementById("time_server_enabled");
             const timeSourceMode = document.getElementById("time_source_mode");
@@ -1659,13 +1905,25 @@ class SetupPageRenderer {
             const manualTimeDisplay = document.getElementById("manual_time_display");
             const manualTimeLocalInput = document.getElementById("manual_time_local");
             const manualTimeEpochInput = document.getElementById("manual_time_epoch");
+            const locationSection = document.getElementById("location_section");
+            const exactLocationRow = document.getElementById("exact_location_row");
+            const exactLocationInput = document.getElementById("exact_location_enabled");
+            const exactLocationFields = document.getElementById("exact_location_fields");
+            const locationLatitudeInput = document.getElementById("location_latitude");
+            const locationLongitudeInput = document.getElementById("location_longitude");
             const weatherSection = document.getElementById("weather_section");
             const weatherEnabledRow = document.getElementById("weather_enabled_row");
             const weatherEnabledInput = document.getElementById("weather_enabled");
             const weatherLocationMode = document.getElementById("weather_location_mode");
             const weatherLocationInputs = Array.from(document.querySelectorAll("input[name='weather_location_mode']"));
-            const weatherLocationFields = document.getElementById("weather_location_fields");
-            const weatherCityInput = document.getElementById("weather_city");
+            const weatherAutomaticLocationInput = document.getElementById("weather_location_ip");
+            const weatherManualLocationInput = document.getElementById("weather_location_manual");
+            const flightRadarSection = document.getElementById("flight_radar_section");
+            const flightRadarEnabledRow = document.getElementById("flight_radar_enabled_row");
+            const flightRadarEnabledInput = document.getElementById("flight_radar_enabled");
+            const flightRadarFields = document.getElementById("flight_radar_fields");
+            const flightRadarRangeInput = document.getElementById("flight_radar_range_km");
+            const flightRadarTrafficInputs = Array.from(document.querySelectorAll("input[name='flight_radar_traffic']"));
             const integrationsSection = document.getElementById("integrations_section");
             const integrationInterval = document.getElementById("integration_interval");
             const haDiscoveryInput = document.getElementById("ha_discovery");
@@ -1688,6 +1946,7 @@ class SetupPageRenderer {
             const screenOffEndDisplay = document.getElementById("screen_off_end_display");
             const screenOffStartText = document.getElementById("screen_off_start_text");
             const screenOffEndText = document.getElementById("screen_off_end_text");
+            const unitInputs = Array.from(document.querySelectorAll("input[name='units']"));
             const timeFormatField = document.getElementById("time_format_field");
             const timeFormatInputs = Array.from(document.querySelectorAll("input[name='time_format']"));
             const timeFormat24Input = document.getElementById("time_format_24h");
@@ -1705,10 +1964,14 @@ class SetupPageRenderer {
             let timeSettingsTouched = false;
             let timeFormatTouched = false;
             let weatherSettingsTouched = false;
+            let flightRadarSettingsTouched = false;
             let firmwareUploadInProgress = false;
             function syncWifiFields(networkChanged) {
               if (!wifiSelect || !wifiHidden) return;
-              wifiHidden.value = wifiSelect.value;
+              const selectedOption = wifiSelect.options[wifiSelect.selectedIndex];
+              const selectedValue = wifiSelect.value;
+              const selectedOffline = selectedOption && selectedOption.dataset.i18n === "offline_option";
+              wifiHidden.value = selectedValue || (selectedOffline ? "" : savedWifiSsid);
               if (networkChanged && wifiPassword && wifiHidden.value !== lastWifiSsid) {
                 if (wifiHidden.value === savedWifiSsid && savedWifiSsid !== "") {
                   wifiPassword.value = savedWifiPassword;
@@ -1741,12 +2004,58 @@ class SetupPageRenderer {
             function weatherSelected() {
               return wifiOnlineSelected() && weatherEnabledInput ? weatherEnabledInput.checked : false;
             }
-            function selectedWeatherLocation() {
-              return document.querySelector("input[name='weather_location_mode']:checked");
+            function flightRadarSelected() {
+              return wifiOnlineSelected() && flightRadarEnabledInput ? flightRadarEnabledInput.checked : false;
             }
-            function customWeatherLocationSelected() {
-              const selected = selectedWeatherLocation();
-              return weatherSelected() && selected && selected.value === "manual";
+            function selectedUnitSystem() {
+              const selected = document.querySelector("input[name='units']:checked");
+              return selected ? selected.value : "metric";
+            }
+            function formatFlightRadarRange(km) {
+              if (selectedUnitSystem() === "imperial") {
+                return Math.round(km * 0.621371192) + " mi";
+              }
+              return km + " km";
+            }
+            function updateFlightRadarRangeLabels() {
+              if (!flightRadarRangeInput) return;
+              Array.from(flightRadarRangeInput.options).forEach((option) => {
+                const km = Number(option.dataset.km || option.value);
+                if (Number.isFinite(km)) option.textContent = formatFlightRadarRange(km);
+              });
+            }
+            function parseCoordinateInput(input, minimum, maximum) {
+              if (!input) return null;
+              const normalized = input.value.trim().replace(",", ".");
+              if (!/^-?\d+(\.\d+)?$/.test(normalized)) return null;
+              const value = Number(normalized);
+              return Number.isFinite(value) && value >= minimum && value <= maximum ? value : null;
+            }
+            function exactLocationFieldsSelected() {
+              return Boolean(wifiOnlineSelected() && exactLocationInput && exactLocationInput.checked);
+            }
+            function exactLocationCoordinatesReady() {
+              return parseCoordinateInput(locationLatitudeInput, -90, 90) !== null &&
+                parseCoordinateInput(locationLongitudeInput, -180, 180) !== null;
+            }
+            function exactLocationSelected() {
+              return exactLocationFieldsSelected() && exactLocationCoordinatesReady();
+            }
+            function syncWeatherLocationMode() {
+              const weatherActive = weatherSelected();
+              const coordinatesReady = exactLocationCoordinatesReady();
+              if (weatherAutomaticLocationInput) {
+                weatherAutomaticLocationInput.disabled = !weatherActive;
+              }
+              if (weatherManualLocationInput) {
+                weatherManualLocationInput.disabled = !weatherActive || !coordinatesReady;
+              }
+
+              if (weatherActive && exactLocationSelected() && weatherManualLocationInput) {
+                weatherManualLocationInput.checked = true;
+              } else if (weatherAutomaticLocationInput) {
+                weatherAutomaticLocationInput.checked = true;
+              }
             }
             function applyConnectionDefaults() {
               if (!timeSettingsTouched && timeServerInput) {
@@ -1760,11 +2069,14 @@ class SetupPageRenderer {
               if (!timeFormatTouched && timeFormat24Input) timeFormat24Input.checked = true;
               if (!wifiOnlineSelected()) {
                 if (weatherEnabledInput) weatherEnabledInput.checked = false;
+                if (flightRadarEnabledInput) flightRadarEnabledInput.checked = false;
               } else if (!weatherSettingsTouched && weatherEnabledInput &&
                          weatherEnabledInput.dataset.defaultOnline === "1") {
                 weatherEnabledInput.checked = true;
-                const automaticLocation = weatherLocationInputs.find((input) => input.value === "ip");
-                if (automaticLocation) automaticLocation.checked = true;
+                syncWeatherLocationMode();
+              }
+              if (wifiOnlineSelected() && !flightRadarSettingsTouched && flightRadarEnabledInput) {
+                flightRadarEnabledInput.checked = true;
               }
             }
             function setDisabled(elements, disabled) {
@@ -1774,6 +2086,40 @@ class SetupPageRenderer {
             }
             function setDisabledClass(element, disabled) {
               if (element) element.classList.toggle("is-disabled", disabled);
+            }
+            function passwordToggleTarget(button) {
+              return button && button.dataset.passwordToggle ?
+                document.getElementById(button.dataset.passwordToggle) : null;
+            }
+            function updatePasswordToggleButton(button) {
+              const input = passwordToggleTarget(button);
+              const disabled = !input || input.disabled;
+              if (input && disabled) input.type = "password";
+              const visible = Boolean(input && input.type === "text");
+              button.disabled = disabled;
+              button.classList.toggle("is-active", visible);
+              button.setAttribute("aria-pressed", visible ? "true" : "false");
+            }
+            function updatePasswordToggleButtons() {
+              passwordToggleButtons.forEach(updatePasswordToggleButton);
+            }
+            function togglePasswordVisibility(button) {
+              const input = passwordToggleTarget(button);
+              if (!input || input.disabled) return;
+              input.type = input.type === "password" ? "text" : "password";
+              updatePasswordToggleButton(button);
+              input.focus();
+            }
+            function updateFlightRadarControls() {
+              const online = wifiOnlineSelected();
+              const active = flightRadarSelected();
+              setDisabledClass(flightRadarSection, !online);
+              setDisabledClass(flightRadarEnabledRow, !online);
+              if (flightRadarEnabledInput) flightRadarEnabledInput.disabled = !online;
+              if (flightRadarFields) flightRadarFields.classList.toggle("is-disabled", !active);
+              if (flightRadarRangeInput) flightRadarRangeInput.disabled = !active;
+              setDisabled(flightRadarTrafficInputs, !active);
+              updateFlightRadarRangeLabels();
             }
             const desktopTextQuery = window.matchMedia ?
               window.matchMedia("(hover: hover) and (pointer: fine)") : null;
@@ -1808,12 +2154,18 @@ class SetupPageRenderer {
                 timeSourceManualInput.checked = true;
               }
               if (!online && weatherEnabledInput) weatherEnabledInput.checked = false;
+              if (!online && flightRadarEnabledInput) flightRadarEnabledInput.checked = false;
+              if (!online && exactLocationInput) exactLocationInput.checked = false;
               const timeSyncActive = timeSyncSelected();
               const timeAvailable = localTimeSelected();
               const weatherActive = weatherSelected();
 
+              setDisabledClass(locationSection, !online);
+              setDisabledClass(exactLocationRow, !online);
+              if (exactLocationInput) exactLocationInput.disabled = !online;
               setDisabledClass(weatherSection, !online);
               setDisabledClass(weatherEnabledRow, !online);
+              updateFlightRadarControls();
               setDisabledClass(integrationsSection, !online);
               setDisabledClass(haRow, !online);
               setDisabledClass(mqttRow, !online);
@@ -1832,11 +2184,14 @@ class SetupPageRenderer {
               setDisabled(timeFormatInputs, !timeAvailable);
               if (weatherEnabledInput) weatherEnabledInput.disabled = !online;
               if (weatherLocationMode) weatherLocationMode.hidden = !weatherActive;
-              setDisabled(weatherLocationInputs, !weatherActive);
-              if (weatherLocationFields) weatherLocationFields.hidden = !customWeatherLocationSelected();
-              if (weatherCityInput) {
-                weatherCityInput.disabled = !customWeatherLocationSelected();
-              }
+              syncWeatherLocationMode();
+              const exactFieldsActive = exactLocationFieldsSelected();
+              if (exactLocationFields) exactLocationFields.hidden = !exactFieldsActive;
+              [locationLatitudeInput, locationLongitudeInput].forEach((input) => {
+                if (!input) return;
+                input.required = exactFieldsActive;
+                input.disabled = !exactFieldsActive;
+              });
               if (!online && haDiscoveryInput) haDiscoveryInput.checked = false;
               if (haDiscoveryInput) haDiscoveryInput.disabled = !online;
               if (mqttEnabledInput) mqttEnabledInput.disabled = !online;
@@ -1849,6 +2204,7 @@ class SetupPageRenderer {
               if (integrationInterval) integrationInterval.hidden = !integrationActive;
               setDisabled(integrationIntervalInputs, !integrationActive);
               updateNightScreenOffControls();
+              updatePasswordToggleButtons();
             }
             function pad2(value) {
               return value < 10 ? "0" + value : String(value);
@@ -2302,8 +2658,35 @@ class SetupPageRenderer {
                 updateDependentControls();
               });
             }
+            if (flightRadarEnabledInput) {
+              flightRadarEnabledInput.addEventListener("change", () => {
+                flightRadarSettingsTouched = true;
+                updateDependentControls();
+              });
+            }
+            if (flightRadarRangeInput) {
+              flightRadarRangeInput.addEventListener("change", updateFlightRadarRangeLabels);
+            }
+            unitInputs.forEach((input) => {
+              input.addEventListener("change", updateFlightRadarRangeLabels);
+            });
+            if (exactLocationInput) {
+              exactLocationInput.addEventListener("change", updateDependentControls);
+            }
+            [locationLatitudeInput, locationLongitudeInput].forEach((input) => {
+              if (!input) return;
+              input.addEventListener("input", () => {
+                if (exactLocationCoordinatesReady() && exactLocationInput)
+                  exactLocationInput.checked = true;
+                updateDependentControls();
+              });
+              input.addEventListener("change", updateDependentControls);
+            });
             weatherLocationInputs.forEach((input) => input.addEventListener("change", () => {
               weatherSettingsTouched = true;
+              if (exactLocationInput && input.checked) {
+                exactLocationInput.checked = input.value === "manual";
+              }
               updateDependentControls();
             }));
             if (haDiscoveryInput) {
@@ -2312,6 +2695,9 @@ class SetupPageRenderer {
             if (mqttEnabledInput) {
               mqttEnabledInput.addEventListener("change", updateDependentControls);
             }
+            passwordToggleButtons.forEach((button) => {
+              button.addEventListener("click", () => togglePasswordVisibility(button));
+            });
             if (wifiSelect) {
               wifiSelect.addEventListener("change", () => {
                 syncWifiFields(true);
@@ -2432,6 +2818,35 @@ class SetupPageRenderer {
     return std::string(text);
   }
 
+  static std::string flight_radar_range_display_value_(uint8_t range_km, bool imperial_units) {
+    char text[16];
+    if (imperial_units) {
+      const int miles = static_cast<int>(std::round(static_cast<double>(range_km) * 0.621371192));
+      std::snprintf(text, sizeof(text), "%d mi", miles);
+    } else {
+      std::snprintf(text, sizeof(text), "%u km", static_cast<unsigned>(range_km));
+    }
+    return std::string(text);
+  }
+
+  static std::string coordinate_input_value_(int32_t coordinate_e7) {
+    const bool negative = coordinate_e7 < 0;
+    int64_t absolute = coordinate_e7;
+    if (absolute < 0)
+      absolute = -absolute;
+    const int64_t whole = absolute / 10000000LL;
+    const int64_t fraction = absolute % 10000000LL;
+    char text[24];
+    std::snprintf(text, sizeof(text), "%s%lld.%07lld", negative ? "-" : "", static_cast<long long>(whole),
+                  static_cast<long long>(fraction));
+    std::string value(text);
+    while (value.size() > 1 && value.back() == '0')
+      value.pop_back();
+    if (!value.empty() && value.back() == '.')
+      value.push_back('0');
+    return value;
+  }
+
   static void append_air_quality_profile_option_(std::string &options, AirDot::AirQualityProfile option,
                                                  AirDot::AirQualityProfile selected) {
     options += "<option value='";
@@ -2442,6 +2857,26 @@ class SetupPageRenderer {
     options += ">";
     options += AirDot::air_quality_profile_label(option);
     options += "</option>";
+  }
+
+  static std::string flight_radar_range_options_(uint8_t selected_range_km, bool imperial_units) {
+    std::string options;
+    options.reserve(420);
+    for (uint8_t range_km = FLIGHT_RADAR_RANGE_MIN_KM; range_km <= FLIGHT_RADAR_RANGE_MAX_KM;
+         range_km = static_cast<uint8_t>(range_km + FLIGHT_RADAR_RANGE_STEP_KM)) {
+      const std::string value = std::to_string(static_cast<unsigned>(range_km));
+      options += "<option value='";
+      options += value;
+      options += "' data-km='";
+      options += value;
+      options += "'";
+      if (range_km == selected_range_km)
+        options += " selected";
+      options += ">";
+      options += flight_radar_range_display_value_(range_km, imperial_units);
+      options += "</option>";
+    }
+    return options;
   }
 
   static std::string network_options_(const std::string &selected_ssid, const SetupPageText &text) {

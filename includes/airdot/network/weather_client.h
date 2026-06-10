@@ -4,6 +4,7 @@
 #include <esp_crt_bundle.h>
 #include <esp_err.h>
 #include <esp_http_client.h>
+#include <esp_log.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 #endif
@@ -16,7 +17,6 @@
 
 #include <algorithm>
 #include <atomic>
-#include <cctype>
 #include <cmath>
 #include <cstdint>
 #include <cstring>
@@ -45,11 +45,6 @@ inline AirDot::connectivity::RetryState &ipwhois_location_retry_state_() {
   return state;
 }
 
-inline AirDot::connectivity::RetryState &open_meteo_geocoding_retry_state_() {
-  static AirDot::connectivity::RetryState state{};
-  return state;
-}
-
 inline AirDot::connectivity::RetryState &open_meteo_weather_retry_state_() {
   static AirDot::connectivity::RetryState state{};
   return state;
@@ -58,6 +53,21 @@ inline AirDot::connectivity::RetryState &open_meteo_weather_retry_state_() {
 inline std::atomic<bool> &weather_http_request_active_() {
   static std::atomic<bool> active{false};
   return active;
+}
+
+inline bool http_request_active() {
+  return weather_http_request_active_().load(std::memory_order_acquire);
+}
+
+inline void suppress_transport_logs_() {
+  static bool configured = false;
+  if (configured)
+    return;
+  configured = true;
+  esp_log_level_set("esp-tls-mbedtls", ESP_LOG_NONE);
+  esp_log_level_set("esp-tls", ESP_LOG_NONE);
+  esp_log_level_set("transport_base", ESP_LOG_NONE);
+  esp_log_level_set("HTTP_CLIENT", ESP_LOG_NONE);
 }
 
 inline bool acquire_weather_http_request_slot_(AirDot::connectivity::Service service) {
@@ -80,8 +90,6 @@ inline AirDot::connectivity::RetryState &retry_state_for_service_(AirDot::connec
   switch (service) {
     case AirDot::connectivity::Service::WEATHER_LOCATION:
       return ipwhois_location_retry_state_();
-    case AirDot::connectivity::Service::WEATHER_GEOCODING:
-      return open_meteo_geocoding_retry_state_();
     case AirDot::connectivity::Service::WEATHER:
     default:
       return open_meteo_weather_retry_state_();
@@ -107,6 +115,7 @@ inline void note_weather_service_failure_(AirDot::connectivity::Service service,
 }
 
 inline bool weather_service_start_allowed_(AirDot::connectivity::Service service) {
+  suppress_transport_logs_();
   const uint32_t now = esphome::millis();
   if (!esphome::network::is_connected()) {
     AirDot::connectivity::set_service_status(
@@ -206,7 +215,7 @@ inline bool extract_json_number_(const std::string &json, const char *key, float
   }
 }
 
-inline bool fetch_ipwhois_location_(esp_http_client_addr_type_t address_type, const char *,
+inline bool fetch_ipwhois_location_(esp_http_client_addr_type_t address_type,
                                     float &latitude, float &longitude) {
   HttpResponse response;
   esp_http_client_config_t config{};
@@ -287,103 +296,13 @@ inline void reset_ipwhois_ipv6_location_probe() {
 
 inline bool fetch_ipwhois_location(float &latitude, float &longitude) {
   if (!ipwhois_ipv6_location_suppressed_().load(std::memory_order_acquire) && has_preferred_global_ipv6_address_()) {
-    if (fetch_ipwhois_location_(HTTP_ADDR_TYPE_INET6, "IPv6", latitude, longitude))
+    if (fetch_ipwhois_location_(HTTP_ADDR_TYPE_INET6, latitude, longitude))
       return true;
 
     ipwhois_ipv6_location_suppressed_().store(true, std::memory_order_release);
   }
 
-  return fetch_ipwhois_location_(HTTP_ADDR_TYPE_INET, "IPv4", latitude, longitude);
-}
-
-inline std::string url_encode_(const std::string &value) {
-  static constexpr char HEX[] = "0123456789ABCDEF";
-  std::string encoded;
-  encoded.reserve(value.size() * 3);
-  for (unsigned char c : value) {
-    if (std::isalnum(c) || c == '-' || c == '_' || c == '.' || c == '~') {
-      encoded += static_cast<char>(c);
-    } else {
-      encoded += '%';
-      encoded += HEX[(c >> 4) & 0x0F];
-      encoded += HEX[c & 0x0F];
-    }
-  }
-  return encoded;
-}
-
-inline bool fetch_open_meteo_geocoding(const std::string &city, float &latitude, float &longitude) {
-  if (city.empty()) {
-    note_weather_service_failure_(
-        AirDot::connectivity::Service::WEATHER_GEOCODING,
-        AirDot::connectivity::ConnectivityError::CONFIG_MISSING);
-    return false;
-  }
-
-  const std::string encoded_city = url_encode_(city);
-  char url[384];
-  const int written = std::snprintf(
-      url, sizeof(url),
-      "https://geocoding-api.open-meteo.com/v1/search?name=%s&count=1&language=en&format=json",
-      encoded_city.c_str());
-  if (written <= 0 || static_cast<size_t>(written) >= sizeof(url)) {
-    return false;
-  }
-
-  HttpResponse response;
-  response.max_length = 1536;
-  esp_http_client_config_t config{};
-  config.url = url;
-  config.method = HTTP_METHOD_GET;
-  config.timeout_ms = 5000;
-  config.event_handler = http_response_event_handler_;
-  config.user_data = &response;
-  config.buffer_size = 768;
-  config.buffer_size_tx = 512;
-  config.user_agent = "";
-  config.addr_type = HTTP_ADDR_TYPE_INET;
-#if CONFIG_MBEDTLS_CERTIFICATE_BUNDLE
-  config.crt_bundle_attach = esp_crt_bundle_attach;
-#endif
-
-  esp_http_client_handle_t client = esp_http_client_init(&config);
-  if (client == nullptr) {
-    note_weather_service_failure_(
-        AirDot::connectivity::Service::WEATHER_GEOCODING,
-        AirDot::connectivity::ConnectivityError::RESOURCE_EXHAUSTED);
-    return false;
-  }
-
-  const esp_err_t error = esp_http_client_perform(client);
-  const int status_code = esp_http_client_get_status_code(client);
-  esp_http_client_cleanup(client);
-
-  if (error != ESP_OK || status_code != 200 || response.overflow) {
-    const auto classified_error = classify_http_error_(error, status_code, response.overflow);
-    note_weather_service_failure_(AirDot::connectivity::Service::WEATHER_GEOCODING, classified_error);
-    return false;
-  }
-
-  float parsed_latitude = 0.0f;
-  float parsed_longitude = 0.0f;
-  if (!extract_json_number_(response.body, "\"latitude\"", parsed_latitude) ||
-      !extract_json_number_(response.body, "\"longitude\"", parsed_longitude)) {
-    note_weather_service_failure_(
-        AirDot::connectivity::Service::WEATHER_GEOCODING,
-        AirDot::connectivity::ConnectivityError::INVALID_RESPONSE);
-    return false;
-  }
-  if (!coordinates_are_valid_(parsed_latitude, parsed_longitude)) {
-    note_weather_service_failure_(
-        AirDot::connectivity::Service::WEATHER_GEOCODING,
-        AirDot::connectivity::ConnectivityError::INVALID_RESPONSE);
-    return false;
-  }
-
-  latitude = parsed_latitude;
-  longitude = parsed_longitude;
-  note_weather_service_success_(AirDot::connectivity::Service::WEATHER_GEOCODING);
-  return true;
+  return fetch_ipwhois_location_(HTTP_ADDR_TYPE_INET, latitude, longitude);
 }
 
 inline bool fetch_ipwhois_ipv6_location(float &latitude, float &longitude) {
@@ -525,7 +444,7 @@ inline bool start_ipwhois_location_request() {
     return false;
 
   const BaseType_t created = xTaskCreate(
-      ipwhois_location_task_, "airdot_location", WEATHER_HTTP_TASK_STACK_SIZE, nullptr, 1, nullptr);
+      ipwhois_location_task_, "location", WEATHER_HTTP_TASK_STACK_SIZE, nullptr, 1, nullptr);
   if (created == pdPASS)
     return true;
 
@@ -547,100 +466,6 @@ inline int consume_ipwhois_location_result(float &latitude, float &longitude) {
 
   if (state == WEATHER_TASK_FAILED) {
     ipwhois_location_task_state_().store(WEATHER_TASK_IDLE, std::memory_order_release);
-    return -1;
-  }
-
-  return 0;
-}
-
-inline std::atomic<int> &open_meteo_geocoding_task_state_() {
-  static std::atomic<int> state{WEATHER_TASK_IDLE};
-  return state;
-}
-
-inline std::atomic<int32_t> &open_meteo_geocoding_latitude_e7_() {
-  static std::atomic<int32_t> latitude{0};
-  return latitude;
-}
-
-inline std::atomic<int32_t> &open_meteo_geocoding_longitude_e7_() {
-  static std::atomic<int32_t> longitude{0};
-  return longitude;
-}
-
-inline char *open_meteo_geocoding_city_() {
-  static char city[65]{};
-  return city;
-}
-
-inline void open_meteo_geocoding_task_(void *) {
-  esphome::watchdog::WatchdogManager watchdog(20000);
-  const std::string city(open_meteo_geocoding_city_());
-  float latitude = 0.0f;
-  float longitude = 0.0f;
-  const bool acquired = acquire_weather_http_request_slot_(AirDot::connectivity::Service::WEATHER_GEOCODING);
-  if (acquired && fetch_open_meteo_geocoding(city, latitude, longitude)) {
-    open_meteo_geocoding_latitude_e7_().store(static_cast<int32_t>(latitude * 10000000.0f),
-                                              std::memory_order_release);
-    open_meteo_geocoding_longitude_e7_().store(static_cast<int32_t>(longitude * 10000000.0f),
-                                               std::memory_order_release);
-    open_meteo_geocoding_task_state_().store(WEATHER_TASK_SUCCESS, std::memory_order_release);
-  } else {
-    open_meteo_geocoding_task_state_().store(WEATHER_TASK_FAILED, std::memory_order_release);
-  }
-  if (acquired)
-    release_weather_http_request_slot_();
-
-  vTaskDelete(nullptr);
-}
-
-inline bool start_open_meteo_geocoding_request(const std::string &city) {
-  if (city.empty()) {
-    AirDot::connectivity::set_service_status(
-        AirDot::connectivity::Service::WEATHER_GEOCODING,
-        AirDot::connectivity::ConnectivityStatus::CONFIG_MISSING,
-        AirDot::connectivity::ConnectivityError::CONFIG_MISSING, esphome::millis());
-    return false;
-  }
-
-  if (!weather_service_start_allowed_(AirDot::connectivity::Service::WEATHER_GEOCODING))
-    return false;
-
-  int expected = WEATHER_TASK_IDLE;
-  if (!open_meteo_geocoding_task_state_().compare_exchange_strong(
-          expected, WEATHER_TASK_RUNNING, std::memory_order_acq_rel))
-    return false;
-
-  std::snprintf(open_meteo_geocoding_city_(), 65, "%s", city.c_str());
-
-  const BaseType_t created = xTaskCreate(
-      open_meteo_geocoding_task_, "airdot_geocode", WEATHER_HTTP_TASK_STACK_SIZE, nullptr, 1, nullptr);
-  if (created == pdPASS)
-    return true;
-
-  open_meteo_geocoding_task_state_().store(WEATHER_TASK_FAILED, std::memory_order_release);
-  note_weather_service_failure_(
-      AirDot::connectivity::Service::WEATHER_GEOCODING,
-      AirDot::connectivity::ConnectivityError::RESOURCE_EXHAUSTED);
-  return false;
-}
-
-inline bool open_meteo_geocoding_request_matches(const std::string &city) {
-  return std::strcmp(open_meteo_geocoding_city_(), city.c_str()) == 0;
-}
-
-inline int consume_open_meteo_geocoding_result(float &latitude, float &longitude) {
-  const int state = open_meteo_geocoding_task_state_().load(std::memory_order_acquire);
-  if (state == WEATHER_TASK_SUCCESS) {
-    latitude = static_cast<float>(open_meteo_geocoding_latitude_e7_().load(std::memory_order_acquire)) / 10000000.0f;
-    longitude =
-        static_cast<float>(open_meteo_geocoding_longitude_e7_().load(std::memory_order_acquire)) / 10000000.0f;
-    open_meteo_geocoding_task_state_().store(WEATHER_TASK_IDLE, std::memory_order_release);
-    return 1;
-  }
-
-  if (state == WEATHER_TASK_FAILED) {
-    open_meteo_geocoding_task_state_().store(WEATHER_TASK_IDLE, std::memory_order_release);
     return -1;
   }
 
@@ -744,7 +569,7 @@ inline bool start_open_meteo_weather_request(float latitude, float longitude) {
   open_meteo_request_longitude_e7_().store(static_cast<int32_t>(longitude * 10000000.0f), std::memory_order_release);
 
   const BaseType_t created = xTaskCreate(
-      open_meteo_weather_task_, "airdot_weather", WEATHER_HTTP_TASK_STACK_SIZE, nullptr, 1, nullptr);
+      open_meteo_weather_task_, "weather", WEATHER_HTTP_TASK_STACK_SIZE, nullptr, 1, nullptr);
   if (created == pdPASS)
     return true;
 
@@ -796,6 +621,8 @@ inline bool fetch_ipwhois_location(float &latitude, float &longitude) {
   return false;
 }
 
+inline bool http_request_active() { return false; }
+
 inline bool fetch_ipwhois_ipv6_location(float &latitude, float &longitude) {
   (void) latitude;
   (void) longitude;
@@ -811,22 +638,6 @@ inline int consume_ipwhois_location_result(float &latitude, float &longitude) {
 }
 
 inline void reset_ipwhois_ipv6_location_probe() {}
-
-inline bool start_open_meteo_geocoding_request(const std::string &city) {
-  (void) city;
-  return false;
-}
-
-inline bool open_meteo_geocoding_request_matches(const std::string &city) {
-  (void) city;
-  return false;
-}
-
-inline int consume_open_meteo_geocoding_result(float &latitude, float &longitude) {
-  (void) latitude;
-  (void) longitude;
-  return -1;
-}
 
 inline bool start_open_meteo_weather_request(float latitude, float longitude) {
   (void) latitude;

@@ -683,6 +683,16 @@ interval:
       - if:
           condition:
             lambda: |-
+              return id(flight_radar_page)->is_showing() &&
+                  (!AirDot::onboarding::has_saved_wifi_settings() ||
+                   !AirDot::onboarding::load_flight_radar_enabled());
+          then:
+            - lambda: |-
+                id(air_quality_summary_page)->get_parent()->show_page(
+                    id(air_quality_summary_page)->index, LV_SCREEN_LOAD_ANIM_NONE, 0);
+      - if:
+          condition:
+            lambda: |-
               return id(ui_alert_active) == 1 &&
                   id(ui_alert_until_ms) != 0 &&
                   static_cast<int32_t>(millis() - id(ui_alert_until_ms)) >= 0;
