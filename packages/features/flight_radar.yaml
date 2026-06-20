@@ -5,6 +5,12 @@ globals:
     initial_value: "0"
 
 script:
+  - id: flight_radar_request_update_after_page_show
+    mode: restart
+    then:
+      - delay: 300ms
+      - script.execute: flight_radar_request_update
+
   - id: flight_radar_request_update
     mode: restart
     then:
@@ -41,7 +47,6 @@ script:
                 }
                 id(flight_radar_next_request_ms) =
                     now + AirDot::flight_radar::FLIGHT_RADAR_REQUEST_INTERVAL_MS;
-            - script.execute: ui_refresh_flight_radar_page
 
 interval:
   - interval: 250ms

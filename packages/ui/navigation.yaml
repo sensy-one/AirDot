@@ -58,7 +58,12 @@ script:
             } else if (flight_radar_page_available) {
               id(flight_radar_page)->get_parent()->show_page(
                 id(flight_radar_page)->index, LV_SCREEN_LOAD_ANIM_NONE, 0);
-              id(flight_radar_request_update).execute();
+              const uint32_t radar_request_at_ms = millis() + 300UL;
+              if (id(flight_radar_next_request_ms) == 0 ||
+                  static_cast<int32_t>(millis() - id(flight_radar_next_request_ms)) >= 0) {
+                id(flight_radar_next_request_ms) = radar_request_at_ms;
+              }
+              id(flight_radar_request_update_after_page_show).execute();
             } else {
               id(pm1_history_page)->get_parent()->show_page(
                 id(pm1_history_page)->index, LV_SCREEN_LOAD_ANIM_NONE, 0);
@@ -69,7 +74,12 @@ script:
             if (flight_radar_page_available) {
               id(flight_radar_page)->get_parent()->show_page(
                 id(flight_radar_page)->index, LV_SCREEN_LOAD_ANIM_NONE, 0);
-              id(flight_radar_request_update).execute();
+              const uint32_t radar_request_at_ms = millis() + 300UL;
+              if (id(flight_radar_next_request_ms) == 0 ||
+                  static_cast<int32_t>(millis() - id(flight_radar_next_request_ms)) >= 0) {
+                id(flight_radar_next_request_ms) = radar_request_at_ms;
+              }
+              id(flight_radar_request_update_after_page_show).execute();
             } else {
               id(pm1_history_page)->get_parent()->show_page(
                 id(pm1_history_page)->index, LV_SCREEN_LOAD_ANIM_NONE, 0);

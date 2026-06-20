@@ -31,7 +31,7 @@ inline constexpr uint8_t FLIGHT_RADAR_RADIUS_DEFAULT_KM = 25;
 inline constexpr uint8_t FLIGHT_RADAR_RADIUS_MAX_KM = 50;
 inline constexpr float FLIGHT_RADAR_RADIUS_KM = static_cast<float>(FLIGHT_RADAR_RADIUS_DEFAULT_KM);
 inline constexpr uint8_t FLIGHT_RADAR_MAX_AIRCRAFT = 10;
-inline constexpr uint32_t FLIGHT_RADAR_REQUEST_INTERVAL_MS = 1000UL;
+inline constexpr uint32_t FLIGHT_RADAR_REQUEST_INTERVAL_MS = 5000UL;
 
 struct Aircraft {
   char callsign[9]{};
