@@ -2,7 +2,7 @@
 
 The smart indoor air-quality display that works standalone, offline, or connected to Home Assistant.
 
-![AirDot banner](banner.png)
+![AirDot banner](banner.webp)
 
 AirDot combines real-time air-quality sensing, a sharp 480 x 480 color display, local setup, standalone operation, optional Home Assistant integration, optional MQTT publishing, time, weather, Flight Radar, alerts, and on-device history pages in one compact ESPHome-powered device.
 
