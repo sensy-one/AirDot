@@ -1,19 +1,70 @@
+globals:
+  - id: ui_auto_page_switch_last_ms
+    type: uint32_t
+    restore_value: false
+    initial_value: "0"
+
 script:
-  - id: ui_show_next_page
+  - id: ui_show_overview_page
     mode: restart
     then:
       - lambda: |-
           const uint32_t now_ms = millis();
-          const uint32_t snooze_until_ms = now_ms + 30000UL;
+          id(ui_auto_page_switch_last_ms) = now_ms;
+          constexpr uint32_t HAZARD_SNOOZE_MS = 15UL * 60UL * 1000UL;
+          constexpr uint32_t FOCUS_SNOOZE_MS = HAZARD_SNOOZE_MS;
+          constexpr uint32_t SOUND_SNOOZE_MS = HAZARD_SNOOZE_MS;
+          const uint32_t focus_snooze_until_ms = now_ms + FOCUS_SNOOZE_MS;
+          const uint32_t sound_snooze_until_ms = now_ms + SOUND_SNOOZE_MS;
           const auto air_quality_profile = AirDot::onboarding::load_air_quality_profile();
           const int air_quality_level = AirDot::sanitized_air_quality_level(
             air_quality_profile, id(pm25).state, id(pm10).state, id(voc).state, id(nox).state, id(co2).state);
           if (air_quality_level >= 4) {
-            id(air_quality_hazard_sound_snooze_until_ms) = snooze_until_ms;
+            id(air_quality_hazard_sound_snooze_until_ms) = sound_snooze_until_ms;
             id(air_quality_hazard_last_chirp_ms) = 0;
             id(hazard_alert_chirp).stop();
             id(alert_buzzer_pwm).turn_off();
           }
+
+          id(air_quality_hazard_focus_snooze_until_ms) = focus_snooze_until_ms;
+          id(air_quality_hazard_focus_metric) = -1;
+          id(air_quality_hazard_focus_last_switch_ms) = 0;
+          id(air_quality_hazard_focus_hazard_since_ms) = 0;
+          id(air_quality_hazard_focus_clear_since_ms) = 0;
+          id(air_quality_hazard_focus_status_since_ms) = 0;
+          id(air_quality_hazard_focus_return_page) = -1;
+          id(air_quality_summary_page)->get_parent()->show_page(
+            id(air_quality_summary_page)->index, LV_SCREEN_LOAD_ANIM_NONE, 0);
+
+  - id: ui_show_next_page
+    mode: restart
+    then:
+      - script.execute:
+          id: ui_show_next_page_internal
+          user_initiated: true
+
+  - id: ui_show_next_page_internal
+    mode: restart
+    parameters:
+      user_initiated: bool
+    then:
+      - lambda: |-
+          const uint32_t now_ms = millis();
+          id(ui_auto_page_switch_last_ms) = now_ms;
+          constexpr uint32_t HAZARD_SNOOZE_MS = 15UL * 60UL * 1000UL;
+          constexpr uint32_t FOCUS_SNOOZE_MS = HAZARD_SNOOZE_MS;
+          constexpr uint32_t SOUND_SNOOZE_MS = HAZARD_SNOOZE_MS;
+          auto snooze_hazard_sound = [&]() {
+            const auto air_quality_profile = AirDot::onboarding::load_air_quality_profile();
+            const int air_quality_level = AirDot::sanitized_air_quality_level(
+              air_quality_profile, id(pm25).state, id(pm10).state, id(voc).state, id(nox).state, id(co2).state);
+            if (air_quality_level < 4)
+              return;
+            id(air_quality_hazard_sound_snooze_until_ms) = now_ms + SOUND_SNOOZE_MS;
+            id(air_quality_hazard_last_chirp_ms) = 0;
+            id(hazard_alert_chirp).stop();
+            id(alert_buzzer_pwm).turn_off();
+          };
 
           const bool hazard_focus_pending_or_active =
             id(air_quality_hazard_focus_hazard_since_ms) != 0 ||
@@ -21,7 +72,12 @@ script:
             id(air_quality_hazard_focus_clear_since_ms) != 0 ||
             id(air_quality_hazard_focus_status_since_ms) != 0;
           if (hazard_focus_pending_or_active) {
+            if (!user_initiated)
+              return;
+
+            const uint32_t snooze_until_ms = now_ms + FOCUS_SNOOZE_MS;
             const int return_page = id(air_quality_hazard_focus_return_page);
+            snooze_hazard_sound();
             id(air_quality_hazard_focus_snooze_until_ms) = snooze_until_ms;
             id(air_quality_hazard_focus_metric) = -1;
             id(air_quality_hazard_focus_last_switch_ms) = 0;
@@ -39,6 +95,10 @@ script:
             return;
           }
 
+          if (user_initiated) {
+            snooze_hazard_sound();
+          }
+
           const bool manual_time_available =
               AirDot::onboarding::load_manual_time_enabled() &&
               id(sntp_time).utcnow().is_valid();
@@ -51,19 +111,23 @@ script:
               AirDot::onboarding::has_saved_wifi_settings() &&
               AirDot::onboarding::load_flight_radar_enabled();
 
+          auto show_flight_radar_page = [&]() {
+            id(flight_radar_page)->get_parent()->show_page(
+              id(flight_radar_page)->index, LV_SCREEN_LOAD_ANIM_NONE, 0);
+            const uint32_t radar_request_at_ms = millis() + 300UL;
+            if (id(flight_radar_next_request_ms) == 0 ||
+                static_cast<int32_t>(millis() - id(flight_radar_next_request_ms)) >= 0) {
+              id(flight_radar_next_request_ms) = radar_request_at_ms;
+            }
+            id(flight_radar_request_update_after_page_show).execute();
+          };
+
           if (id(air_quality_summary_page)->is_showing()) {
             if (time_page_available) {
               id(time_page)->get_parent()->show_page(
                 id(time_page)->index, LV_SCREEN_LOAD_ANIM_NONE, 0);
             } else if (flight_radar_page_available) {
-              id(flight_radar_page)->get_parent()->show_page(
-                id(flight_radar_page)->index, LV_SCREEN_LOAD_ANIM_NONE, 0);
-              const uint32_t radar_request_at_ms = millis() + 300UL;
-              if (id(flight_radar_next_request_ms) == 0 ||
-                  static_cast<int32_t>(millis() - id(flight_radar_next_request_ms)) >= 0) {
-                id(flight_radar_next_request_ms) = radar_request_at_ms;
-              }
-              id(flight_radar_request_update_after_page_show).execute();
+              show_flight_radar_page();
             } else {
               id(pm1_history_page)->get_parent()->show_page(
                 id(pm1_history_page)->index, LV_SCREEN_LOAD_ANIM_NONE, 0);
@@ -72,14 +136,7 @@ script:
           }
           if (id(time_page)->is_showing()) {
             if (flight_radar_page_available) {
-              id(flight_radar_page)->get_parent()->show_page(
-                id(flight_radar_page)->index, LV_SCREEN_LOAD_ANIM_NONE, 0);
-              const uint32_t radar_request_at_ms = millis() + 300UL;
-              if (id(flight_radar_next_request_ms) == 0 ||
-                  static_cast<int32_t>(millis() - id(flight_radar_next_request_ms)) >= 0) {
-                id(flight_radar_next_request_ms) = radar_request_at_ms;
-              }
-              id(flight_radar_request_update_after_page_show).execute();
+              show_flight_radar_page();
             } else {
               id(pm1_history_page)->get_parent()->show_page(
                 id(pm1_history_page)->index, LV_SCREEN_LOAD_ANIM_NONE, 0);
@@ -143,3 +200,41 @@ script:
           }
           id(air_quality_summary_page)->get_parent()->show_page(
             id(air_quality_summary_page)->index, LV_SCREEN_LOAD_ANIM_NONE, 0);
+
+interval:
+  - interval: 1s
+    then:
+      - if:
+          condition:
+            lambda: |-
+              const uint32_t now_ms = millis();
+              auto pause_auto_switch = [&]() {
+                id(ui_auto_page_switch_last_ms) = now_ms;
+                return false;
+              };
+
+              if (!AirDot::onboarding::load_auto_page_switch_enabled())
+                return pause_auto_switch();
+              if (AirDot::onboarding::setup_or_onboarding_active(
+                    id(setup_ap_active), id(setup_portal_active), id(onboarding_ui_active)))
+                return pause_auto_switch();
+              if (id(ui_alert_active) != 0 || id(page_button_pressed_at_ms) != 0 ||
+                  !id(display_panel).is_screen_powered())
+                return pause_auto_switch();
+              if (id(air_quality_hazard_focus_hazard_since_ms) != 0 ||
+                  id(air_quality_hazard_focus_metric) != -1 ||
+                  id(air_quality_hazard_focus_clear_since_ms) != 0 ||
+                  id(air_quality_hazard_focus_status_since_ms) != 0)
+                return pause_auto_switch();
+
+              const uint32_t interval_ms =
+                static_cast<uint32_t>(AirDot::onboarding::load_monitoring_update_interval_seconds()) * 1000UL;
+              if (id(ui_auto_page_switch_last_ms) == 0) {
+                id(ui_auto_page_switch_last_ms) = now_ms;
+                return false;
+              }
+              return static_cast<uint32_t>(now_ms - id(ui_auto_page_switch_last_ms)) >= interval_ms;
+          then:
+            - script.execute:
+                id: ui_show_next_page_internal
+                user_initiated: false

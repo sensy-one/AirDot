@@ -58,6 +58,7 @@ static constexpr uint32_t MANUAL_TIME_PREF_KEY = 2918394843UL;
 static constexpr uint32_t WEATHER_SYNC_PREF_KEY = 2918394844UL;
 static constexpr uint32_t SEN66_TEMPERATURE_OFFSET_CENTI_C_PREF_KEY = 2918394845UL;
 static constexpr uint32_t DISPLAY_ALERT_WAKE_SCREEN_PREF_KEY = 2918394846UL;
+static constexpr uint32_t AUTO_PAGE_SWITCH_PREF_KEY = 2918394849UL;
 static constexpr int32_t LATITUDE_MIN_E7 = -900000000;
 static constexpr int32_t LATITUDE_MAX_E7 = 900000000;
 static constexpr int32_t LONGITUDE_MIN_E7 = -1800000000;
@@ -825,6 +826,11 @@ inline CachedUint8Preference &display_alert_wake_screen_pref_() {
   return cache;
 }
 
+inline CachedUint8Preference &auto_page_switch_pref_() {
+  static CachedUint8Preference cache{AUTO_PAGE_SWITCH_PREF_KEY, 0, 0, false, false, {}};
+  return cache;
+}
+
 inline CachedUint8Preference &ui_language_pref_() {
   static CachedUint8Preference cache{
       UI_LANGUAGE_PREF_KEY,
@@ -1547,6 +1553,15 @@ inline bool load_display_alert_wake_screen_enabled() {
 inline void save_display_alert_wake_screen_enabled(bool enabled) {
   uint8_t value = enabled ? 1 : 0;
   save_cached_uint8_preference_(display_alert_wake_screen_pref_(), value);
+}
+
+inline bool load_auto_page_switch_enabled() {
+  return load_cached_uint8_preference_(auto_page_switch_pref_()) == 1;
+}
+
+inline void save_auto_page_switch_enabled(bool enabled) {
+  uint8_t value = enabled ? 1 : 0;
+  save_cached_uint8_preference_(auto_page_switch_pref_(), value);
 }
 
 inline bool load_hazard_focus_mode_enabled() {

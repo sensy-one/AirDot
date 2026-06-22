@@ -15,6 +15,10 @@ font:
       - '¡¢£¤¥¦§¨©ª«¬­®¯°±²³´µ¶·¸¹º»¼½¾¿ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖ×ØÙÚÛÜÝÞßàáâãäåæçèéêëìíîïðñòóôõö÷øùúûüýþÿ'
       - 'ĀāĂăĄąĆćĈĉĊċČčĎďĐđĒēĔĕĖėĘęĚěĜĝĞğĠġĢģĤĥĦħĨĩĪīĬĭĮįİıĲĳĴĵĶķĸĹĺĻļĽľĿŀŁłŃńŅņŇňŉŊŋŌōŎŏŐőŒœŔŕŖŗŘřŚśŜŝŞşŠšŢţŤťŦŧŨũŪūŬŭŮůŰűŲųŴŵŶŷŸŹźŻżŽžſ'
       - '‐‑–—―‗‘’‚‛“”„†‡•‥…‧‰′″‹›‼⁄₣₤₦₧₨₩₪₫€₱₹₺₼₽℅ℓ№™Ω℮■◊○●⁰⁴⁵⁶⁷⁸⁹⁺⁻⁼⁽⁾ⁿ₀₁₂₃₄₅₆₇₈₉₊₋₌₍₎'
+    extras: &alert_emoji_font_extras
+      - file: "gfonts://Noto Emoji"
+        glyphs:
+          - "✅⚠️🚨❌💡🌡🔒🚪⚡🔋💧🔥🏠⏰"
   - file: "gfonts://Roboto"
     id: ui_font_radar_tag
     size: 18
@@ -23,6 +27,7 @@ font:
     id: ui_font_modal_title
     size: 31
     glyphs: *alert_font_glyphs
+    extras: *alert_emoji_font_extras
   - file: "gfonts://Roboto"
     id: ui_font_status
     size: 52

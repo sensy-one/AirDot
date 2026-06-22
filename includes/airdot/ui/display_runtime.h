@@ -28,6 +28,85 @@ inline lv_color_t display_text_color() {
   return onboarding::load_dark_mode_enabled() ? color(0xFF, 0xFF, 0xFF) : color(0x00, 0x00, 0x00);
 }
 
+inline char ascii_lower_(char value) {
+  return value >= 'A' && value <= 'Z' ? static_cast<char>(value + ('a' - 'A')) : value;
+}
+
+inline bool ascii_equals_ignore_case_(const std::string &value, const char *expected) {
+  if (expected == nullptr)
+    return false;
+
+  size_t index = 0;
+  while (index < value.size() && expected[index] != '\0') {
+    if (ascii_lower_(value[index]) != ascii_lower_(expected[index]))
+      return false;
+    index++;
+  }
+  return index == value.size() && expected[index] == '\0';
+}
+
+inline bool parse_hex_digit_(char value, uint8_t &digit) {
+  if (value >= '0' && value <= '9') {
+    digit = static_cast<uint8_t>(value - '0');
+    return true;
+  }
+  if (value >= 'A' && value <= 'F') {
+    digit = static_cast<uint8_t>(value - 'A' + 10);
+    return true;
+  }
+  if (value >= 'a' && value <= 'f') {
+    digit = static_cast<uint8_t>(value - 'a' + 10);
+    return true;
+  }
+  return false;
+}
+
+inline bool parse_display_color(const std::string &value, uint32_t &rgb) {
+  size_t begin = 0;
+  size_t end = value.size();
+  while (begin < end && (value[begin] == ' ' || value[begin] == '\t' || value[begin] == '\r' || value[begin] == '\n'))
+    begin++;
+  while (end > begin &&
+         (value[end - 1] == ' ' || value[end - 1] == '\t' || value[end - 1] == '\r' || value[end - 1] == '\n'))
+    end--;
+
+  std::string text = value.substr(begin, end - begin);
+  if (text.empty() || ascii_equals_ignore_case_(text, "default") || ascii_equals_ignore_case_(text, "none"))
+    return false;
+
+  auto named_color = [&](const char *name, uint32_t color) -> bool {
+    if (!ascii_equals_ignore_case_(text, name))
+      return false;
+    rgb = color;
+    return true;
+  };
+  if (named_color("white", 0xFFFFFF) || named_color("black", 0x000000) || named_color("red", 0xFF2B2B) ||
+      named_color("orange", 0xFF8C00) || named_color("yellow", 0xFFD400) || named_color("green", 0x20E840) ||
+      named_color("blue", 0x00A3FF) || named_color("cyan", 0x00D4FF) || named_color("purple", 0x8B5CFF) ||
+      named_color("pink", 0xFF006E)) {
+    return true;
+  }
+
+  if (!text.empty() && text[0] == '#')
+    text.erase(0, 1);
+  else if (text.size() >= 2 && text[0] == '0' && (text[1] == 'x' || text[1] == 'X'))
+    text.erase(0, 2);
+
+  if (text.size() != 6)
+    return false;
+
+  uint32_t parsed = 0;
+  for (char current : text) {
+    uint8_t digit = 0;
+    if (!parse_hex_digit_(current, digit))
+      return false;
+    parsed = (parsed << 4) | digit;
+  }
+
+  rgb = parsed;
+  return true;
+}
+
 inline std::string truncate_text(std::string text, size_t max_length) {
   if (text.size() > max_length)
     text.resize(max_length);
@@ -102,14 +181,44 @@ inline bool alert_font_codepoint_supported_(uint32_t codepoint) {
   static constexpr uint32_t SUPPORTED[] = {
       0x2010, 0x2011, 0x2013, 0x2014, 0x2015, 0x2017, 0x2018, 0x2019, 0x201A, 0x201B,
       0x201C, 0x201D, 0x201E, 0x2020, 0x2021, 0x2022, 0x2025, 0x2026, 0x2027, 0x2030,
-      0x2032, 0x2033, 0x2039, 0x203A, 0x203C, 0x2044, 0x20A3, 0x20A4, 0x20A6, 0x20A7,
-      0x20A8, 0x20A9, 0x20AA, 0x20AB, 0x20AC, 0x20B1, 0x20B9, 0x20BA, 0x20BC, 0x20BD,
-      0x2105, 0x2113, 0x2116, 0x2122, 0x2126, 0x212E, 0x25A0, 0x25CA, 0x25CB, 0x25CF,
+      0x2032, 0x2033, 0x2039, 0x203A, 0x203C, 0x2044,
       0x2070, 0x2074, 0x2075, 0x2076, 0x2077, 0x2078, 0x2079, 0x207A, 0x207B, 0x207C,
       0x207D, 0x207E, 0x207F, 0x2080, 0x2081, 0x2082, 0x2083, 0x2084, 0x2085, 0x2086,
       0x2087, 0x2088, 0x2089, 0x208A, 0x208B, 0x208C, 0x208D, 0x208E,
+      0x20A3, 0x20A4, 0x20A6, 0x20A7, 0x20A8, 0x20A9, 0x20AA, 0x20AB, 0x20AC, 0x20B1,
+      0x20B9, 0x20BA, 0x20BC, 0x20BD, 0x2105, 0x2113, 0x2116, 0x2122, 0x2126, 0x212E,
+      0x2139, 0x23F0, 0x25A0, 0x25CA, 0x25CB, 0x25CF, 0x2665, 0x2699, 0x26A0, 0x26A1,
+      0x2705, 0x2714, 0x2716, 0x274C, 0x2753, 0x2754, 0x2755, 0x2757, 0x2764, 0x2B50,
+      0x1F319, 0x1F321, 0x1F3A5, 0x1F3B5, 0x1F3E0, 0x1F440, 0x1F4A1, 0x1F4A7,
+      0x1F4A8, 0x1F4CD, 0x1F4E6, 0x1F4F1, 0x1F4F7, 0x1F4FA, 0x1F504, 0x1F507,
+      0x1F50A, 0x1F50B, 0x1F50C, 0x1F511, 0x1F512, 0x1F513, 0x1F514, 0x1F525,
+      0x1F5D1, 0x1F697, 0x1F6A8, 0x1F6AA, 0x1F6CF, 0x1F6DC, 0x1F9CD, 0x1F9F9,
+      0x1FA9F, 0x1FAAB,
   };
   return std::binary_search(SUPPORTED, SUPPORTED + sizeof(SUPPORTED) / sizeof(SUPPORTED[0]), codepoint);
+}
+
+inline uint32_t alert_symbol_codepoint_(uint32_t codepoint) {
+  switch (codepoint) {
+    case 0x2605:
+      return 0x2B50;
+    case 0x26D4:
+      return 0x274C;
+    case 0x2713:
+      return 0x2714;
+    case 0x2715:
+    case 0x2717:
+    case 0x2718:
+      return 0x2716;
+    default:
+      return 0;
+  }
+}
+
+inline bool alert_text_drop_codepoint_(uint32_t codepoint) {
+  return codepoint == 0x200D || codepoint == 0x20E3 || (codepoint >= 0x2600 && codepoint <= 0x27BF) ||
+         (codepoint >= 0xFE00 && codepoint <= 0xFE0F) || (codepoint >= 0x1F000 && codepoint <= 0x1FAFF) ||
+         (codepoint >= 0xE0020 && codepoint <= 0xE007F);
 }
 
 inline void append_utf8_codepoint_(std::string &text, uint32_t codepoint) {
@@ -156,8 +265,14 @@ inline std::string sanitize_alert_text(const std::string &text, size_t max_lengt
       codepoint = ' ';
     if (codepoint >= 0x0300 && codepoint <= 0x036F)
       continue;
-    if (!alert_font_codepoint_supported_(codepoint))
+    const uint32_t symbol_codepoint = alert_symbol_codepoint_(codepoint);
+    if (symbol_codepoint != 0)
+      codepoint = symbol_codepoint;
+    if (!alert_font_codepoint_supported_(codepoint)) {
+      if (alert_text_drop_codepoint_(codepoint))
+        continue;
       codepoint = '?';
+    }
 
     std::string encoded;
     append_utf8_codepoint_(encoded, codepoint);

@@ -120,7 +120,13 @@ script:
             id(lux_history_page), id(lux_history_title_label), id(lux_history_max_label),
             id(lux_history_empty_label), id(lux_history_min_label), id(lux_current_value_label), id(lux_unit_label));
 
+          const auto modal_text =
+            id(ui_alert_active) != 0 && id(onboarding_ui_active) == 0 && id(ui_alert_text_color_set) != 0
+              ? lv_color_hex(id(ui_alert_text_color))
+              : text;
           set_background(id(modal_overlay_layer));
-          set_text(id(modal_overlay_title_label));
-          set_text(id(modal_overlay_body_label));
-          set_text(id(modal_overlay_primary_button_label));
+          AirDot::set_text_color(id(modal_overlay_title_label), modal_text);
+          AirDot::set_text_color(id(modal_overlay_body_label), modal_text);
+          AirDot::set_text_color(id(modal_overlay_primary_button_label), modal_text);
+          AirDot::set_text_color(id(modal_overlay_primary_button_left_bracket_label), modal_text);
+          AirDot::set_text_color(id(modal_overlay_primary_button_right_bracket_label), modal_text);

@@ -12,6 +12,7 @@ source = project_dir / "src/esphome/components/mqtt/mqtt_backend_esp32.cpp"
 mqtt_client = project_dir / "src/esphome/components/mqtt/mqtt_client.cpp"
 mqtt_client_header = project_dir / "src/esphome/components/mqtt/mqtt_client.h"
 api_server = project_dir / "src/esphome/components/api/api_server.cpp"
+api_user_services = project_dir / "src/esphome/components/api/user_services.h"
 wifi_component = project_dir / "src/esphome/components/wifi/wifi_component.cpp"
 wifi_component_header = project_dir / "src/esphome/components/wifi/wifi_component.h"
 web_server_idf = project_dir / "src/esphome/components/web_server_idf/web_server_idf.cpp"
@@ -76,6 +77,180 @@ def replace_range(path, start, end, new):
     end_index += len(end)
     stage_patch_text(path, text[:start_index] + new + text[end_index:])
 
+
+replace_once(
+    api_user_services,
+    """  UserServiceBase(const char *name, const std::array<const char *, sizeof...(Ts)> &arg_names,
+                  enums::SupportsResponseType supports_response = enums::SUPPORTS_RESPONSE_NONE)
+      : name_(name), arg_names_(arg_names), supports_response_(supports_response) {
+    this->key_ = fnv1_hash(name);
+  }
+""",
+    """  UserServiceBase(const char *name, const std::array<const char *, sizeof...(Ts)> &arg_names,
+                  enums::SupportsResponseType supports_response = enums::SUPPORTS_RESPONSE_NONE)
+      : name_(name), arg_names_(arg_names), supports_response_(supports_response) {
+    this->key_ = fnv1_hash(name);
+    if (this->key_ == fnv1_hash("show_display_alert") && sizeof...(Ts) == 6)
+      this->min_args_ = 4;
+  }
+""",
+)
+
+replace_once(
+    api_user_services,
+    """  uint32_t key_{0};
+  enums::SupportsResponseType supports_response_{enums::SUPPORTS_RESPONSE_NONE};
+""",
+    """  uint32_t key_{0};
+  size_t min_args_{sizeof...(Ts)};
+  enums::SupportsResponseType supports_response_{enums::SUPPORTS_RESPONSE_NONE};
+""",
+)
+
+replace_once(
+    api_user_services,
+    (
+        """  bool execute_service(const ExecuteServiceRequest &req) override {
+    if (req.key != this->key_)
+      return false;
+    if (req.args.size() != sizeof...(Ts))
+      return false;
+#ifdef USE_API_USER_DEFINED_ACTION_RESPONSES
+    this->execute_(req.args, req.call_id, req.return_response, std::make_index_sequence<sizeof...(Ts)>{});
+#else
+    this->execute_(req.args, 0, false, std::make_index_sequence<sizeof...(Ts)>{});
+#endif
+    return true;
+  }
+
+#ifdef USE_API_USER_DEFINED_ACTION_RESPONSES
+  bool execute_service(const ExecuteServiceRequest &req, uint32_t action_call_id) override {
+    if (req.key != this->key_)
+      return false;
+    if (req.args.size() != sizeof...(Ts))
+      return false;
+    this->execute_(req.args, action_call_id, req.return_response, std::make_index_sequence<sizeof...(Ts)>{});
+    return true;
+  }
+#endif
+
+ protected:
+  virtual void execute(uint32_t call_id, bool return_response, Ts... x) = 0;
+  template<typename ArgsContainer, size_t... S>
+  void execute_(const ArgsContainer &args, uint32_t call_id, bool return_response, std::index_sequence<S...> /*type*/) {
+    this->execute(call_id, return_response, (get_execute_arg_value<Ts>(args[S]))...);
+  }
+""",
+        """  bool execute_service(const ExecuteServiceRequest &req) override {
+    if (req.key != this->key_)
+      return false;
+    if (req.args.size() > sizeof...(Ts))
+      return false;
+#ifdef USE_API_USER_DEFINED_ACTION_RESPONSES
+    this->execute_(req.args, req.call_id, req.return_response, std::make_index_sequence<sizeof...(Ts)>{});
+#else
+    this->execute_(req.args, 0, false, std::make_index_sequence<sizeof...(Ts)>{});
+#endif
+    return true;
+  }
+
+#ifdef USE_API_USER_DEFINED_ACTION_RESPONSES
+  bool execute_service(const ExecuteServiceRequest &req, uint32_t action_call_id) override {
+    if (req.key != this->key_)
+      return false;
+    if (req.args.size() > sizeof...(Ts))
+      return false;
+    this->execute_(req.args, action_call_id, req.return_response, std::make_index_sequence<sizeof...(Ts)>{});
+    return true;
+  }
+#endif
+
+ protected:
+  virtual void execute(uint32_t call_id, bool return_response, Ts... x) = 0;
+  template<typename T, typename ArgsContainer> T get_execute_arg_value_or_default_(const ArgsContainer &args, size_t index) {
+    return index < args.size() ? get_execute_arg_value<T>(args[index]) : T{};
+  }
+  template<typename ArgsContainer, size_t... S>
+  void execute_(const ArgsContainer &args, uint32_t call_id, bool return_response, std::index_sequence<S...> /*type*/) {
+    this->execute(call_id, return_response, (get_execute_arg_value_or_default_<Ts>(args, S))...);
+  }
+""",
+        """  bool execute_service(const ExecuteServiceRequest &req) override {
+    if (req.key != this->key_)
+      return false;
+    if (req.args.size() > sizeof...(Ts))
+      return false;
+    const size_t min_args = sizeof...(Ts) >= 2 ? sizeof...(Ts) - 2 : sizeof...(Ts);
+    if (req.args.size() < min_args)
+      return false;
+#ifdef USE_API_USER_DEFINED_ACTION_RESPONSES
+    this->execute_(req.args, req.call_id, req.return_response, std::make_index_sequence<sizeof...(Ts)>{});
+#else
+    this->execute_(req.args, 0, false, std::make_index_sequence<sizeof...(Ts)>{});
+#endif
+    return true;
+  }
+
+#ifdef USE_API_USER_DEFINED_ACTION_RESPONSES
+  bool execute_service(const ExecuteServiceRequest &req, uint32_t action_call_id) override {
+    if (req.key != this->key_)
+      return false;
+    if (req.args.size() > sizeof...(Ts))
+      return false;
+    const size_t min_args = sizeof...(Ts) >= 2 ? sizeof...(Ts) - 2 : sizeof...(Ts);
+    if (req.args.size() < min_args)
+      return false;
+    this->execute_(req.args, action_call_id, req.return_response, std::make_index_sequence<sizeof...(Ts)>{});
+    return true;
+  }
+#endif
+
+ protected:
+  virtual void execute(uint32_t call_id, bool return_response, Ts... x) = 0;
+  template<typename T, typename ArgsContainer> T get_execute_arg_value_or_default_(const ArgsContainer &args, size_t index) {
+    return index < args.size() ? get_execute_arg_value<T>(args[index]) : T{};
+  }
+  template<typename ArgsContainer, size_t... S>
+  void execute_(const ArgsContainer &args, uint32_t call_id, bool return_response, std::index_sequence<S...> /*type*/) {
+    this->execute(call_id, return_response, (get_execute_arg_value_or_default_<Ts>(args, S))...);
+  }
+""",
+    ),
+    """  bool execute_service(const ExecuteServiceRequest &req) override {
+    if (req.key != this->key_)
+      return false;
+    if (req.args.size() > sizeof...(Ts) || req.args.size() < this->min_args_)
+      return false;
+#ifdef USE_API_USER_DEFINED_ACTION_RESPONSES
+    this->execute_(req.args, req.call_id, req.return_response, std::make_index_sequence<sizeof...(Ts)>{});
+#else
+    this->execute_(req.args, 0, false, std::make_index_sequence<sizeof...(Ts)>{});
+#endif
+    return true;
+  }
+
+#ifdef USE_API_USER_DEFINED_ACTION_RESPONSES
+  bool execute_service(const ExecuteServiceRequest &req, uint32_t action_call_id) override {
+    if (req.key != this->key_)
+      return false;
+    if (req.args.size() > sizeof...(Ts) || req.args.size() < this->min_args_)
+      return false;
+    this->execute_(req.args, action_call_id, req.return_response, std::make_index_sequence<sizeof...(Ts)>{});
+    return true;
+  }
+#endif
+
+ protected:
+  virtual void execute(uint32_t call_id, bool return_response, Ts... x) = 0;
+  template<typename T, typename ArgsContainer> T get_execute_arg_value_or_default_(const ArgsContainer &args, size_t index) {
+    return index < args.size() ? get_execute_arg_value<T>(args[index]) : T{};
+  }
+  template<typename ArgsContainer, size_t... S>
+  void execute_(const ArgsContainer &args, uint32_t call_id, bool return_response, std::index_sequence<S...> /*type*/) {
+    this->execute(call_id, return_response, (get_execute_arg_value_or_default_<Ts>(args, S))...);
+  }
+""",
+)
 
 replace_once(
     header,

@@ -411,7 +411,7 @@ inline const char *date_format_text(UiLanguage language) {
     case UiLanguage::EN:
       return "{weekday} {month} {day}";
     case UiLanguage::DE:
-      return "{weekday} {day}. {month}";
+      return "{weekday} {day} {month}";
     case UiLanguage::NL:
       return "{weekday} {day} {month}";
     case UiLanguage::FR:
@@ -762,7 +762,6 @@ struct SetupPageText {
   const char *display_alert_wake_screen_description;
   const char *integrations_title;
   const char *integrations_note;
-  const char *publishing_interval_label;
   const char *audio_alerts_title;
   const char *audio_alerts_description;
   const char *location_title;
@@ -803,6 +802,9 @@ struct SetupPageText {
   const char *dark_mode_description;
   const char *adaptive_brightness_title;
   const char *adaptive_brightness_description;
+  const char *auto_page_switch_title;
+  const char *auto_page_switch_description;
+  const char *update_interval_label;
   const char *night_screen_off_title;
   const char *night_screen_off_description;
   const char *hazard_focus_title;
@@ -936,7 +938,6 @@ inline SetupPageText setup_page_text(AirDot::UiLanguage language) {
         "Turn on the display when Home Assistant sends an alert.",
         "Integrations",
         "Connect AirDot to Home Assistant or an MQTT server.",
-        "Publish interval",
         "Sound alerts",
         "Play a warning tone when a measurement reaches a dangerous level.",
         "Location",
@@ -977,6 +978,9 @@ inline SetupPageText setup_page_text(AirDot::UiLanguage language) {
         "Use a dark display theme.",
         "Automatic brightness",
         "Adjust brightness automatically based on ambient light.",
+        "Automatic screen switching",
+        "Cycle through the display screens automatically.",
+        "Update interval",
         "Night mode",
         "Turn off the display during the selected hours.",
         "Focus on critical values",
@@ -1040,7 +1044,6 @@ inline SetupPageText setup_page_text(AirDot::UiLanguage language) {
         "Schaltet das Display ein, wenn Home Assistant eine Meldung sendet.",
         "Integrationen",
         "Verbinde AirDot mit Home Assistant oder einem MQTT-Server.",
-        "Sendeintervall",
         "Tonwarnungen",
         "Spiele einen Warnton ab, wenn eine Messung einen gefährlichen Wert erreicht.",
         "Standort",
@@ -1081,6 +1084,9 @@ inline SetupPageText setup_page_text(AirDot::UiLanguage language) {
         "Verwende eine dunkle Bildschirmdarstellung.",
         "Automatische Helligkeit",
         "Passe die Helligkeit automatisch an das Umgebungslicht an.",
+        "Automatischer Bildschirmwechsel",
+        "Wechselt automatisch zwischen den Bildschirmen.",
+        "Aktualisierungsintervall",
         "Nachtmodus",
         "Schalte den Bildschirm während der eingestellten Zeiten aus.",
         "Fokus bei kritischen Werten",
@@ -1144,7 +1150,6 @@ inline SetupPageText setup_page_text(AirDot::UiLanguage language) {
         "Zet het scherm aan wanneer Home Assistant een melding stuurt.",
         "Koppelingen",
         "Koppel AirDot aan Home Assistant of een MQTT-server.",
-        "Publicatie-interval",
         "Geluidswaarschuwingen",
         "Speel een waarschuwingstoon af wanneer een meting een gevaarlijk niveau bereikt.",
         "Locatie",
@@ -1185,6 +1190,9 @@ inline SetupPageText setup_page_text(AirDot::UiLanguage language) {
         "Gebruik een donkere schermweergave.",
         "Automatische helderheid",
         "Pas de helderheid automatisch aan op basis van het omgevingslicht.",
+        "Automatisch scherm wisselen",
+        "Wissel automatisch tussen de schermen.",
+        "Update-interval",
         "Nachtstand",
         "Schakel het scherm uit tijdens de ingestelde uren.",
         "Focus bij kritieke waarden",
@@ -1248,7 +1256,6 @@ inline SetupPageText setup_page_text(AirDot::UiLanguage language) {
         "Allume l’écran lorsque Home Assistant envoie une alerte.",
         "Intégrations",
         "Connectez AirDot à Home Assistant ou à un serveur MQTT.",
-        "Intervalle de publication",
         "Alertes sonores",
         "Émettez un signal d’alerte lorsqu’une mesure atteint un niveau dangereux.",
         "Localisation",
@@ -1289,6 +1296,9 @@ inline SetupPageText setup_page_text(AirDot::UiLanguage language) {
         "Utilisez un affichage sombre.",
         "Luminosité automatique",
         "Ajustez automatiquement la luminosité selon la lumière ambiante.",
+        "Changement automatique d’écran",
+        "Faites défiler automatiquement les écrans.",
+        "Intervalle de mise à jour",
         "Mode nuit",
         "Éteignez l’écran pendant les heures définies.",
         "Focus sur les valeurs critiques",
@@ -1396,7 +1406,6 @@ inline void append_setup_page_translation_json(std::string &html, AirDot::UiLang
   append_json_field_(html, "display_alert_wake_screen_description", text.display_alert_wake_screen_description, first);
   append_json_field_(html, "integrations_title", text.integrations_title, first);
   append_json_field_(html, "integrations_note", text.integrations_note, first);
-  append_json_field_(html, "publishing_interval_label", text.publishing_interval_label, first);
   append_json_field_(html, "audio_alerts_title", text.audio_alerts_title, first);
   append_json_field_(html, "audio_alerts_description", text.audio_alerts_description, first);
   append_json_field_(html, "location_title", text.location_title, first);
@@ -1437,6 +1446,9 @@ inline void append_setup_page_translation_json(std::string &html, AirDot::UiLang
   append_json_field_(html, "dark_mode_description", text.dark_mode_description, first);
   append_json_field_(html, "adaptive_brightness_title", text.adaptive_brightness_title, first);
   append_json_field_(html, "adaptive_brightness_description", text.adaptive_brightness_description, first);
+  append_json_field_(html, "auto_page_switch_title", text.auto_page_switch_title, first);
+  append_json_field_(html, "auto_page_switch_description", text.auto_page_switch_description, first);
+  append_json_field_(html, "update_interval_label", text.update_interval_label, first);
   append_json_field_(html, "night_screen_off_title", text.night_screen_off_title, first);
   append_json_field_(html, "night_screen_off_description", text.night_screen_off_description, first);
   append_json_field_(html, "hazard_focus_title", text.hazard_focus_title, first);

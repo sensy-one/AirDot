@@ -9,6 +9,7 @@ api:
         duration_seconds: int
         sound_enabled: bool
         sound_duration_ms: int
+        text_color: string
       then:
         - if:
             condition:
@@ -18,6 +19,14 @@ api:
               - lambda: |-
                   id(ui_alert_title) = AirDot::sanitize_alert_text(title, 64);
                   id(ui_alert_message) = AirDot::sanitize_alert_text(message, 240);
+
+                  uint32_t parsed_color = 0xFFFFFF;
+                  if (AirDot::parse_display_color(text_color, parsed_color)) {
+                    id(ui_alert_text_color) = parsed_color;
+                  } else {
+                    id(ui_alert_text_color) = 0xFFFFFF;
+                  }
+                  id(ui_alert_text_color_set) = 1;
 
                   uint32_t seconds = 10;
                   if (duration_seconds >= 0)

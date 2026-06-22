@@ -91,6 +91,14 @@ globals:
     type: std::string
     restore_value: false
     initial_value: '""'
+  - id: ui_alert_text_color
+    type: uint32_t
+    restore_value: false
+    initial_value: "0"
+  - id: ui_alert_text_color_set
+    type: int
+    restore_value: false
+    initial_value: "0"
 
 script:
   - id: setup_display_restore_bandwidth
@@ -472,6 +480,8 @@ script:
           id(ui_alert_until_ms) = 0;
           id(ui_alert_title).clear();
           id(ui_alert_message).clear();
+          id(ui_alert_text_color) = 0;
+          id(ui_alert_text_color_set) = 0;
       - if:
           condition:
             lambda: "return id(onboarding_ui_active) == 0;"
@@ -517,15 +527,18 @@ script:
                 lv_label_set_text(id(modal_overlay_primary_button_right_bracket_label), "");
                 lv_obj_add_flag(id(modal_overlay_primary_button_left_bracket_label), LV_OBJ_FLAG_HIDDEN);
                 lv_obj_add_flag(id(modal_overlay_primary_button_right_bracket_label), LV_OBJ_FLAG_HIDDEN);
-                lv_label_set_text(id(modal_overlay_title_label), title.c_str());
-                lv_label_set_text(id(modal_overlay_body_label), message.c_str());
                 const std::string button_text =
                     AirDot::onboarding::dismiss_button_text(ui_language);
                 const std::string button_display =
                     button_text.empty() ? std::string() : std::string("[ ") + button_text + " ]";
+                const auto text_color =
+                    id(ui_alert_text_color_set) != 0
+                        ? lv_color_hex(id(ui_alert_text_color))
+                        : AirDot::display_text_color();
+                lv_label_set_text(id(modal_overlay_title_label), title.c_str());
+                lv_label_set_text(id(modal_overlay_body_label), message.c_str());
                 lv_label_set_text(id(modal_overlay_primary_button_label), button_display.c_str());
                 lv_obj_clear_flag(id(modal_overlay_primary_button_group), LV_OBJ_FLAG_HIDDEN);
-                const auto text_color = AirDot::display_text_color();
                 const auto hidden_bracket_color = AirDot::display_background_color();
                 lv_obj_set_style_bg_color(id(modal_overlay_layer), hidden_bracket_color, LV_PART_MAIN);
                 lv_obj_set_style_bg_opa(id(modal_overlay_layer), LV_OPA_COVER, LV_PART_MAIN);

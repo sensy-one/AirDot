@@ -34,8 +34,6 @@ setup_page:
   mqtt_password_label: Password
   mqtt_topic_prefix_label: Topic prefix
   optional_placeholder: Optional
-  publishing_interval_label: Publish interval
-
   air_quality_title: Air quality
   air_quality_note: Choose the guideline AirDot uses to assess air quality.
   air_quality_profile_label: Guideline
@@ -129,6 +127,10 @@ setup_page:
 
   adaptive_brightness_title: Automatic brightness
   adaptive_brightness_description: Adjust brightness automatically based on ambient light.
+
+  auto_page_switch_title: Automatic screen switching
+  auto_page_switch_description: Cycle through the display screens automatically.
+  update_interval_label: Update interval
 
   save_button: Save
   footer_note: Hold the action button to open setup again later.

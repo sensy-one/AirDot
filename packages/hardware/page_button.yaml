@@ -7,6 +7,14 @@ globals:
     type: uint32_t
     restore_value: false
     initial_value: "0"
+  - id: page_button_last_short_release_ms
+    type: uint32_t
+    restore_value: false
+    initial_value: "0"
+  - id: page_button_double_click_pending
+    type: int
+    restore_value: false
+    initial_value: "0"
   - id: page_button_wake_only_release
     type: int
     restore_value: false
@@ -25,6 +33,24 @@ globals:
     initial_value: "0"
 
 script:
+  - id: page_button_short_press_next_page
+    mode: restart
+    then:
+      - delay: 350ms
+      - if:
+          condition:
+            lambda: |-
+              return id(page_button_last_short_release_ms) != 0 &&
+                  id(page_button_pressed_at_ms) == 0 &&
+                  id(page_button_double_click_pending) == 0 &&
+                  id(ui_alert_active) == 0 &&
+                  id(onboarding_ui_active) == 0;
+          then:
+            - lambda: "id(page_button_last_short_release_ms) = 0;"
+            - script.execute: ui_show_next_page
+          else:
+            - lambda: "id(page_button_last_short_release_ms) = 0;"
+
   - id: page_button_factory_reset_hold
     mode: restart
     then:
@@ -222,8 +248,8 @@ interval:
 binary_sensor:
   - platform: gpio
     id: page_button
-    name: Page Button
-    internal: true
+    name: Action Button
+    icon: mdi:gesture-tap-button
     pin:
       number: ${button_page_pin}
       mode:
@@ -245,6 +271,20 @@ binary_sensor:
               now.is_valid() &&
               AirDot::onboarding::screen_off_window_active_at_utc(static_cast<uint32_t>(now.timestamp)) &&
               !id(display_panel).is_screen_powered();
+        - if:
+            condition:
+              lambda: |-
+                const uint32_t last_release_ms = id(page_button_last_short_release_ms);
+                return last_release_ms != 0 &&
+                    id(page_button_wake_only_release) == 0 &&
+                    id(ui_alert_active) == 0 &&
+                    id(onboarding_ui_active) == 0 &&
+                    static_cast<uint32_t>(millis() - last_release_ms) <= 400UL;
+            then:
+              - script.stop: page_button_short_press_next_page
+              - lambda: |-
+                  id(page_button_double_click_pending) = 1;
+                  id(page_button_last_short_release_ms) = 0;
         - script.execute: page_button_factory_reset_hold
         - script.execute: page_button_long_press_hold
         - script.execute: display_wake_from_sleep_button
@@ -265,6 +305,8 @@ binary_sensor:
                   id(page_button_factory_reset_started) = 0;
                   id(page_button_wake_only_release) = 0;
                   id(page_button_long_press_handled) = 0;
+                  id(page_button_last_short_release_ms) = 0;
+                  id(page_button_double_click_pending) = 0;
               - if:
                   condition:
                     lambda: "return id(onboarding_ui_active) != 0;"
@@ -281,17 +323,25 @@ binary_sensor:
                     - lambda: |-
                         id(page_button_wake_only_release) = 0;
                         id(page_button_long_press_handled) = 0;
+                        id(page_button_last_short_release_ms) = 0;
+                        id(page_button_double_click_pending) = 0;
                   else:
                     - if:
                         condition:
                           lambda: "return id(page_button_long_press_handled) != 0;"
                         then:
-                          - lambda: "id(page_button_long_press_handled) = 0;"
+                          - lambda: |-
+                              id(page_button_long_press_handled) = 0;
+                              id(page_button_last_short_release_ms) = 0;
+                              id(page_button_double_click_pending) = 0;
                         else:
                           - if:
                               condition:
                                 lambda: "return id(ui_alert_active) != 0;"
                               then:
+                                - lambda: |-
+                                    id(page_button_last_short_release_ms) = 0;
+                                    id(page_button_double_click_pending) = 0;
                                 - script.execute: ui_hide_display_alert
                               else:
                                 - if:
@@ -302,6 +352,19 @@ binary_sensor:
                                           condition:
                                             lambda: "return id(onboarding_ui_active) == 0;"
                                           then:
-                                            - script.execute: ui_show_next_page
+                                            - if:
+                                                condition:
+                                                  lambda: "return id(page_button_double_click_pending) != 0;"
+                                                then:
+                                                  - lambda: |-
+                                                      id(page_button_double_click_pending) = 0;
+                                                      id(page_button_last_short_release_ms) = 0;
+                                                  - script.execute: ui_show_overview_page
+                                                else:
+                                                  - lambda: "id(page_button_last_short_release_ms) = millis();"
+                                                  - script.execute: page_button_short_press_next_page
                                           else:
+                                            - lambda: |-
+                                                id(page_button_last_short_release_ms) = 0;
+                                                id(page_button_double_click_pending) = 0;
                                             - script.execute: onboarding_short_press_action

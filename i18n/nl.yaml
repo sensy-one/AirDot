@@ -34,8 +34,6 @@ setup_page:
   mqtt_password_label: Wachtwoord
   mqtt_topic_prefix_label: Topic-prefix
   optional_placeholder: Optioneel
-  publishing_interval_label: Publicatie-interval
-
   air_quality_title: Luchtkwaliteit
   air_quality_note: Kies welke richtlijn AirDot gebruikt om de luchtkwaliteit te beoordelen.
   air_quality_profile_label: Richtlijn
@@ -129,6 +127,10 @@ setup_page:
 
   adaptive_brightness_title: Automatische helderheid
   adaptive_brightness_description: Pas de helderheid automatisch aan op basis van het omgevingslicht.
+
+  auto_page_switch_title: Automatisch scherm wisselen
+  auto_page_switch_description: Wissel automatisch tussen de schermen.
+  update_interval_label: Update-interval
 
   save_button: Opslaan
   footer_note: Open deze setup later opnieuw door de actieknop ingedrukt te houden.

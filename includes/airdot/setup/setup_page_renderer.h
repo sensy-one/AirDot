@@ -9,6 +9,9 @@
 
 #include "esphome/components/web_server_base/web_server_base.h"
 
+#ifndef AIRDOT_FIRMWARE_VERSION
+#define AIRDOT_FIRMWARE_VERSION "unknown"
+#endif
 
 namespace AirDot::onboarding {
 
@@ -101,6 +104,7 @@ class SetupPageRenderer {
     const DisplayBrightness display_brightness = load_display_brightness();
     const bool dark_mode_enabled = load_dark_mode_enabled();
     const bool auto_dim_enabled = load_auto_dim_enabled();
+    const bool auto_page_switch_enabled = load_auto_page_switch_enabled();
     const bool stored_night_screen_off_enabled = load_night_screen_off_enabled();
     const std::string screen_off_start_value = time_input_value_(load_screen_off_start_minutes());
     const std::string screen_off_end_value = time_input_value_(load_screen_off_end_minutes());
@@ -590,8 +594,15 @@ class SetupPageRenderer {
     .switch {
       position: relative;
       flex: 0 0 auto;
+      display: inline-block;
       width: 56px;
       height: 34px;
+      padding: 0;
+      border: 0;
+      background: transparent;
+      appearance: none;
+      -webkit-appearance: none;
+      cursor: pointer;
     }
     .switch input {
       position: absolute;
@@ -601,6 +612,9 @@ class SetupPageRenderer {
       height: 100%;
       cursor: pointer;
     }
+    .switch:disabled {
+      cursor: not-allowed;
+    }
     .slider {
       position: absolute;
       inset: 0;
@@ -608,6 +622,7 @@ class SetupPageRenderer {
       background: rgba(255, 255, 255, 0.16);
       border: 1px solid rgba(255, 255, 255, 0.12);
       transition: background 180ms ease, border-color 180ms ease;
+      pointer-events: none;
     }
     .slider::after {
       content: "";
@@ -626,14 +641,23 @@ class SetupPageRenderer {
       background: #f5f5f5;
       border-color: rgba(255, 255, 255, 0.42);
     }
+    .switch[role="switch"][aria-checked="true"] .slider {
+      background: #f5f5f5;
+      border-color: rgba(255, 255, 255, 0.42);
+    }
     .switch input:checked + .slider::after {
+      transform: translate(22px, -50%);
+      background: #111111;
+    }
+    .switch[role="switch"][aria-checked="true"] .slider::after {
       transform: translate(22px, -50%);
       background: #111111;
     }
     .switch input:disabled {
       cursor: not-allowed;
     }
-    .switch input:disabled + .slider {
+    .switch input:disabled + .slider,
+    .switch:disabled .slider {
       opacity: 0.48;
     }
     .segmented {
@@ -762,12 +786,29 @@ class SetupPageRenderer {
       margin-top: 16px;
     }
     .firmware-header {
-      display: grid;
-      align-items: start;
-      gap: 6px;
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
     }
+    .firmware-header > div { min-width: 0; }
     .firmware-header .section-note {
-      margin-top: 0;
+      margin-top: 4px;
+    }
+    .firmware-version-badge {
+      flex: 0 0 auto;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 28px;
+      padding: 0 10px;
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      border-radius: 999px;
+      color: rgba(245, 247, 251, 0.86);
+      background: rgba(255, 255, 255, 0.08);
+      font-size: 12px;
+      line-height: 1;
+      white-space: nowrap;
     }
     .firmware-upload {
       display: grid;
@@ -1029,33 +1070,35 @@ class SetupPageRenderer {
               </div>
 
 )html";
-    html += "              <div id=\"integration_interval\" class=\"field integration-dependent\"";
+    html += "              <input id=\"update_interval_value\" type=\"hidden\" name=\"update_interval\" value=\"";
+    html += std::to_string(static_cast<unsigned>(monitoring_update_interval_seconds));
+    html += "\">\n              <div id=\"integration_interval\" class=\"field\"";
     if (!(ha_discovery_enabled || mqtt_enabled))
       html += " hidden";
-    html += ">\n                <label for=\"interval_10\" data-i18n=\"publishing_interval_label\">";
-    html += text.publishing_interval_label;
-    html += "</label>\n                <div class=\"segmented three\" role=\"radiogroup\" data-i18n-aria-label=\"publishing_interval_label\" aria-label=\"";
-    html += text.publishing_interval_label;
+    html += ">\n                <label for=\"integration_interval_10\" data-i18n=\"update_interval_label\">";
+    html += text.update_interval_label;
+    html += "</label>\n                <div class=\"segmented three\" role=\"radiogroup\" data-i18n-aria-label=\"update_interval_label\" aria-label=\"";
+    html += text.update_interval_label;
     html += R"html(">
-                <label class="segment" for="interval_5">
+                <label class="segment" for="integration_interval_5">
 )html";
-    html += "                  <input id=\"interval_5\" type=\"radio\" name=\"update_interval\" value=\"5\"";
+    html += "                  <input id=\"integration_interval_5\" type=\"radio\" name=\"integration_update_interval\" value=\"5\" data-update-interval-value";
     if (monitoring_update_interval_seconds == 5)
       html += " checked";
     html += R"html(>
                   <span>5s</span>
                 </label>
-                <label class="segment" for="interval_10">
+                <label class="segment" for="integration_interval_10">
 )html";
-    html += "                  <input id=\"interval_10\" type=\"radio\" name=\"update_interval\" value=\"10\"";
+    html += "                  <input id=\"integration_interval_10\" type=\"radio\" name=\"integration_update_interval\" value=\"10\" data-update-interval-value";
     if (monitoring_update_interval_seconds == 10)
       html += " checked";
     html += R"html(>
                   <span>10s</span>
                 </label>
-                <label class="segment" for="interval_30">
+                <label class="segment" for="integration_interval_30">
 )html";
-    html += "                  <input id=\"interval_30\" type=\"radio\" name=\"update_interval\" value=\"30\"";
+    html += "                  <input id=\"integration_interval_30\" type=\"radio\" name=\"integration_update_interval\" value=\"30\" data-update-interval-value";
     if (monitoring_update_interval_seconds == 30)
       html += " checked";
     html += R"html(>
@@ -1063,6 +1106,7 @@ class SetupPageRenderer {
                 </label>
                 </div>
               </div>
+
             </section>
 
             <section class="section" aria-labelledby="air-quality-title">
@@ -1841,6 +1885,65 @@ class SetupPageRenderer {
                 </label>
               </div>
 
+              <div class="toggle-row">
+                <div class="toggle-copy">
+)html";
+    html += "                  <p class=\"toggle-title\" data-i18n=\"auto_page_switch_title\">";
+    html += text.auto_page_switch_title;
+    html += "</p>\n                  <p class=\"toggle-description\" data-i18n=\"auto_page_switch_description\">";
+    html += text.auto_page_switch_description;
+    html += R"html(</p>
+                </div>
+
+)html";
+    html += "                <input id=\"auto_page_switch_value\" type=\"hidden\" name=\"auto_page_switch\" value=\"";
+    html += (auto_page_switch_enabled ? "1" : "0");
+    html += "\">\n                <button id=\"auto_page_switch\" class=\"switch\" type=\"button\" role=\"switch\" aria-checked=\"";
+    html += (auto_page_switch_enabled ? "true" : "false");
+    html += "\" data-i18n-aria-label=\"auto_page_switch_title\" aria-label=\"";
+    html += text.auto_page_switch_title;
+    html += R"html(">
+)html";
+    html += R"html(                  <span class="slider" aria-hidden="true"></span>
+                </button>
+              </div>
+
+)html";
+    html += "              <div id=\"auto_page_switch_interval\" class=\"field\"";
+    if (!auto_page_switch_enabled)
+      html += " hidden";
+    html += ">\n                <label for=\"auto_page_switch_interval_10\" data-i18n=\"update_interval_label\">";
+    html += text.update_interval_label;
+    html += "</label>\n                <div class=\"segmented three\" role=\"radiogroup\" data-i18n-aria-label=\"update_interval_label\" aria-label=\"";
+    html += text.update_interval_label;
+    html += R"html(">
+                <label class="segment" for="auto_page_switch_interval_5">
+)html";
+    html += "                  <input id=\"auto_page_switch_interval_5\" type=\"radio\" name=\"display_update_interval\" value=\"5\" data-update-interval-value";
+    if (monitoring_update_interval_seconds == 5)
+      html += " checked";
+    html += R"html(>
+                  <span>5s</span>
+                </label>
+                <label class="segment" for="auto_page_switch_interval_10">
+)html";
+    html += "                  <input id=\"auto_page_switch_interval_10\" type=\"radio\" name=\"display_update_interval\" value=\"10\" data-update-interval-value";
+    if (monitoring_update_interval_seconds == 10)
+      html += " checked";
+    html += R"html(>
+                  <span>10s</span>
+                </label>
+                <label class="segment" for="auto_page_switch_interval_30">
+)html";
+    html += "                  <input id=\"auto_page_switch_interval_30\" type=\"radio\" name=\"display_update_interval\" value=\"30\" data-update-interval-value";
+    if (monitoring_update_interval_seconds == 30)
+      html += " checked";
+    html += R"html(>
+                  <span>30s</span>
+                </label>
+                </div>
+              </div>
+
             </section>
 
             <div class="actions">
@@ -1855,6 +1958,7 @@ class SetupPageRenderer {
     html += R"html(
           <section class="section firmware-section" aria-labelledby="firmware-title">
             <div class="section-header firmware-header">
+              <div>
 )html";
     html += "                <h2 id=\"firmware-title\" data-i18n=\"firmware_title\">";
     html += text.firmware_title;
@@ -1862,6 +1966,11 @@ class SetupPageRenderer {
     html += "              <p class=\"section-note\" data-i18n=\"firmware_note\">";
     html += text.firmware_note;
     html += R"html(</p>
+              </div>
+)html";
+    html += "              <span class=\"firmware-version-badge\" title=\"Current firmware version\">";
+    html += html_escape_(AIRDOT_FIRMWARE_VERSION);
+    html += R"html(</span>
             </div>
 
             <div class="firmware-upload">
@@ -1930,6 +2039,8 @@ class SetupPageRenderer {
             const flightRadarTrafficInputs = Array.from(document.querySelectorAll("input[name='flight_radar_traffic']"));
             const integrationsSection = document.getElementById("integrations_section");
             const integrationInterval = document.getElementById("integration_interval");
+            const autoPageSwitchInterval = document.getElementById("auto_page_switch_interval");
+            const updateIntervalValue = document.getElementById("update_interval_value");
             const haDiscoveryInput = document.getElementById("ha_discovery");
             const haRow = document.getElementById("ha_row");
             const mqttRow = document.getElementById("mqtt_row");
@@ -1937,7 +2048,11 @@ class SetupPageRenderer {
             const mqttFields = document.getElementById("mqtt_fields");
             const mqttBrokerInput = document.getElementById("mqtt_broker");
             const mqttFieldInputs = mqttFields ? Array.from(mqttFields.querySelectorAll("input")) : [];
-            const integrationIntervalInputs = Array.from(document.querySelectorAll("input[name='update_interval']"));
+            const integrationIntervalInputs = Array.from(document.querySelectorAll("input[name='integration_update_interval']"));
+            const autoPageSwitchIntervalInputs = Array.from(document.querySelectorAll("input[name='display_update_interval']"));
+            const updateIntervalInputs = Array.from(document.querySelectorAll("[data-update-interval-value]"));
+            const autoPageSwitchInput = document.getElementById("auto_page_switch");
+            const autoPageSwitchValue = document.getElementById("auto_page_switch_value");
             const nightScreenOffRow = document.getElementById("night_screen_off_row");
             const timeZoneScheduleInput = document.getElementById("time_zone_offset_schedule");
             const nightScreenOffInput = document.getElementById("night_screen_off");
@@ -2091,6 +2206,28 @@ class SetupPageRenderer {
             function setDisabledClass(element, disabled) {
               if (element) element.classList.toggle("is-disabled", disabled);
             }
+            function switchEnabled(control) {
+              return control ? control.getAttribute("aria-checked") === "true" : false;
+            }
+            function setSwitchEnabled(control, hiddenInput, enabled) {
+              if (!control) return;
+              control.setAttribute("aria-checked", enabled ? "true" : "false");
+              if (hiddenInput) hiddenInput.value = enabled ? "1" : "0";
+            }
+            function toggleSwitch(control, hiddenInput) {
+              if (!control || control.disabled) return;
+              setSwitchEnabled(control, hiddenInput, !switchEnabled(control));
+            }
+            function syncUpdateIntervalControls() {
+              if (!updateIntervalValue) return;
+              updateIntervalInputs.forEach((input) => {
+                input.checked = input.value === updateIntervalValue.value;
+              });
+            }
+            function setUpdateInterval(value) {
+              if (updateIntervalValue) updateIntervalValue.value = value;
+              syncUpdateIntervalControls();
+            }
             function passwordToggleTarget(button) {
               return button && button.dataset.passwordToggle ?
                 document.getElementById(button.dataset.passwordToggle) : null;
@@ -2208,8 +2345,12 @@ class SetupPageRenderer {
               updateMqttFields();
               const integrationActive = online &&
                 ((haDiscoveryInput && haDiscoveryInput.checked) || (mqttEnabledInput && mqttEnabledInput.checked));
+              const autoPageSwitchActive = switchEnabled(autoPageSwitchInput);
               if (integrationInterval) integrationInterval.hidden = !integrationActive;
+              if (autoPageSwitchInterval) autoPageSwitchInterval.hidden = !autoPageSwitchActive;
               setDisabled(integrationIntervalInputs, !integrationActive);
+              setDisabled(autoPageSwitchIntervalInputs, !autoPageSwitchActive);
+              syncUpdateIntervalControls();
               updateNightScreenOffControls();
               updatePasswordToggleButtons();
             }
@@ -2677,6 +2818,11 @@ class SetupPageRenderer {
             unitInputs.forEach((input) => {
               input.addEventListener("change", updateFlightRadarRangeLabels);
             });
+            updateIntervalInputs.forEach((input) => {
+              input.addEventListener("change", () => {
+                if (input.checked) setUpdateInterval(input.value);
+              });
+            });
             if (exactLocationInput) {
               exactLocationInput.addEventListener("change", updateDependentControls);
             }
@@ -2701,6 +2847,12 @@ class SetupPageRenderer {
             }
             if (mqttEnabledInput) {
               mqttEnabledInput.addEventListener("change", updateDependentControls);
+            }
+            if (autoPageSwitchInput) {
+              autoPageSwitchInput.addEventListener("click", () => {
+                toggleSwitch(autoPageSwitchInput, autoPageSwitchValue);
+                updateDependentControls();
+              });
             }
             passwordToggleButtons.forEach((button) => {
               button.addEventListener("click", () => togglePasswordVisibility(button));

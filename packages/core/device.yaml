@@ -12,6 +12,7 @@ esphome:
     build_flags:
       - -DAIRDOT_DEFAULT_MQTT_TOPIC_PREFIX=\"${mqtt_default_topic_prefix}\"
       - -DAIRDOT_DEFAULT_SEN66_TEMPERATURE_OFFSET_C=${sen66_temperature_offset_c}
+      - -DAIRDOT_FIRMWARE_VERSION=\"${device_firmware_version}\"
   includes:
     - includes/airdot/ui/sensor_history_graph.h
     - includes/airdot/generated/i18n_texts.h

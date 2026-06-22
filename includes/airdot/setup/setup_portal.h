@@ -241,12 +241,14 @@ class SetupHandler : public AsyncWebHandler {
     save_display_brightness(parse_display_brightness_(bounded_arg_(request, "brightness", 8)));
     save_dark_mode_enabled(request->hasArg("dark_mode"));
     save_auto_dim_enabled(request->hasArg("auto_dim"));
+    const bool auto_page_switch_enabled = bounded_arg_(request, "auto_page_switch", 1) == "1";
+    save_auto_page_switch_enabled(auto_page_switch_enabled);
     save_night_screen_off_enabled((time_server_enabled || manual_time_valid) && request->hasArg("night_screen_off"));
     save_screen_off_start_minutes(
         parse_minute_of_day_(bounded_arg_(request, "screen_off_start", 8), load_screen_off_start_minutes()));
     save_screen_off_end_minutes(
         parse_minute_of_day_(bounded_arg_(request, "screen_off_end", 8), load_screen_off_end_minutes()));
-    if (ha_discovery_enabled || mqtt_enabled) {
+    if (ha_discovery_enabled || mqtt_enabled || auto_page_switch_enabled) {
       save_monitoring_update_interval_seconds(
           parse_monitoring_update_interval_(bounded_arg_(request, "update_interval", 2)));
     }

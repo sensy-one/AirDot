@@ -34,8 +34,6 @@ setup_page:
   mqtt_password_label: Passwort
   mqtt_topic_prefix_label: Topic-Präfix
   optional_placeholder: Optional
-  publishing_interval_label: Sendeintervall
-
   air_quality_title: Luftqualität
   air_quality_note: Wähle, nach welcher Richtlinie AirDot die Luftqualität bewertet.
   air_quality_profile_label: Richtlinie
@@ -130,6 +128,10 @@ setup_page:
   adaptive_brightness_title: Automatische Helligkeit
   adaptive_brightness_description: Passe die Helligkeit automatisch an das Umgebungslicht an.
 
+  auto_page_switch_title: Automatischer Bildschirmwechsel
+  auto_page_switch_description: Wechselt automatisch zwischen den Bildschirmen.
+  update_interval_label: Aktualisierungsintervall
+
   save_button: Speichern
   footer_note: Öffne diese Einrichtung später erneut, indem du die Aktionstaste gedrückt hältst.
 
@@ -184,7 +186,7 @@ notification:
   dismiss: Schließen
 
 date:
-  format: "{weekday} {day}. {month}"
+  format: "{weekday} {day} {month}"
   weekdays:
     sunday: SO
     monday: MO
