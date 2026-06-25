@@ -1,0 +1,257 @@
+language:
+  id: 4
+  code: cs
+  label: Čeština
+
+setup_page:
+  html_title: Nastavení AirDot
+  hero_title: Nastavení AirDot
+  hero_body: Nastavte připojení, čas, displej a integrace.
+
+  saved: Nastavení uloženo
+
+  network_title: Připojení
+  network_note: Vyberte Wi-Fi síť, nebo používejte AirDot bez Wi-Fi.
+  wifi_ssid_label: Wi-Fi síť
+  wifi_password_label: Heslo k Wi-Fi
+  wifi_password_placeholder: Zadejte heslo
+  password_visibility_toggle_label: Zobrazit nebo skrýt heslo
+  offline_option: Pokračovat bez Wi-Fi
+  no_networks: Nebyly nalezeny žádné Wi-Fi sítě
+
+  integrations_title: Integrace
+  integrations_note: Připojte AirDot k Home Assistantu nebo MQTT serveru.
+
+  ha_discovery_title: Home Assistant
+  ha_discovery_description: Umožnit automatické nalezení AirDotu v Home Assistantu.
+
+  mqtt_title: MQTT
+  mqtt_description: Odesílat naměřená data na MQTT server.
+  mqtt_broker_label: Server
+  mqtt_broker_placeholder: 192.168.1.10
+  mqtt_port_label: Port
+  mqtt_username_label: Uživatelské jméno
+  mqtt_password_label: Heslo
+  mqtt_topic_prefix_label: Prefix topicu
+  optional_placeholder: Volitelné
+  air_quality_title: Kvalita vzduchu
+  air_quality_note: Vyberte doporučení, podle kterého bude AirDot hodnotit kvalitu vzduchu.
+  air_quality_profile_label: Doporučení
+
+  sensor_calibration_title: Kalibrace senzorů
+  sensor_calibration_note: Upravte údaj vestavěného teplotního senzoru.
+  sen66_temperature_offset_label: SEN66 ukazuje vyšší teplotu o
+  sen66_co2_reference_label: Referenční hodnota CO2
+  sen66_co2_calibration_title: Vynutit kalibraci referenční hodnoty CO2
+  sen66_co2_calibration_description: Umístěte AirDot alespoň na 3 minuty na čerstvý venkovní vzduch a poté nastavení uložte.
+
+  alerts_title: Upozornění
+  alerts_note: Nastavte, kdy vás má AirDot upozornit.
+
+  display_alert_wake_screen_title: Probuzení displeje
+  display_alert_wake_screen_description: Zapnout displej, když Home Assistant odešle upozornění.
+
+  audio_alerts_title: Zvuková upozornění
+  audio_alerts_description: Přehrát výstražný tón, když některá hodnota dosáhne nebezpečné úrovně.
+
+  hazard_focus_title: Zaměření na kritické hodnoty
+  hazard_focus_description: Automaticky zobrazit graf senzoru s nejvyšší úrovní rizika.
+
+  firmware_title: Aktualizace firmwaru
+  firmware_note: Vyberte OTA .bin soubor pro aktualizaci firmwaru AirDotu.
+  firmware_file_label: Soubor firmwaru
+  firmware_select_button: Vybrat soubor firmwaru
+  firmware_upload_button: Aktualizovat firmware
+  firmware_success: Aktualizace byla úspěšná
+  firmware_no_file: Nejprve vyberte soubor firmwaru
+  firmware_failed: Aktualizace selhala
+
+  time_title: Čas
+  time_note: Nastavte datum, čas a formát času.
+
+  time_server_title: Datum a čas
+  time_server_description: Nechte AirDot nastavovat čas automaticky, nebo datum a čas nastavte ručně.
+  time_source_label: Nastavení času
+  time_source_network_label: Automaticky
+  time_source_manual_label: Ručně
+
+  manual_time_label: Datum a čas
+
+  time_format_label: Formát času
+  time_24h_label: 24hodinový
+  time_12h_label: 12hodinový
+
+  night_screen_off_title: Noční režim
+  night_screen_off_description: Vypnout displej ve vybraných hodinách.
+
+  location_title: Poloha
+  location_note: Nastavte přesnou polohu používanou pro počasí a letecký radar.
+  exact_location_title: Přesná poloha
+  exact_location_description: Použít tyto souřadnice pro počasí a letecký radar.
+  location_latitude_label: Zeměpisná šířka
+  location_longitude_label: Zeměpisná délka
+
+  flight_radar_title: Letecký radar
+  flight_radar_note: Nastavte dosah a zobrazovaný provoz.
+  flight_radar_enabled_title: Letecký radar
+  flight_radar_enabled_description: Zobrazovat živý letecký provoz na obrazovce radaru.
+  flight_radar_range_label: Dosah
+  flight_radar_traffic_label: Provoz
+  flight_radar_traffic_all_label: Všechna letadla
+  flight_radar_traffic_military_label: Pouze vojenská
+
+  weather_title: Počasí
+  weather_note: Zobrazovat na displeji místní venkovní počasí.
+
+  weather_sync_title: Aktualizace počasí
+  weather_sync_description: Použít automatické určení polohy nebo nastavenou přesnou polohu.
+  weather_location_mode_label: Poloha
+  weather_location_ip_label: Automaticky
+  weather_location_manual_label: Nastavit polohu
+
+  display_title: Displej
+  display_note: Nastavte jazyk, jednotky, jas a vzhled.
+
+  language_label: Jazyk
+  units_label: Jednotky
+  metric_label: Metrické
+  imperial_label: Imperiální
+
+  brightness_label: Jas
+  brightness_low: Nízký
+  brightness_medium: Střední
+  brightness_high: Vysoký
+
+  dark_mode_title: Tmavý režim
+  dark_mode_description: Používat tmavý motiv displeje.
+
+  adaptive_brightness_title: Automatický jas
+  adaptive_brightness_description: Automaticky upravovat jas podle okolního světla.
+
+  auto_page_switch_title: Automatické přepínání obrazovek
+  auto_page_switch_description: Automaticky střídat obrazovky displeje.
+  update_interval_label: Interval aktualizace
+
+  save_button: Uložit
+  footer_note: Podržením akčního tlačítka můžete nastavení později znovu otevřít.
+
+air_quality:
+  balanced:
+    status: DOBRÁ
+    action: Není potřeba žádná akce
+  moderate:
+    status: ZHORŠENÁ
+    action: Sledujte hodnoty
+  poor:
+    status: ŠPATNÁ
+    action: Vyvětrejte místnost
+  unhealthy:
+    status: NEZDRAVÁ
+    action: Omezte pobyt v místnosti
+  hazardous:
+    status: KRITICKÁ
+    action: Okamžitě jednejte
+
+factory_reset:
+  factory_reset_countdown:
+    title: Obnovení továrního nastavení
+    body: |-
+      Držte tlačítko dál
+      pro reset AirDotu.
+
+      Reset za {seconds}...
+
+connection:
+  indoor: Uvnitř
+  outdoor: Venku
+
+weather:
+  clear: Jasno
+  cloudy: Oblačno
+  fog: Mlha
+  drizzle: Mrholení
+  freezing_drizzle: Namrzající mrholení
+  rain: Déšť
+  freezing_rain: Namrzající déšť
+  snow: Sněžení
+  snow_grains: Sněhová zrna
+  rain_showers: Dešťové přeháňky
+  snow_showers: Sněhové přeháňky
+  thunderstorm: Bouřka
+  thunderstorm_hail: Bouřka s kroupami
+  high_label: H
+  low_label: L
+
+notification:
+  fallback: Upozornění
+  dismiss: Zavřít
+
+date:
+  format: "{weekday} {day}. {month}"
+  weekdays:
+    sunday: NE
+    monday: PO
+    tuesday: ÚT
+    wednesday: ST
+    thursday: ČT
+    friday: PÁ
+    saturday: SO
+  months:
+    january: LED
+    february: ÚNO
+    march: BŘE
+    april: DUB
+    may: KVĚ
+    june: ČVN
+    july: ČVC
+    august: SRP
+    september: ZÁŘ
+    october: ŘÍJ
+    november: LIS
+    december: PRO
+
+history:
+  pm1_title: PM₁
+  pm25_title: PM₂
+  pm4_title: PM₄
+  pm10_title: PM₁₀
+  co2_title: CO₂
+  voc_title: VOC
+  nox_title: NOx
+  temperature_title: TEPLOTA
+  humidity_title: VLHKOST
+  pressure_title: TLAK
+  light_title: SVĚTLO
+  min_pattern: "{value} min"
+  max_pattern: "{value} max"
+
+onboarding:
+  setup_language:
+    title: Vyberte jazyk
+    body: |-
+      Krátkým stiskem přepnete.
+      Podržením potvrdíte.
+  setup_connect:
+    title: Nastavení AirDotu
+    body: |-
+      Otevřete Wi-Fi v telefonu
+      a vyberte AirDot-XXXXXX.
+
+      Poté otevřete prohlížeč
+      a přejděte na 192.168.4.1
+    button_0: Později
+    button_0_reopen: Zpět
+
+  setup_applying:
+    title: Připojování
+    body: |-
+      AirDot ukládá nastavení
+      a připojuje se.
+    button_0: Čekejte prosím…
+
+  setup_complete:
+    title: AirDot je nastavený
+    body: |-
+      Nyní můžete sledovat
+      kvalitu vzduchu.
+    countdown: Přehled se otevře za {seconds}…
