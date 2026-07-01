@@ -34,7 +34,7 @@ AirDot includes a SPA06 barometric pressure sensor. The firmware uses this readi
 
 **480 x 480 color display**
 
-The round display shows a live air-quality summary, local time, outdoor weather, Flight Radar, and dedicated history pages for each sensor value. It supports dark mode, manual brightness levels, automatic brightness, automatic page switching, and a night screen-off schedule.
+The round display shows a live air-quality summary, local time, outdoor weather, Flight Radar, and dedicated history pages for each sensor value. It supports dark mode, manual and automatic brightness, automatic page switching, and a night mode schedule that can dim or turn off the display.
 
 **On-device guidance and history**
 
@@ -62,7 +62,7 @@ The built-in buzzer can play warning tones when air quality becomes critical. Ho
 
 **Home Assistant integration**
 
-AirDot can expose its measurements through ESPHome's native Home Assistant API and can be automatically discovered when Home Assistant discovery is enabled in setup. Home Assistant can also send display alerts to the device.
+AirDot can expose its measurements through ESPHome's native Home Assistant API and can be automatically discovered when Home Assistant discovery is enabled in setup. Home Assistant can also control display power and brightness, and can send display alerts to the device.
 
 **MQTT publishing**
 
@@ -138,8 +138,12 @@ AirDot publishes these entities to Home Assistant:
 - NOx Index
 - CO2, in ppm
 - Action Button
+- Display Brightness, as a number from 0 to 100%
+- Display Power, as an on/off switch
 
 The default publication interval is 10 seconds. In setup, this can be changed to 5, 10, or 30 seconds.
+
+Display Brightness uses a number field. When automatic brightness is enabled, AirDot keeps the display brightness controlled by the ambient light sensor and publishes the current effective value back to Home Assistant. When automatic brightness is disabled, the Home Assistant number acts as the manual display brightness setting.
 
 AirDot also exposes ESPHome API actions for display notifications:
 
@@ -209,7 +213,7 @@ The physical action button controls the local UI.
 - Double press: return to the overview screen.
 - Short press during a critical air-quality alert: snooze the alert sound and critical value focus for 15 minutes.
 - Long press, about 0.8 seconds: open setup or confirm the current onboarding action.
-- Press during night screen-off: wake the display temporarily.
+- Press during night mode or when display power is off: wake the display temporarily.
 - Hold for about 10 seconds: factory reset AirDot. Keep holding through the countdown to complete the reset.
 
 If AirDot is showing a Home Assistant display alert, pressing the button dismisses the alert.
@@ -220,7 +224,7 @@ The Action Button is also available in Home Assistant and MQTT.
 
 The setup page lets you configure:
 
-- Language: English, German, Dutch, or French
+- Language: English, German, Dutch, French, Hungarian, or Czech
 - Units: metric or imperial
 - Brightness: low, medium, or high
 - Dark mode
@@ -228,11 +232,20 @@ The setup page lets you configure:
 - Automatic page switching
 - Page switching interval: 5, 10, or 30 seconds
 - Time format: 24-hour or 12-hour
-- Night screen-off schedule
+- Night mode schedule
+- Night mode display behavior: display off or dim display
 
 > Note: Lux measurement and automatic brightness are only available on AirDot White. On AirDot Black, the lux value will stay at 0 lx and automatic brightness is not available.
 
-If night screen-off is enabled, AirDot needs a valid time source or manual time to know when the schedule is active.
+The local brightness presets map to these user-facing brightness percentages:
+
+- Low: 25%
+- Medium: 50%
+- High: 75%
+
+Home Assistant can set brightness from 0 to 100%. A value of 0 turns the backlight off. A value of 1 is the minimum manual brightness, and higher values follow the display brightness curve up to full brightness.
+
+If night mode is enabled, AirDot needs a valid time source or manual time to know when the schedule is active. In night mode, the display can either turn off completely or use the same backlight level as Home Assistant brightness 0.
 
 ## Location
 
@@ -407,7 +420,8 @@ After reset, AirDot starts the setup access point again.
 **The display is off**
 
 - Press the action button once to wake it.
-- Check whether night screen-off is active.
+- Check whether night mode is active.
+- Check the Display Power switch in Home Assistant.
 - Check brightness and automatic brightness settings.
 - Confirm the device is powered.
 

@@ -559,33 +559,104 @@ template<typename MqttClient> inline void pause_mqtt_for_network_change(MqttClie
       AirDot::connectivity::ConnectivityError::OFFLINE, esphome::millis());
 }
 
+inline float normalized_backlight_brightness_(float brightness) {
+  if (!std::isfinite(brightness))
+    return 0.0f;
+  return std::min<float>(1.0f, std::max<float>(0.0f, brightness));
+}
+
+template<typename DisplayBacklight>
+inline void turn_display_backlight_off(DisplayBacklight *display_backlight) {
+  if (display_backlight == nullptr)
+    return;
+
+  auto call = display_backlight->turn_off();
+  call.set_transition_length(0);
+  call.perform();
+}
+
+template<typename DisplayBacklight>
+inline void set_display_backlight_brightness_(DisplayBacklight *display_backlight, float brightness) {
+  if (display_backlight == nullptr)
+    return;
+
+  auto call = display_backlight->turn_on();
+  call.set_transition_length(0);
+  call.set_brightness(normalized_backlight_brightness_(brightness));
+  call.perform();
+}
+
+template<typename DisplayBacklight>
+inline uint8_t current_display_brightness_percent(DisplayBacklight *display_backlight) {
+  if (display_backlight == nullptr)
+    return load_display_brightness_percent();
+
+  float brightness = 0.0f;
+  display_backlight->current_values_as_brightness(&brightness);
+  const float normalized = normalized_backlight_brightness_(brightness);
+  return display_brightness_percent_for_value_(normalized);
+}
+
+template<typename DisplayBacklight, typename Number>
+inline void publish_current_display_brightness_percent(DisplayBacklight *display_backlight, Number *number) {
+  if (number == nullptr)
+    return;
+
+  const uint8_t percent = current_display_brightness_percent(display_backlight);
+  if (number->has_state()) {
+    const uint8_t published = normalize_display_brightness_percent_(static_cast<int>(std::round(number->state)));
+    if (published == percent)
+      return;
+  }
+  number->publish_state(percent);
+}
+
 template<typename DisplayBacklight>
 inline void apply_display_brightness(DisplayBacklight *display_backlight, bool screen_off) {
   if (display_backlight == nullptr)
     return;
 
   if (screen_off) {
-    display_backlight->turn_off().perform();
+    turn_display_backlight_off(display_backlight);
     return;
   }
 
-  auto call = display_backlight->turn_on();
-  call.set_brightness(display_brightness_value(load_display_brightness()));
-  call.perform();
+  set_display_backlight_brightness_(display_backlight, display_brightness_value());
+}
+
+template<typename DisplayBacklight> inline void apply_night_screen_brightness(DisplayBacklight *display_backlight) {
+  if (display_backlight == nullptr)
+    return;
+
+  if (!load_night_screen_dim_enabled()) {
+    turn_display_backlight_off(display_backlight);
+    return;
+  }
+
+  set_display_backlight_brightness_(display_backlight, display_brightness_value_for_percent_(0));
+}
+
+inline uint8_t effective_display_brightness_percent(float ambient_lux, float min_lux, float max_lux,
+                                                    float min_brightness) {
+  const uint8_t max_percent = load_display_brightness_percent();
+  if (!load_auto_dim_enabled())
+    return max_percent;
+
+  const uint8_t min_percent = std::min<uint8_t>(display_brightness_percent_for_value_(min_brightness), max_percent);
+  if (!std::isfinite(ambient_lux))
+    return min_percent;
+
+  const float corrected_min_lux = std::max(0.1f, min_lux);
+  const float corrected_max_lux = std::max(corrected_min_lux + 1.0f, max_lux);
+  const float corrected_lux = std::clamp(ambient_lux, corrected_min_lux, corrected_max_lux);
+  const float ratio = (corrected_lux - corrected_min_lux) / (corrected_max_lux - corrected_min_lux);
+  const float percent = static_cast<float>(min_percent) + ratio * static_cast<float>(max_percent - min_percent);
+  return normalize_display_brightness_percent_(static_cast<int>(std::round(percent)));
 }
 
 inline float effective_display_brightness(float ambient_lux, float min_lux, float max_lux, float min_brightness) {
-  const float max_brightness = display_brightness_value(load_display_brightness());
-  if (!load_auto_dim_enabled())
-    return max_brightness;
-
-  const float minimum_brightness = std::min<float>(min_brightness, max_brightness);
-  if (!std::isfinite(ambient_lux))
-    return minimum_brightness;
-
-  const float brightness = AirDot::adaptive_backlight_brightness(
-      ambient_lux, min_lux, max_lux, minimum_brightness, max_brightness);
-  return std::isfinite(brightness) ? brightness : minimum_brightness;
+  return display_brightness_value_for_percent_(
+      effective_display_brightness_percent(ambient_lux, min_lux, max_lux, min_brightness));
 }
 
 template<typename DisplayBacklight>
@@ -595,17 +666,31 @@ inline void apply_display_brightness(DisplayBacklight *display_backlight, float 
     return;
 
   if (screen_off) {
-    display_backlight->turn_off().perform();
+    turn_display_backlight_off(display_backlight);
     return;
   }
 
-  auto call = display_backlight->turn_on();
-  call.set_brightness(effective_display_brightness(ambient_lux, min_lux, max_lux, min_brightness));
-  call.perform();
+  set_display_backlight_brightness_(
+      display_backlight, effective_display_brightness(ambient_lux, min_lux, max_lux, min_brightness));
 }
 
 template<typename DisplayBacklight> inline void apply_display_brightness(DisplayBacklight *display_backlight) {
   apply_display_brightness(display_backlight, false);
+}
+
+template<typename DisplayPanel, typename DisplayBacklight>
+inline void wake_display_with_brightness(DisplayPanel *display_panel, DisplayBacklight *display_backlight,
+                                         float ambient_lux, float min_lux, float max_lux, float min_brightness) {
+  apply_display_brightness(display_backlight, ambient_lux, min_lux, max_lux, min_brightness);
+  if (display_panel != nullptr)
+    display_panel->set_screen_powered(true);
+}
+
+template<typename DisplayPanel, typename DisplayBacklight>
+inline void apply_night_screen_state(DisplayPanel *display_panel, DisplayBacklight *display_backlight) {
+  apply_night_screen_brightness(display_backlight);
+  if (display_panel != nullptr)
+    display_panel->set_screen_powered(load_night_screen_dim_enabled());
 }
 
 template<typename DisplayBacklight, typename... Entities>

@@ -82,7 +82,10 @@ setup_page:
   time_12h_label: 12 Stunden
 
   night_screen_off_title: Nachtmodus
-  night_screen_off_description: Schalte den Bildschirm während der eingestellten Zeiten aus.
+  night_screen_off_description: Display während der eingestellten Zeiten dimmen oder ausschalten.
+  night_screen_mode_label: Display im Nachtmodus
+  night_screen_mode_off_label: Display aus
+  night_screen_mode_dim_label: Display dimmen
 
   location_title: Standort
   location_note: Lege den genauen Standort für Wetter und Flugradar fest.

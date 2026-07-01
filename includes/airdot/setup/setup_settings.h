@@ -59,6 +59,10 @@ static constexpr uint32_t WEATHER_SYNC_PREF_KEY = 2918394844UL;
 static constexpr uint32_t SEN66_TEMPERATURE_OFFSET_CENTI_C_PREF_KEY = 2918394845UL;
 static constexpr uint32_t DISPLAY_ALERT_WAKE_SCREEN_PREF_KEY = 2918394846UL;
 static constexpr uint32_t AUTO_PAGE_SWITCH_PREF_KEY = 2918394849UL;
+static constexpr uint32_t NIGHT_SCREEN_MODE_PREF_KEY = 2918394850UL;
+static constexpr uint32_t DISPLAY_BRIGHTNESS_PERCENT_PREF_KEY = 2918394851UL;
+static constexpr uint32_t DISPLAY_POWER_PREF_KEY = 2918394852UL;
+static constexpr uint32_t DISPLAY_POWER_HA_CONTROL_RECOVERY_PREF_KEY = 2918394853UL;
 static constexpr int32_t LATITUDE_MIN_E7 = -900000000;
 static constexpr int32_t LATITUDE_MAX_E7 = 900000000;
 static constexpr int32_t LONGITUDE_MIN_E7 = -1800000000;
@@ -74,6 +78,9 @@ static constexpr int16_t SEN66_TEMPERATURE_OFFSET_MIN_CENTI_C = -2000;
 static constexpr int16_t SEN66_TEMPERATURE_OFFSET_MAX_CENTI_C = 0;
 static constexpr uint16_t SCREEN_OFF_DEFAULT_START_MINUTES = 22 * 60;
 static constexpr uint16_t SCREEN_OFF_DEFAULT_END_MINUTES = 7 * 60;
+static constexpr float DISPLAY_MIN_BRIGHTNESS = 0.0002f;
+static constexpr float DISPLAY_BRIGHTNESS_GAMMA = 2.0f;
+static constexpr uint8_t DISPLAY_BRIGHTNESS_DEFAULT_PERCENT = 50;
 static constexpr uint16_t MINUTES_PER_DAY = 24 * 60;
 static constexpr uint16_t MQTT_DEFAULT_PORT = 1883;
 static constexpr uint32_t SETUP_NETWORK_SCAN_RETRY_MS = 5000;
@@ -106,6 +113,11 @@ enum DisplayBrightness : uint8_t {
 enum TimeFormat : uint8_t {
   TIME_FORMAT_24H = 0,
   TIME_FORMAT_12H = 1,
+};
+
+enum NightScreenMode : uint8_t {
+  NIGHT_SCREEN_MODE_OFF = 0,
+  NIGHT_SCREEN_MODE_DIM = 1,
 };
 
 struct SetupWifiBackup {
@@ -780,6 +792,22 @@ inline CachedUint8Preference &display_brightness_pref_() {
   return cache;
 }
 
+inline CachedUint8Preference &display_brightness_percent_pref_() {
+  static CachedUint8Preference cache{DISPLAY_BRIGHTNESS_PERCENT_PREF_KEY, DISPLAY_BRIGHTNESS_DEFAULT_PERCENT,
+                                     DISPLAY_BRIGHTNESS_DEFAULT_PERCENT, false, false, {}};
+  return cache;
+}
+
+inline CachedUint8Preference &display_power_pref_() {
+  static CachedUint8Preference cache{DISPLAY_POWER_PREF_KEY, 1, 1, false, false, {}};
+  return cache;
+}
+
+inline CachedUint8Preference &display_power_ha_control_recovery_pref_() {
+  static CachedUint8Preference cache{DISPLAY_POWER_HA_CONTROL_RECOVERY_PREF_KEY, 0, 0, false, false, {}};
+  return cache;
+}
+
 inline CachedUint8Preference &dark_mode_pref_() {
   static CachedUint8Preference cache{DARK_MODE_PREF_KEY, 1, 1, false, false, {}};
   return cache;
@@ -875,6 +903,12 @@ inline CachedInt16Preference &sen66_temperature_offset_centi_c_pref_() {
 
 inline CachedUint8Preference &night_screen_off_pref_() {
   static CachedUint8Preference cache{NIGHT_SCREEN_OFF_PREF_KEY, 0, 0, false, false, {}};
+  return cache;
+}
+
+inline CachedUint8Preference &night_screen_mode_pref_() {
+  static CachedUint8Preference cache{NIGHT_SCREEN_MODE_PREF_KEY, NIGHT_SCREEN_MODE_OFF, NIGHT_SCREEN_MODE_OFF, false,
+                                     false, {}};
   return cache;
 }
 
@@ -1429,6 +1463,22 @@ inline void save_night_screen_off_enabled(bool enabled) {
   save_cached_uint8_preference_(night_screen_off_pref_(), value);
 }
 
+inline NightScreenMode normalize_night_screen_mode_(uint8_t value) {
+  return value == NIGHT_SCREEN_MODE_DIM ? NIGHT_SCREEN_MODE_DIM : NIGHT_SCREEN_MODE_OFF;
+}
+
+inline NightScreenMode load_night_screen_mode() {
+  return normalize_night_screen_mode_(load_cached_uint8_preference_(night_screen_mode_pref_()));
+}
+
+inline void save_night_screen_mode(NightScreenMode mode) {
+  save_cached_uint8_preference_(night_screen_mode_pref_(), normalize_night_screen_mode_(mode));
+}
+
+inline bool load_night_screen_dim_enabled() {
+  return load_night_screen_mode() == NIGHT_SCREEN_MODE_DIM;
+}
+
 inline uint16_t load_screen_off_start_minutes() {
   return normalize_minute_of_day_(load_cached_uint16_preference_(screen_off_start_minutes_pref_()));
 }
@@ -1485,13 +1535,107 @@ inline DisplayBrightness normalize_display_brightness_(uint8_t value) {
   }
 }
 
+inline uint8_t normalize_display_brightness_percent_(int value) {
+  if (value < 0)
+    return 0;
+  if (value > 100)
+    return 100;
+  return static_cast<uint8_t>(value);
+}
+
+inline uint8_t display_brightness_percent_for_(DisplayBrightness brightness) {
+  switch (brightness) {
+    case DISPLAY_BRIGHTNESS_LOW:
+      return 25;
+    case DISPLAY_BRIGHTNESS_HIGH:
+      return 75;
+    case DISPLAY_BRIGHTNESS_MEDIUM:
+    default:
+      return DISPLAY_BRIGHTNESS_DEFAULT_PERCENT;
+  }
+}
+
+inline DisplayBrightness display_brightness_for_percent_(uint8_t percent) {
+  if (percent < 38)
+    return DISPLAY_BRIGHTNESS_LOW;
+  if (percent >= 63)
+    return DISPLAY_BRIGHTNESS_HIGH;
+  return DISPLAY_BRIGHTNESS_MEDIUM;
+}
+
+inline float display_brightness_value_for_percent_(uint8_t percent) {
+  const uint8_t normalized = normalize_display_brightness_percent_(percent);
+  if (normalized == 0)
+    return 0.0f;
+  if (normalized == 1)
+    return DISPLAY_MIN_BRIGHTNESS;
+  if (normalized >= 100)
+    return 1.0f;
+
+  const float ratio = static_cast<float>(normalized - 1) / 99.0f;
+  return DISPLAY_MIN_BRIGHTNESS +
+         (1.0f - DISPLAY_MIN_BRIGHTNESS) * std::pow(ratio, DISPLAY_BRIGHTNESS_GAMMA);
+}
+
+inline uint8_t display_brightness_percent_for_value_(float brightness) {
+  if (!std::isfinite(brightness) || brightness <= 0.0f)
+    return 0;
+  if (brightness <= DISPLAY_MIN_BRIGHTNESS)
+    return 1;
+  if (brightness >= 1.0f)
+    return 100;
+
+  const float ratio = std::clamp((brightness - DISPLAY_MIN_BRIGHTNESS) /
+                                     (1.0f - DISPLAY_MIN_BRIGHTNESS),
+                                 0.0f, 1.0f);
+  const float percent_ratio = std::pow(ratio, 1.0f / DISPLAY_BRIGHTNESS_GAMMA);
+  return normalize_display_brightness_percent_(static_cast<int>(std::round(1.0f + percent_ratio * 99.0f)));
+}
+
 inline DisplayBrightness load_display_brightness() {
+  uint8_t percent = DISPLAY_BRIGHTNESS_DEFAULT_PERCENT;
+  if (load_optional_cached_uint8_preference_(display_brightness_percent_pref_(), percent))
+    return display_brightness_for_percent_(normalize_display_brightness_percent_(percent));
+
   return normalize_display_brightness_(load_cached_uint8_preference_(display_brightness_pref_()));
 }
 
 inline void save_display_brightness(DisplayBrightness brightness) {
-  uint8_t value = normalize_display_brightness_(brightness);
+  const DisplayBrightness normalized = normalize_display_brightness_(brightness);
+  uint8_t value = normalized;
   save_cached_uint8_preference_(display_brightness_pref_(), value);
+  save_cached_uint8_preference_(display_brightness_percent_pref_(), display_brightness_percent_for_(normalized));
+}
+
+inline uint8_t load_display_brightness_percent() {
+  uint8_t percent = DISPLAY_BRIGHTNESS_DEFAULT_PERCENT;
+  if (load_optional_cached_uint8_preference_(display_brightness_percent_pref_(), percent))
+    return normalize_display_brightness_percent_(percent);
+
+  return display_brightness_percent_for_(
+      normalize_display_brightness_(load_cached_uint8_preference_(display_brightness_pref_())));
+}
+
+inline void save_display_brightness_percent(uint8_t percent) {
+  const uint8_t normalized = normalize_display_brightness_percent_(percent);
+  save_cached_uint8_preference_(display_brightness_percent_pref_(), normalized);
+  save_cached_uint8_preference_(display_brightness_pref_(), display_brightness_for_percent_(normalized));
+}
+
+inline bool load_display_power_enabled() {
+  return load_cached_uint8_preference_(display_power_pref_()) == 1;
+}
+
+inline void save_display_power_enabled(bool enabled) {
+  save_cached_uint8_preference_(display_power_pref_(), enabled ? 1 : 0);
+}
+
+inline void recover_display_power_after_home_assistant_control_upgrade() {
+  if (load_cached_uint8_preference_(display_power_ha_control_recovery_pref_()) == 1)
+    return;
+
+  save_display_power_enabled(true);
+  save_cached_uint8_preference_(display_power_ha_control_recovery_pref_(), 1);
 }
 
 inline bool load_dark_mode_enabled() {
@@ -1502,16 +1646,8 @@ inline void save_dark_mode_enabled(bool enabled) {
   save_cached_uint8_preference_(dark_mode_pref_(), enabled ? 1 : 0);
 }
 
-inline float display_brightness_value(DisplayBrightness brightness) {
-  switch (brightness) {
-    case DISPLAY_BRIGHTNESS_LOW:
-      return 0.35f;
-    case DISPLAY_BRIGHTNESS_HIGH:
-      return 1.0f;
-    case DISPLAY_BRIGHTNESS_MEDIUM:
-    default:
-      return 0.7f;
-  }
+inline float display_brightness_value() {
+  return display_brightness_value_for_percent_(load_display_brightness_percent());
 }
 
 inline bool load_auto_dim_enabled() {

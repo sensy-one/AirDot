@@ -1,0 +1,69 @@
+number:
+  - platform: template
+    id: ha_display_brightness_percent
+    name: Display Brightness
+    internal: false
+    entity_category: config
+    icon: mdi:brightness-percent
+    unit_of_measurement: "%"
+    min_value: 0
+    max_value: 100
+    step: 1
+    mode: box
+    update_interval: ${ha_sensor_update_interval}
+    lambda: |-
+      return AirDot::onboarding::current_display_brightness_percent(id(display_backlight));
+    set_action:
+      - lambda: |-
+          const uint8_t percent =
+            AirDot::onboarding::normalize_display_brightness_percent_(static_cast<int>(std::round(x)));
+          const bool auto_brightness_enabled = AirDot::onboarding::load_auto_dim_enabled();
+          if (!auto_brightness_enabled)
+            AirDot::onboarding::save_display_brightness_percent(percent);
+          if (AirDot::onboarding::load_display_power_enabled()) {
+            const auto now = id(sntp_time).utcnow();
+            const bool night_screen_active =
+              now.is_valid() &&
+              AirDot::onboarding::screen_off_window_active_at_utc(static_cast<uint32_t>(now.timestamp));
+            if (night_screen_active) {
+              AirDot::onboarding::apply_night_screen_state(id(display_panel), id(display_backlight));
+            } else {
+              AirDot::onboarding::wake_display_with_brightness(
+                id(display_panel), id(display_backlight), id(ambient_light_sensor).state,
+                ${display_auto_dim_min_lux}, ${display_auto_dim_max_lux},
+                ${display_auto_dim_min_brightness});
+            }
+          }
+      - component.update: ha_display_brightness_percent
+
+switch:
+  - platform: template
+    id: ha_display_power
+    name: Display Power
+    internal: false
+    entity_category: config
+    icon: mdi:monitor
+    restore_mode: DISABLED
+    lambda: |-
+      return AirDot::onboarding::load_display_power_enabled() && id(display_panel).is_screen_powered();
+    turn_on_action:
+      - lambda: |-
+          AirDot::onboarding::save_display_power_enabled(true);
+          const auto now = id(sntp_time).utcnow();
+          const bool night_screen_active =
+            now.is_valid() &&
+            AirDot::onboarding::screen_off_window_active_at_utc(static_cast<uint32_t>(now.timestamp));
+          if (night_screen_active) {
+            AirDot::onboarding::apply_night_screen_state(id(display_panel), id(display_backlight));
+          } else {
+            AirDot::onboarding::wake_display_with_brightness(
+              id(display_panel), id(display_backlight), id(ambient_light_sensor).state,
+              ${display_auto_dim_min_lux}, ${display_auto_dim_max_lux},
+              ${display_auto_dim_min_brightness});
+          }
+    turn_off_action:
+      - lambda: |-
+          AirDot::onboarding::save_display_power_enabled(false);
+          id(display_sleep_wake_until_ms) = 0;
+          AirDot::onboarding::turn_display_backlight_off(id(display_backlight));
+          id(display_panel).set_screen_powered(false);

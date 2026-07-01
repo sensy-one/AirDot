@@ -243,6 +243,10 @@ class SetupHandler : public AsyncWebHandler {
     save_auto_dim_enabled(request->hasArg("auto_dim"));
     const bool auto_page_switch_enabled = bounded_arg_(request, "auto_page_switch", 1) == "1";
     save_auto_page_switch_enabled(auto_page_switch_enabled);
+    const NightScreenMode night_screen_mode =
+        request->hasArg("night_screen_mode") ? parse_night_screen_mode_(bounded_arg_(request, "night_screen_mode", 8))
+                                             : load_night_screen_mode();
+    save_night_screen_mode(night_screen_mode);
     save_night_screen_off_enabled((time_server_enabled || manual_time_valid) && request->hasArg("night_screen_off"));
     save_screen_off_start_minutes(
         parse_minute_of_day_(bounded_arg_(request, "screen_off_start", 8), load_screen_off_start_minutes()));
@@ -379,6 +383,10 @@ class SetupHandler : public AsyncWebHandler {
     if (value == "high")
       return DISPLAY_BRIGHTNESS_HIGH;
     return DISPLAY_BRIGHTNESS_MEDIUM;
+  }
+
+  static NightScreenMode parse_night_screen_mode_(const std::string &value) {
+    return value == "dim" ? NIGHT_SCREEN_MODE_DIM : NIGHT_SCREEN_MODE_OFF;
   }
 
   static bool parse_manual_time_epoch_(const std::string &value, uint32_t &epoch) {

@@ -422,20 +422,4 @@ inline lv_color_t metric_color(AirQualityProfile profile, AirQualityMetric metri
   return color_for_thresholds(value, metric_status_thresholds(profile, metric));
 }
 
-inline float adaptive_backlight_brightness(float lux, float min_lux, float max_lux, float min_brightness,
-                                           float max_brightness) {
-  if (!std::isfinite(lux))
-    return NAN;
-
-  const float corrected_min_lux = std::max(0.1f, min_lux);
-  const float corrected_max_lux = std::max(corrected_min_lux + 1.0f, max_lux);
-  const float corrected_min_brightness = std::clamp(min_brightness, 0.05f, 1.0f);
-  const float corrected_max_brightness = std::clamp(max_brightness, corrected_min_brightness, 1.0f);
-
-  const float corrected_lux = std::clamp(lux, corrected_min_lux, corrected_max_lux);
-  const float ratio = (corrected_lux - corrected_min_lux) / (corrected_max_lux - corrected_min_lux);
-
-  return corrected_min_brightness + ratio * (corrected_max_brightness - corrected_min_brightness);
-}
-
 }  // namespace AirDot

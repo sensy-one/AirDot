@@ -2,7 +2,7 @@ output:
   - platform: ledc
     id: display_backlight_pwm
     pin: ${display_backlight_pin}
-    frequency: 20000Hz
+    frequency: 1000Hz
   - platform: ledc
     id: alert_buzzer_pwm
     pin: ${alert_buzzer_pin}

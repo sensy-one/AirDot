@@ -80,9 +80,8 @@ script:
               id(air_quality_summary_page)->index, LV_SCREEN_LOAD_ANIM_NONE, 0);
           };
           auto wake_display = [&]() {
-            id(display_panel).set_screen_powered(true);
-            AirDot::onboarding::apply_display_brightness(
-              id(display_backlight), id(ambient_light_sensor).state,
+            AirDot::onboarding::wake_display_with_brightness(
+              id(display_panel), id(display_backlight), id(ambient_light_sensor).state,
               ${display_auto_dim_min_lux}, ${display_auto_dim_max_lux},
               ${display_auto_dim_min_brightness});
           };
@@ -198,8 +197,7 @@ script:
               show_return_page();
             reset_focus_state();
             if (sleep_after_focus) {
-              id(display_backlight).turn_off().perform();
-              id(display_panel).set_screen_powered(false);
+              AirDot::onboarding::apply_night_screen_state(id(display_panel), id(display_backlight));
             }
             return;
           }

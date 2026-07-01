@@ -110,6 +110,7 @@ esphome:
         - component.update: display_panel
         - delay: 100ms
         - lambda: |-
+            AirDot::onboarding::recover_display_power_after_home_assistant_control_upgrade();
             AirDot::onboarding::apply_display_brightness(
               id(display_backlight), id(ambient_light_sensor).state,
               ${display_auto_dim_min_lux}, ${display_auto_dim_max_lux},

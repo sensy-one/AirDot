@@ -13,6 +13,8 @@ enum class UiLanguage : uint8_t {
   DE = 1,
   NL = 2,
   FR = 3,
+  HU = 4,
+  CS = 5,
 };
 
 struct AirQualityText {
@@ -51,6 +53,10 @@ inline UiLanguage normalize_ui_language(uint8_t value) {
       return UiLanguage::NL;
     case UiLanguage::FR:
       return UiLanguage::FR;
+    case UiLanguage::HU:
+      return UiLanguage::HU;
+    case UiLanguage::CS:
+      return UiLanguage::CS;
     default:
       return UiLanguage::EN;
   }
@@ -98,6 +104,26 @@ inline AirQualityText air_quality_text(int level, UiLanguage language) {
       if (level >= 4)
         return {"CRITIQUE", "Agissez immédiatement"};
       return {"BON", "Aucune action nécessaire"};
+    case UiLanguage::HU:
+      if (level == 1)
+        return {"MÉRSEKELT", "Ellenőrizd az értékeket"};
+      if (level == 2)
+        return {"ROSSZ", "Szellőztesd ki a helyiséget"};
+      if (level == 3)
+        return {"EGÉSZSÉGTELEN", "Korlátozd a bent tartózkodást"};
+      if (level >= 4)
+        return {"KRITIKUS", "Azonnali intézkedés szükséges"};
+      return {"JÓ", "Nincs szükség intézkedésre"};
+    case UiLanguage::CS:
+      if (level == 1)
+        return {"ZHORŠENÁ", "Sledujte hodnoty"};
+      if (level == 2)
+        return {"ŠPATNÁ", "Vyvětrejte místnost"};
+      if (level == 3)
+        return {"NEZDRAVÁ", "Omezte pobyt v místnosti"};
+      if (level >= 4)
+        return {"KRITICKÁ", "Okamžitě jednejte"};
+      return {"DOBRÁ", "Není potřeba žádná akce"};
     default:
       return air_quality_text(level, UiLanguage::EN);
   }
@@ -117,6 +143,10 @@ inline TitleBodyText factory_reset_countdown_text(UiLanguage language) {
       return {"Fabrieksreset", "Blijf vasthouden om\nAirDot te resetten.\n\nReset over {seconds}..."};
     case UiLanguage::FR:
       return {"Réinit. usine", "Maintenez pour\nréinitialiser AirDot.\n\nRéinit. dans {seconds}..."};
+    case UiLanguage::HU:
+      return {"Gyári visszaállítás", "Tartsd lenyomva\naz AirDot\nvisszaállításához.\n\nVisszaállítás {seconds} mp múlva..."};
+    case UiLanguage::CS:
+      return {"Obnovení továrního nastavení", "Držte tlačítko dál\npro reset AirDotu.\n\nReset za {seconds}...\n"};
     default:
       return factory_reset_countdown_text(UiLanguage::EN);
   }
@@ -182,6 +212,10 @@ inline const char *weather_text(int code, UiLanguage language) {
             return "Helder";
           case UiLanguage::FR:
             return "Dégagé";
+          case UiLanguage::HU:
+            return "Tiszta";
+          case UiLanguage::CS:
+            return "Jasno";
           default:
             return "Clear";
         }
@@ -195,6 +229,10 @@ inline const char *weather_text(int code, UiLanguage language) {
             return "Bewolkt";
           case UiLanguage::FR:
             return "Nuageux";
+          case UiLanguage::HU:
+            return "Felhős";
+          case UiLanguage::CS:
+            return "Oblačno";
           default:
             return "Cloudy";
         }
@@ -208,6 +246,10 @@ inline const char *weather_text(int code, UiLanguage language) {
             return "Mist";
           case UiLanguage::FR:
             return "Brouillard";
+          case UiLanguage::HU:
+            return "Köd";
+          case UiLanguage::CS:
+            return "Mlha";
           default:
             return "Fog";
         }
@@ -221,6 +263,10 @@ inline const char *weather_text(int code, UiLanguage language) {
             return "Motregen";
           case UiLanguage::FR:
             return "Bruine";
+          case UiLanguage::HU:
+            return "Szitálás";
+          case UiLanguage::CS:
+            return "Mrholení";
           default:
             return "Drizzle";
         }
@@ -234,6 +280,10 @@ inline const char *weather_text(int code, UiLanguage language) {
             return "Lichte ijzel";
           case UiLanguage::FR:
             return "Bruine verglaçante";
+          case UiLanguage::HU:
+            return "Ónos szitálás";
+          case UiLanguage::CS:
+            return "Namrzající mrholení";
           default:
             return "Freezing drizzle";
         }
@@ -247,6 +297,10 @@ inline const char *weather_text(int code, UiLanguage language) {
             return "Regen";
           case UiLanguage::FR:
             return "Pluie";
+          case UiLanguage::HU:
+            return "Eső";
+          case UiLanguage::CS:
+            return "Déšť";
           default:
             return "Rain";
         }
@@ -260,6 +314,10 @@ inline const char *weather_text(int code, UiLanguage language) {
             return "IJzel";
           case UiLanguage::FR:
             return "Pluie verglaçante";
+          case UiLanguage::HU:
+            return "Ónos eső";
+          case UiLanguage::CS:
+            return "Namrzající déšť";
           default:
             return "Freezing rain";
         }
@@ -273,6 +331,10 @@ inline const char *weather_text(int code, UiLanguage language) {
             return "Sneeuw";
           case UiLanguage::FR:
             return "Neige";
+          case UiLanguage::HU:
+            return "Havazás";
+          case UiLanguage::CS:
+            return "Sněžení";
           default:
             return "Snow";
         }
@@ -286,6 +348,10 @@ inline const char *weather_text(int code, UiLanguage language) {
             return "Sneeuwkorrels";
           case UiLanguage::FR:
             return "Neige en grains";
+          case UiLanguage::HU:
+            return "Hódara";
+          case UiLanguage::CS:
+            return "Sněhová zrna";
           default:
             return "Snow grains";
         }
@@ -299,6 +365,10 @@ inline const char *weather_text(int code, UiLanguage language) {
             return "Regenbuien";
           case UiLanguage::FR:
             return "Averses";
+          case UiLanguage::HU:
+            return "Zápor";
+          case UiLanguage::CS:
+            return "Dešťové přeháňky";
           default:
             return "Rain showers";
         }
@@ -312,6 +382,10 @@ inline const char *weather_text(int code, UiLanguage language) {
             return "Sneeuwbuien";
           case UiLanguage::FR:
             return "Averses de neige";
+          case UiLanguage::HU:
+            return "Hózápor";
+          case UiLanguage::CS:
+            return "Sněhové přeháňky";
           default:
             return "Snow showers";
         }
@@ -325,6 +399,10 @@ inline const char *weather_text(int code, UiLanguage language) {
             return "Onweer";
           case UiLanguage::FR:
             return "Orage";
+          case UiLanguage::HU:
+            return "Zivatar";
+          case UiLanguage::CS:
+            return "Bouřka";
           default:
             return "Thunderstorm";
         }
@@ -338,6 +416,10 @@ inline const char *weather_text(int code, UiLanguage language) {
             return "Onweer met hagel";
           case UiLanguage::FR:
             return "Orage avec grêle";
+          case UiLanguage::HU:
+            return "Jégesővel kísért zivatar";
+          case UiLanguage::CS:
+            return "Bouřka s kroupami";
           default:
             return "Thunderstorm with hail";
         }
@@ -356,6 +438,10 @@ inline const char *weather_high_temperature_label(UiLanguage language) {
       return "H";
     case UiLanguage::FR:
       return "H";
+    case UiLanguage::HU:
+      return "Max";
+    case UiLanguage::CS:
+      return "H";
     default:
       return "H";
   }
@@ -371,6 +457,10 @@ inline const char *weather_low_temperature_label(UiLanguage language) {
       return "L";
     case UiLanguage::FR:
       return "B";
+    case UiLanguage::HU:
+      return "Min";
+    case UiLanguage::CS:
+      return "L";
     default:
       return "L";
   }
@@ -387,6 +477,10 @@ inline const char *connection_location_text(bool outdoor, UiLanguage language) {
         return "Buiten";
       case UiLanguage::FR:
         return "Extérieur";
+      case UiLanguage::HU:
+        return "Kültéri";
+      case UiLanguage::CS:
+        return "Venku";
       default:
         return "Outdoor";
     }
@@ -401,6 +495,10 @@ inline const char *connection_location_text(bool outdoor, UiLanguage language) {
         return "Binnen";
       case UiLanguage::FR:
         return "Intérieur";
+      case UiLanguage::HU:
+        return "Beltéri";
+      case UiLanguage::CS:
+        return "Uvnitř";
       default:
         return "Indoor";
     }
@@ -415,6 +513,10 @@ inline const char *date_format_text(UiLanguage language) {
     case UiLanguage::NL:
       return "{weekday} {day} {month}";
     case UiLanguage::FR:
+      return "{weekday} {day} {month}";
+    case UiLanguage::HU:
+      return "{month} {day} {weekday}";
+    case UiLanguage::CS:
       return "{weekday} {day} {month}";
     default:
       return "{weekday} {month} {day}";
@@ -495,6 +597,42 @@ inline const char *weekday_text(uint8_t day_of_week, UiLanguage language) {
           return "SAM";
       }
       return "LUN";
+    case UiLanguage::HU:
+      switch (day_of_week) {
+        case 1:
+          return "VAS";
+        case 2:
+          return "HÉT";
+        case 3:
+          return "KED";
+        case 4:
+          return "SZE";
+        case 5:
+          return "CSÜ";
+        case 6:
+          return "PÉN";
+        case 7:
+          return "SZO";
+      }
+      return "HÉT";
+    case UiLanguage::CS:
+      switch (day_of_week) {
+        case 1:
+          return "NE";
+        case 2:
+          return "PO";
+        case 3:
+          return "ÚT";
+        case 4:
+          return "ST";
+        case 5:
+          return "ČT";
+        case 6:
+          return "PÁ";
+        case 7:
+          return "SO";
+      }
+      return "PO";
     default:
       return weekday_text(day_of_week, UiLanguage::EN);
   }
@@ -614,6 +752,62 @@ inline const char *month_text(uint8_t month, UiLanguage language) {
           return "DÉC";
       }
       return "JAN";
+    case UiLanguage::HU:
+      switch (month) {
+        case 1:
+          return "JAN";
+        case 2:
+          return "FEB";
+        case 3:
+          return "MÁR";
+        case 4:
+          return "ÁPR";
+        case 5:
+          return "MÁJ";
+        case 6:
+          return "JÚN";
+        case 7:
+          return "JÚL";
+        case 8:
+          return "AUG";
+        case 9:
+          return "SZEP";
+        case 10:
+          return "OKT";
+        case 11:
+          return "NOV";
+        case 12:
+          return "DEC";
+      }
+      return "JAN";
+    case UiLanguage::CS:
+      switch (month) {
+        case 1:
+          return "LED";
+        case 2:
+          return "ÚNO";
+        case 3:
+          return "BŘE";
+        case 4:
+          return "DUB";
+        case 5:
+          return "KVĚ";
+        case 6:
+          return "ČVN";
+        case 7:
+          return "ČVC";
+        case 8:
+          return "SRP";
+        case 9:
+          return "ZÁŘ";
+        case 10:
+          return "ŘÍJ";
+        case 11:
+          return "LIS";
+        case 12:
+          return "PRO";
+      }
+      return "LED";
     default:
       return month_text(month, UiLanguage::EN);
   }
@@ -705,6 +899,38 @@ inline HistoryText history_text(UiLanguage language) {
         "HR",
         "PRES",
         "LUM",
+        "{value} min",
+        "{value} max",
+      };
+    case UiLanguage::HU:
+      return {
+        "PM₁",
+        "PM₂",
+        "PM₄",
+        "PM₁₀",
+        "CO₂",
+        "VOC",
+        "NOx",
+        "HŐM",
+        "PÁRA",
+        "NYOMÁS",
+        "FÉNY",
+        "{value} min",
+        "{value} max",
+      };
+    case UiLanguage::CS:
+      return {
+        "PM₁",
+        "PM₂",
+        "PM₄",
+        "PM₁₀",
+        "CO₂",
+        "VOC",
+        "NOx",
+        "TEPLOTA",
+        "VLHKOST",
+        "TLAK",
+        "SVĚTLO",
         "{value} min",
         "{value} max",
       };
@@ -807,6 +1033,9 @@ struct SetupPageText {
   const char *update_interval_label;
   const char *night_screen_off_title;
   const char *night_screen_off_description;
+  const char *night_screen_mode_label;
+  const char *night_screen_mode_off_label;
+  const char *night_screen_mode_dim_label;
   const char *hazard_focus_title;
   const char *hazard_focus_description;
   const char *firmware_title;
@@ -841,6 +1070,10 @@ inline const char *ui_language_value(AirDot::UiLanguage language) {
       return "nl";
     case AirDot::UiLanguage::FR:
       return "fr";
+    case AirDot::UiLanguage::HU:
+      return "hu";
+    case AirDot::UiLanguage::CS:
+      return "cs";
     default:
       return "en";
   }
@@ -856,12 +1089,16 @@ inline const char *ui_language_label(AirDot::UiLanguage language) {
       return "Nederlands";
     case UiLanguage::FR:
       return "Français";
+    case UiLanguage::HU:
+      return "Magyar";
+    case UiLanguage::CS:
+      return "Čeština";
     default:
       return "English";
   }
 }
 
-inline uint8_t ui_language_count() { return 4; }
+inline uint8_t ui_language_count() { return 6; }
 
 inline AirDot::UiLanguage ui_language_at(uint8_t index) {
   switch (index) {
@@ -873,6 +1110,10 @@ inline AirDot::UiLanguage ui_language_at(uint8_t index) {
       return AirDot::UiLanguage::NL;
     case 3:
       return AirDot::UiLanguage::FR;
+    case 4:
+      return AirDot::UiLanguage::HU;
+    case 5:
+      return AirDot::UiLanguage::CS;
     default:
       return AirDot::UiLanguage::EN;
   }
@@ -887,6 +1128,10 @@ inline AirDot::UiLanguage ui_language_from_value(const std::string &value) {
     return AirDot::UiLanguage::NL;
   if (value == "fr")
     return AirDot::UiLanguage::FR;
+  if (value == "hu")
+    return AirDot::UiLanguage::HU;
+  if (value == "cs")
+    return AirDot::UiLanguage::CS;
   return AirDot::UiLanguage::EN;
 }
 
@@ -982,7 +1227,10 @@ inline SetupPageText setup_page_text(AirDot::UiLanguage language) {
         "Cycle through the display screens automatically.",
         "Update interval",
         "Night mode",
-        "Turn off the display during the selected hours.",
+        "Dim the display or turn it off during the selected hours.",
+        "Display in night mode",
+        "Display off",
+        "Dim display",
         "Focus on critical values",
         "Automatically show the chart for the sensor with the highest risk level.",
         "Firmware update",
@@ -1088,7 +1336,10 @@ inline SetupPageText setup_page_text(AirDot::UiLanguage language) {
         "Wechselt automatisch zwischen den Bildschirmen.",
         "Aktualisierungsintervall",
         "Nachtmodus",
-        "Schalte den Bildschirm während der eingestellten Zeiten aus.",
+        "Display während der eingestellten Zeiten dimmen oder ausschalten.",
+        "Display im Nachtmodus",
+        "Display aus",
+        "Display dimmen",
         "Fokus bei kritischen Werten",
         "Zeige automatisch die Grafik des Sensors mit dem höchsten Risikoniveau.",
         "Firmware-Update",
@@ -1194,7 +1445,10 @@ inline SetupPageText setup_page_text(AirDot::UiLanguage language) {
         "Wissel automatisch tussen de schermen.",
         "Update-interval",
         "Nachtstand",
-        "Schakel het scherm uit tijdens de ingestelde uren.",
+        "Dim het scherm of zet het uit tijdens de ingestelde tijden.",
+        "Scherm in nachtstand",
+        "Scherm uit",
+        "Gedimd scherm",
         "Focus bij kritieke waarden",
         "Toon automatisch de grafiek van de sensor met het hoogste risiconiveau.",
         "Firmware update",
@@ -1300,7 +1554,10 @@ inline SetupPageText setup_page_text(AirDot::UiLanguage language) {
         "Faites défiler automatiquement les écrans.",
         "Intervalle de mise à jour",
         "Mode nuit",
-        "Éteignez l’écran pendant les heures définies.",
+        "Atténuer ou éteindre l’écran pendant les heures définies.",
+        "Écran en mode nuit",
+        "Écran éteint",
+        "Écran atténué",
         "Focus sur les valeurs critiques",
         "Affichez automatiquement le graphique du capteur présentant le niveau de risque le plus élevé.",
         "Mise à jour du firmware",
@@ -1315,6 +1572,224 @@ inline SetupPageText setup_page_text(AirDot::UiLanguage language) {
         "Maintenez le bouton d’action enfoncé pour rouvrir la configuration.",
         "Continuer sans Wi-Fi",
         "Aucun réseau Wi-Fi trouvé",
+      };
+    case AirDot::UiLanguage::HU:
+      return {
+        "AirDot beállítása",
+        "AirDot beállítása",
+        "Kapcsolat, idő, kijelző és integrációk beállítása.",
+        "Beállítások mentve",
+        "Kapcsolat",
+        "Válassz egy Wi-Fi hálózatot, vagy használd az AirDot-ot Wi-Fi nélkül.",
+        "Wi-Fi hálózat",
+        "Wi-Fi jelszó",
+        "Add meg a jelszót",
+        "Jelszó megjelenítése vagy elrejtése",
+        "Idő",
+        "Dátum, idő és időformátum beállítása.",
+        "Dátum és idő",
+        "Engedélyezd az AirDot számára az idő automatikus frissítését, vagy állítsd be manuálisan.",
+        "Időbeállítás",
+        "Automatikus",
+        "Kézi",
+        "Dátum és idő",
+        "Home Assistant",
+        "Az AirDot automatikus felismerésének engedélyezése a Home Assistant-ban.",
+        "MQTT",
+        "Mérési adatok küldése egy MQTT szerverre.",
+        "Szerver",
+        "192.168.1.10",
+        "Port",
+        "Felhasználónév",
+        "Jelszó",
+        "Topic előtag (prefix)",
+        "Opcionális",
+        "Levegőminőség",
+        "Válaszd ki, melyik irányelvet használja az AirDot a levegőminőség értékeléséhez.",
+        "Irányelv",
+        "Érzékelő kalibrálása",
+        "A beépített hőmérő mérésének korrekciója.",
+        "SEN66 ennyivel mér feljebb",
+        "CO2 bázisérték",
+        "CO2 bázisérték kényszerített kalibrálása",
+        "Helyezd az AirDot-ot friss, kültéri levegőre legalább 3 percre, majd mentsd el.",
+        "Riasztások",
+        "Állítsd be, mikor riasszon az AirDot.",
+        "Képernyő ébresztése",
+        "Kapcsolja be a kijelzőt, ha a Home Assistant riasztást küld.",
+        "Integrációk",
+        "Csatlakoztasd az AirDot-ot a Home Assistant-hoz vagy egy MQTT szerverhez.",
+        "Hangjelzések",
+        "Figyelmeztető hangjelzés lejátszása, ha egy mért érték veszélyes szintet ér el.",
+        "Helyszín",
+        "Add meg a pontos helyzetet az időjárás és a repülőgép-radar számára.",
+        "Pontos helyszín",
+        "Ezen koordináták használata az időjáráshoz és a repülőgép-radarhoz.",
+        "Szélesség (Latitude)",
+        "Hosszúság (Longitude)",
+        "Repülőgép-radar",
+        "Hatótávolság és a megjelenített forgalom beállítása.",
+        "Repülőgép-radar",
+        "Élő repülőgép-forgalom megjelenítése a radarképernyőn.",
+        "Hatótávolság",
+        "Forgalom",
+        "Összes repülőgép",
+        "Csak katonai",
+        "Időjárás",
+        "A helyi kültéri időjárás megjelenítése a kijelzőn.",
+        "Időjárás frissítések",
+        "Automatikus észlelés vagy a beállított pontos helyszín használata.",
+        "Helyszín",
+        "Automatikus",
+        "Helyszín megadása",
+        "Kijelző",
+        "Nyelv, mértékegységek, fényerő és megjelenés beállítása.",
+        "Nyelv",
+        "Mértékegységek",
+        "Metrikus",
+        "Imperiális",
+        "Időformátum",
+        "24 órás",
+        "12 órás",
+        "Fényerő",
+        "Alacsony",
+        "Közepes",
+        "Magas",
+        "Sötét mód",
+        "Sötét kijelzőtéma használata.",
+        "Automatikus fényerő",
+        "A fényerő automatikus beállítása a környezeti fényviszonyok alapján.",
+        "Automatikus képernyőváltás",
+        "A kijelző oldalainak automatikus váltogatása körforgásban.",
+        "Frissítési időköz",
+        "Éjszakai mód",
+        "Halványítsd el vagy kapcsold ki a kijelzőt a kiválasztott időszakban.",
+        "Kijelző éjszakai módban",
+        "Kijelző kikapcsolása",
+        "Halványított kijelző",
+        "Fókusz a kritikus értékekre",
+        "Automatikusan jelenítse meg a legmagasabb kockázati szintű érzékelő diagramját.",
+        "Firmware frissítés",
+        "Válassz ki egy OTA .bin fájlt az AirDot firmware frissítéséhez.",
+        "Firmware fájl",
+        "Firmware fájl kiválasztása",
+        "Firmware frissítése",
+        "Sikeres frissítés",
+        "Előbb válassz ki egy firmware fájlt",
+        "A frissítés sikertelen",
+        "Mentés",
+        "Tartsd lenyomva a funkciógombot a beállítások későbbi újbóli megnyitásához.",
+        "Folytatás Wi-Fi nélkül",
+        "Nem található Wi-Fi hálózat",
+      };
+    case AirDot::UiLanguage::CS:
+      return {
+        "Nastavení AirDot",
+        "Nastavení AirDot",
+        "Nastavte připojení, čas, displej a integrace.",
+        "Nastavení uloženo",
+        "Připojení",
+        "Vyberte Wi-Fi síť, nebo používejte AirDot bez Wi-Fi.",
+        "Wi-Fi síť",
+        "Heslo k Wi-Fi",
+        "Zadejte heslo",
+        "Zobrazit nebo skrýt heslo",
+        "Čas",
+        "Nastavte datum, čas a formát času.",
+        "Datum a čas",
+        "Nechte AirDot nastavovat čas automaticky, nebo datum a čas nastavte ručně.",
+        "Nastavení času",
+        "Automaticky",
+        "Ručně",
+        "Datum a čas",
+        "Home Assistant",
+        "Umožnit automatické nalezení AirDotu v Home Assistantu.",
+        "MQTT",
+        "Odesílat naměřená data na MQTT server.",
+        "Server",
+        "192.168.1.10",
+        "Port",
+        "Uživatelské jméno",
+        "Heslo",
+        "Prefix topicu",
+        "Volitelné",
+        "Kvalita vzduchu",
+        "Vyberte doporučení, podle kterého bude AirDot hodnotit kvalitu vzduchu.",
+        "Doporučení",
+        "Kalibrace senzorů",
+        "Upravte údaj vestavěného teplotního senzoru.",
+        "SEN66 ukazuje vyšší teplotu o",
+        "Referenční hodnota CO2",
+        "Vynutit kalibraci referenční hodnoty CO2",
+        "Umístěte AirDot alespoň na 3 minuty na čerstvý venkovní vzduch a poté nastavení uložte.",
+        "Upozornění",
+        "Nastavte, kdy vás má AirDot upozornit.",
+        "Probuzení displeje",
+        "Zapnout displej, když Home Assistant odešle upozornění.",
+        "Integrace",
+        "Připojte AirDot k Home Assistantu nebo MQTT serveru.",
+        "Zvuková upozornění",
+        "Přehrát výstražný tón, když některá hodnota dosáhne nebezpečné úrovně.",
+        "Poloha",
+        "Nastavte přesnou polohu používanou pro počasí a letecký radar.",
+        "Přesná poloha",
+        "Použít tyto souřadnice pro počasí a letecký radar.",
+        "Zeměpisná šířka",
+        "Zeměpisná délka",
+        "Letecký radar",
+        "Nastavte dosah a zobrazovaný provoz.",
+        "Letecký radar",
+        "Zobrazovat živý letecký provoz na obrazovce radaru.",
+        "Dosah",
+        "Provoz",
+        "Všechna letadla",
+        "Pouze vojenská",
+        "Počasí",
+        "Zobrazovat na displeji místní venkovní počasí.",
+        "Aktualizace počasí",
+        "Použít automatické určení polohy nebo nastavenou přesnou polohu.",
+        "Poloha",
+        "Automaticky",
+        "Nastavit polohu",
+        "Displej",
+        "Nastavte jazyk, jednotky, jas a vzhled.",
+        "Jazyk",
+        "Jednotky",
+        "Metrické",
+        "Imperiální",
+        "Formát času",
+        "24hodinový",
+        "12hodinový",
+        "Jas",
+        "Nízký",
+        "Střední",
+        "Vysoký",
+        "Tmavý režim",
+        "Používat tmavý motiv displeje.",
+        "Automatický jas",
+        "Automaticky upravovat jas podle okolního světla.",
+        "Automatické přepínání obrazovek",
+        "Automaticky střídat obrazovky displeje.",
+        "Interval aktualizace",
+        "Noční režim",
+        "Ztlumit displej nebo ho vypnout během nastavených časů.",
+        "Displej v nočním režimu",
+        "Vypnout displej",
+        "Ztlumený displej",
+        "Zaměření na kritické hodnoty",
+        "Automaticky zobrazit graf senzoru s nejvyšší úrovní rizika.",
+        "Aktualizace firmwaru",
+        "Vyberte OTA .bin soubor pro aktualizaci firmwaru AirDotu.",
+        "Soubor firmwaru",
+        "Vybrat soubor firmwaru",
+        "Aktualizovat firmware",
+        "Aktualizace byla úspěšná",
+        "Nejprve vyberte soubor firmwaru",
+        "Aktualizace selhala",
+        "Uložit",
+        "Podržením akčního tlačítka můžete nastavení později znovu otevřít.",
+        "Pokračovat bez Wi-Fi",
+        "Nebyly nalezeny žádné Wi-Fi sítě",
       };
     default:
       return setup_page_text(AirDot::UiLanguage::EN);
@@ -1451,6 +1926,9 @@ inline void append_setup_page_translation_json(std::string &html, AirDot::UiLang
   append_json_field_(html, "update_interval_label", text.update_interval_label, first);
   append_json_field_(html, "night_screen_off_title", text.night_screen_off_title, first);
   append_json_field_(html, "night_screen_off_description", text.night_screen_off_description, first);
+  append_json_field_(html, "night_screen_mode_label", text.night_screen_mode_label, first);
+  append_json_field_(html, "night_screen_mode_off_label", text.night_screen_mode_off_label, first);
+  append_json_field_(html, "night_screen_mode_dim_label", text.night_screen_mode_dim_label, first);
   append_json_field_(html, "hazard_focus_title", text.hazard_focus_title, first);
   append_json_field_(html, "hazard_focus_description", text.hazard_focus_description, first);
   append_json_field_(html, "firmware_title", text.firmware_title, first);
@@ -1614,6 +2092,78 @@ inline ScreenContent screen_content(int screen, AirDot::UiLanguage language) {
           };
       }
       break;
+    case AirDot::UiLanguage::HU:
+      switch (screen) {
+        case 0:
+          return {
+            "AirDot beállítása",
+            "Nyisd meg a Wi-Fi-t a telefonodon,\nés válaszd az AirDot-XXXXXX hálózatot.\n\nEzután nyisd meg a böngészőt,\nés lépj a 192.168.4.1 címre.",
+            "Később",
+            "Vissza",
+            nullptr,
+          };
+        case 1:
+          return {
+            "Csatlakozás",
+            "Az AirDot alkalmazza a beállításokat\nés kapcsolódik a hálózathoz.",
+            "Kérlek várj…",
+            nullptr,
+            nullptr,
+          };
+        case 2:
+          return {
+            "AirDot beállítva",
+            "Mostantól nyomon követheted\na levegőminőséget.",
+            nullptr,
+            nullptr,
+            "Áttekintés megnyitása {seconds} másodperc múlva…",
+          };
+        case 3:
+          return {
+            "Nyelv kiválasztása",
+            "Nyomd meg röviden a váltáshoz.\nTartsd lenyomva a megerősítéshez.",
+            nullptr,
+            nullptr,
+            nullptr,
+          };
+      }
+      break;
+    case AirDot::UiLanguage::CS:
+      switch (screen) {
+        case 0:
+          return {
+            "Nastavení AirDotu",
+            "Otevřete Wi-Fi v telefonu\na vyberte AirDot-XXXXXX.\n\nPoté otevřete prohlížeč\na přejděte na 192.168.4.1",
+            "Později",
+            "Zpět",
+            nullptr,
+          };
+        case 1:
+          return {
+            "Připojování",
+            "AirDot ukládá nastavení\na připojuje se.",
+            "Čekejte prosím…",
+            nullptr,
+            nullptr,
+          };
+        case 2:
+          return {
+            "AirDot je nastavený",
+            "Nyní můžete sledovat\nkvalitu vzduchu.",
+            nullptr,
+            nullptr,
+            "Přehled se otevře za {seconds}…",
+          };
+        case 3:
+          return {
+            "Vyberte jazyk",
+            "Krátkým stiskem přepnete.\nPodržením potvrdíte.",
+            nullptr,
+            nullptr,
+            nullptr,
+          };
+      }
+      break;
     default:
       return screen_content(screen, AirDot::UiLanguage::EN);
   }
@@ -1630,6 +2180,10 @@ inline const char *notification_title_text(AirDot::UiLanguage language) {
       return "Melding";
     case UiLanguage::FR:
       return "Notification";
+    case UiLanguage::HU:
+      return "Értesítés";
+    case UiLanguage::CS:
+      return "Upozornění";
     default:
       return "Notification";
   }
@@ -1645,6 +2199,10 @@ inline const char *dismiss_button_text(AirDot::UiLanguage language) {
       return "Sluiten";
     case UiLanguage::FR:
       return "Fermer";
+    case UiLanguage::HU:
+      return "Bezárás";
+    case UiLanguage::CS:
+      return "Zavřít";
     default:
       return "Close";
   }

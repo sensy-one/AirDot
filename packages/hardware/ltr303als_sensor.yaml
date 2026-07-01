@@ -27,7 +27,12 @@ sensor:
               AirDot::onboarding::setup_or_onboarding_active(
                 id(setup_ap_active), id(setup_portal_active), id(onboarding_ui_active));
             if (id(setup_firmware_update_active) > 0) {
-              id(display_backlight).turn_off().perform();
+              AirDot::onboarding::turn_display_backlight_off(id(display_backlight));
+              id(display_panel).set_screen_powered(false);
+              return;
+            }
+            if (!AirDot::onboarding::load_display_power_enabled() && !setup_or_onboarding_active) {
+              AirDot::onboarding::turn_display_backlight_off(id(display_backlight));
               id(display_panel).set_screen_powered(false);
               return;
             }
@@ -58,12 +63,13 @@ sensor:
                 !wake_for_hazard_focus &&
                 !wake_for_display_alert &&
                 !display_sleep_button_wake_active) {
-              id(display_backlight).turn_off().perform();
-              id(display_panel).set_screen_powered(false);
+              AirDot::onboarding::apply_night_screen_state(id(display_panel), id(display_backlight));
               return;
             }
-            id(display_panel).set_screen_powered(true);
-
-            AirDot::onboarding::apply_display_brightness(
-              id(display_backlight), x, ${display_auto_dim_min_lux}, ${display_auto_dim_max_lux},
+            AirDot::onboarding::wake_display_with_brightness(
+              id(display_panel), id(display_backlight), x,
+              ${display_auto_dim_min_lux}, ${display_auto_dim_max_lux},
               ${display_auto_dim_min_brightness});
+        - lambda: |-
+            AirDot::onboarding::publish_current_display_brightness_percent(
+              id(display_backlight), id(ha_display_brightness_percent));

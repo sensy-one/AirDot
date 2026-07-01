@@ -82,7 +82,10 @@ setup_page:
   time_12h_label: 12 uur
 
   night_screen_off_title: Nachtstand
-  night_screen_off_description: Schakel het scherm uit tijdens de ingestelde uren.
+  night_screen_off_description: Dim het scherm of zet het uit tijdens de ingestelde tijden.
+  night_screen_mode_label: Scherm in nachtstand
+  night_screen_mode_off_label: Scherm uit
+  night_screen_mode_dim_label: Gedimd scherm
 
   location_title: Locatie
   location_note: Stel de exacte locatie in voor weer en vluchtradar.

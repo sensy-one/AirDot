@@ -82,7 +82,10 @@ setup_page:
   time_12h_label: 12 heures
 
   night_screen_off_title: Mode nuit
-  night_screen_off_description: Éteignez l’écran pendant les heures définies.
+  night_screen_off_description: Atténuer ou éteindre l’écran pendant les heures définies.
+  night_screen_mode_label: Écran en mode nuit
+  night_screen_mode_off_label: Écran éteint
+  night_screen_mode_dim_label: Écran atténué
 
   location_title: Localisation
   location_note: Définissez la position exacte utilisée pour la météo et le radar de vol.

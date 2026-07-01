@@ -82,7 +82,10 @@ setup_page:
   time_12h_label: 12-hour
 
   night_screen_off_title: Night mode
-  night_screen_off_description: Turn off the display during the selected hours.
+  night_screen_off_description: Dim the display or turn it off during the selected hours.
+  night_screen_mode_label: Display in night mode
+  night_screen_mode_off_label: Display off
+  night_screen_mode_dim_label: Dim display
 
   location_title: Location
   location_note: Set the exact location used by weather and flight radar.

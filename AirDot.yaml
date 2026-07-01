@@ -19,6 +19,7 @@ packages:
   hardware_sen66_compensation: !include packages/hardware/sen66_compensation.yaml
 
   integration_published_sensors: !include packages/integrations/published_sensors.yaml
+  integration_display_controls: !include packages/integrations/display_controls.yaml
 
   ui_fonts: !include packages/ui/fonts.yaml
   ui_theme: !include packages/ui/theme.yaml

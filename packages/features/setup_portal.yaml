@@ -554,9 +554,8 @@ script:
                   lambda: "return AirDot::onboarding::load_display_alert_wake_screen_enabled();"
                 then:
                   - lambda: |-
-                      id(display_panel).set_screen_powered(true);
-                      AirDot::onboarding::apply_display_brightness(
-                        id(display_backlight), id(ambient_light_sensor).state,
+                      AirDot::onboarding::wake_display_with_brightness(
+                        id(display_panel), id(display_backlight), id(ambient_light_sensor).state,
                         ${display_auto_dim_min_lux}, ${display_auto_dim_max_lux},
                         ${display_auto_dim_min_brightness});
 
@@ -586,17 +585,18 @@ script:
       - script.execute: ui_refresh_onboarding_overlay
       - lvgl.widget.show: modal_overlay_layer
       - component.update: display_panel
-      - lambda: |-
-          id(display_panel).set_screen_powered(true);
       - if:
           condition:
             lambda: "return wake_backlight;"
           then:
             - lambda: |-
-                AirDot::onboarding::apply_display_brightness(
-                  id(display_backlight), id(ambient_light_sensor).state,
+                AirDot::onboarding::wake_display_with_brightness(
+                  id(display_panel), id(display_backlight), id(ambient_light_sensor).state,
                   ${display_auto_dim_min_lux}, ${display_auto_dim_max_lux},
                   ${display_auto_dim_min_brightness});
+          else:
+            - lambda: |-
+                id(display_panel).set_screen_powered(true);
       - if:
           condition:
             lambda: "return id(onboarding_ui_screen) != AirDot::onboarding::SETUP_LANGUAGE;"
@@ -679,7 +679,7 @@ interval:
           then:
             - lambda: |-
                 id(setup_firmware_update_active) = 2;
-                id(display_backlight).turn_off().perform();
+                AirDot::onboarding::turn_display_backlight_off(id(display_backlight));
                 id(display_panel).set_screen_powered(false);
       - if:
           condition:
@@ -687,9 +687,8 @@ interval:
           then:
             - lambda: |-
                 id(setup_firmware_update_active) = 0;
-                id(display_panel).set_screen_powered(true);
-                AirDot::onboarding::apply_display_brightness(
-                  id(display_backlight), id(ambient_light_sensor).state,
+                AirDot::onboarding::wake_display_with_brightness(
+                  id(display_panel), id(display_backlight), id(ambient_light_sensor).state,
                   ${display_auto_dim_min_lux}, ${display_auto_dim_max_lux},
                   ${display_auto_dim_min_brightness});
             - component.update: display_panel
@@ -760,9 +759,8 @@ interval:
                   AirDot::onboarding::forget_saved_wifi_settings();
                   AirDot::onboarding::save_first_run_onboarding_complete(false);
                 }
-                id(display_panel).set_screen_powered(true);
-                AirDot::onboarding::apply_display_brightness(
-                  id(display_backlight), id(ambient_light_sensor).state,
+                AirDot::onboarding::wake_display_with_brightness(
+                  id(display_panel), id(display_backlight), id(ambient_light_sensor).state,
                   ${display_auto_dim_min_lux}, ${display_auto_dim_max_lux},
                   ${display_auto_dim_min_brightness});
             - script.execute: ui_refresh_onboarding_overlay

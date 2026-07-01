@@ -1,0 +1,260 @@
+language:
+  id: 4
+  code: hu
+  label: Magyar
+
+setup_page:
+  html_title: AirDot beállítása
+  hero_title: AirDot beállítása
+  hero_body: Kapcsolat, idő, kijelző és integrációk beállítása.
+
+  saved: Beállítások mentve
+
+  network_title: Kapcsolat
+  network_note: Válassz egy Wi-Fi hálózatot, vagy használd az AirDot-ot Wi-Fi nélkül.
+  wifi_ssid_label: Wi-Fi hálózat
+  wifi_password_label: Wi-Fi jelszó
+  wifi_password_placeholder: Add meg a jelszót
+  password_visibility_toggle_label: Jelszó megjelenítése vagy elrejtése
+  offline_option: Folytatás Wi-Fi nélkül
+  no_networks: Nem található Wi-Fi hálózat
+
+  integrations_title: Integrációk
+  integrations_note: Csatlakoztasd az AirDot-ot a Home Assistant-hoz vagy egy MQTT szerverhez.
+
+  ha_discovery_title: Home Assistant
+  ha_discovery_description: Az AirDot automatikus felismerésének engedélyezése a Home Assistant-ban.
+
+  mqtt_title: MQTT
+  mqtt_description: Mérési adatok küldése egy MQTT szerverre.
+  mqtt_broker_label: Szerver
+  mqtt_broker_placeholder: 192.168.1.10
+  mqtt_port_label: Port
+  mqtt_username_label: Felhasználónév
+  mqtt_password_label: Jelszó
+  mqtt_topic_prefix_label: Topic előtag (prefix)
+  optional_placeholder: Opcionális
+  air_quality_title: Levegőminőség
+  air_quality_note: Válaszd ki, melyik irányelvet használja az AirDot a levegőminőség értékeléséhez.
+  air_quality_profile_label: Irányelv
+
+  sensor_calibration_title: Érzékelő kalibrálása
+  sensor_calibration_note: A beépített hőmérő mérésének korrekciója.
+  sen66_temperature_offset_label: SEN66 ennyivel mér feljebb
+  sen66_co2_reference_label: CO2 bázisérték
+  sen66_co2_calibration_title: CO2 bázisérték kényszerített kalibrálása
+  sen66_co2_calibration_description: Helyezd az AirDot-ot friss, kültéri levegőre legalább 3 percre, majd mentsd el.
+
+  alerts_title: Riasztások
+  alerts_note: Állítsd be, mikor riasszon az AirDot.
+
+  display_alert_wake_screen_title: Képernyő ébresztése
+  display_alert_wake_screen_description: Kapcsolja be a kijelzőt, ha a Home Assistant riasztást küld.
+
+  audio_alerts_title: Hangjelzések
+  audio_alerts_description: Figyelmeztető hangjelzés lejátszása, ha egy mért érték veszélyes szintet ér el.
+
+  hazard_focus_title: Fókusz a kritikus értékekre
+  hazard_focus_description: Automatikusan jelenítse meg a legmagasabb kockázati szintű érzékelő diagramját.
+
+  firmware_title: Firmware frissítés
+  firmware_note: Válassz ki egy OTA .bin fájlt az AirDot firmware frissítéséhez.
+  firmware_file_label: Firmware fájl
+  firmware_select_button: Firmware fájl kiválasztása
+  firmware_upload_button: Firmware frissítése
+  firmware_success: Sikeres frissítés
+  firmware_no_file: Előbb válassz ki egy firmware fájlt
+  firmware_failed: A frissítés sikertelen
+
+  time_title: Idő
+  time_note: Dátum, idő és időformátum beállítása.
+
+  time_server_title: Dátum és idő
+  time_server_description: Engedélyezd az AirDot számára az idő automatikus frissítését, vagy állítsd be manuálisan.
+  time_source_label: Időbeállítás
+  time_source_network_label: Automatikus
+  time_source_manual_label: Kézi
+
+  manual_time_label: Dátum és idő
+
+  time_format_label: Időformátum
+  time_24h_label: 24 órás
+  time_12h_label: 12 órás
+
+  night_screen_off_title: Éjszakai mód
+  night_screen_off_description: Halványítsd el vagy kapcsold ki a kijelzőt a kiválasztott időszakban.
+  night_screen_mode_label: Kijelző éjszakai módban
+  night_screen_mode_off_label: Kijelző kikapcsolása
+  night_screen_mode_dim_label: Halványított kijelző
+
+  location_title: Helyszín
+  location_note: Add meg a pontos helyzetet az időjárás és a repülőgép-radar számára.
+  exact_location_title: Pontos helyszín
+  exact_location_description: Ezen koordináták használata az időjáráshoz és a repülőgép-radarhoz.
+  location_latitude_label: Szélesség (Latitude)
+  location_longitude_label: Hosszúság (Longitude)
+
+  flight_radar_title: Repülőgép-radar
+  flight_radar_note: Hatótávolság és a megjelenített forgalom beállítása.
+  flight_radar_enabled_title: Repülőgép-radar
+  flight_radar_enabled_description: Élő repülőgép-forgalom megjelenítése a radarképernyőn.
+  flight_radar_range_label: Hatótávolság
+  flight_radar_traffic_label: Forgalom
+  flight_radar_traffic_all_label: Összes repülőgép
+  flight_radar_traffic_military_label: Csak katonai
+
+  weather_title: Időjárás
+  weather_note: A helyi kültéri időjárás megjelenítése a kijelzőn.
+
+  weather_sync_title: Időjárás frissítések
+  weather_sync_description: Automatikus észlelés vagy a beállított pontos helyszín használata.
+  weather_location_mode_label: Helyszín
+  weather_location_ip_label: Automatikus
+  weather_location_manual_label: Helyszín megadása
+
+  display_title: Kijelző
+  display_note: Nyelv, mértékegységek, fényerő és megjelenés beállítása.
+
+  language_label: Nyelv
+  units_label: Mértékegységek
+  metric_label: Metrikus
+  imperial_label: Imperiális
+
+  brightness_label: Fényerő
+  brightness_low: Alacsony
+  brightness_medium: Közepes
+  brightness_high: Magas
+
+  dark_mode_title: Sötét mód
+  dark_mode_description: Sötét kijelzőtéma használata.
+
+  adaptive_brightness_title: Automatikus fényerő
+  adaptive_brightness_description: A fényerő automatikus beállítása a környezeti fényviszonyok alapján.
+
+  auto_page_switch_title: Automatikus képernyőváltás
+  auto_page_switch_description: A kijelző oldalainak automatikus váltogatása körforgásban.
+  update_interval_label: Frissítési időköz
+
+  save_button: Mentés
+  footer_note: Tartsd lenyomva a funkciógombot a beállítások későbbi újbóli megnyitásához.
+
+air_quality:
+  balanced:
+    status: JÓ
+    action: Nincs szükség intézkedésre
+  moderate:
+    status: MÉRSEKELT
+    action: Ellenőrizd az értékeket
+  poor:
+    status: ROSSZ
+    action: Szellőztesd ki a helyiséget
+  unhealthy:
+    status: EGÉSZSÉGTELEN
+    action: Korlátozd a bent tartózkodást
+  hazardous:
+    status: KRITIKUS
+    action: Azonnali intézkedés szükséges
+
+factory_reset:
+  factory_reset_countdown:
+    title: Gyári visszaállítás
+    body: |-
+      Tartsd lenyomva
+      az AirDot
+      visszaállításához.
+
+      Visszaállítás {seconds} mp múlva...
+connection:
+  indoor: Beltéri
+  outdoor: Kültéri
+
+weather:
+  clear: Tiszta
+  cloudy: Felhős
+  fog: Köd
+  drizzle: Szitálás
+  freezing_drizzle: Ónos szitálás
+  rain: Eső
+  freezing_rain: Ónos eső
+  snow: Havazás
+  snow_grains: Hódara
+  rain_showers: Zápor
+  snow_showers: Hózápor
+  thunderstorm: Zivatar
+  thunderstorm_hail: Jégesővel kísért zivatar
+  high_label: Max
+  low_label: Min
+
+notification:
+  fallback: Értesítés
+  dismiss: Bezárás
+
+date:
+  format: "{month} {day} {weekday}"
+  weekdays:
+    sunday: VAS
+    monday: HÉT
+    tuesday: KED
+    wednesday: SZE
+    thursday: CSÜ
+    friday: PÉN
+    saturday: SZO
+  months:
+    january: JAN
+    february: FEB
+    march: MÁR
+    april: ÁPR
+    may: MÁJ
+    june: JÚN
+    july: JÚL
+    august: AUG
+    september: SZEP
+    october: OKT
+    november: NOV
+    december: DEC
+
+history:
+  pm1_title: PM₁
+  pm25_title: PM₂
+  pm4_title: PM₄
+  pm10_title: PM₁₀
+  co2_title: CO₂
+  voc_title: VOC
+  nox_title: NOx
+  temperature_title: HŐM
+  humidity_title: PÁRA
+  pressure_title: NYOMÁS
+  light_title: FÉNY
+  min_pattern: "{value} min"
+  max_pattern: "{value} max"
+
+onboarding:
+  setup_language:
+    title: Nyelv kiválasztása
+    body: |-
+      Nyomd meg röviden a váltáshoz.
+      Tartsd lenyomva a megerősítéshez.
+  setup_connect:
+    title: AirDot beállítása
+    body: |-
+      Nyisd meg a Wi-Fi-t a telefonodon,
+      és válaszd az AirDot-XXXXXX hálózatot.
+
+      Ezután nyisd meg a böngészőt,
+      és lépj a 192.168.4.1 címre.
+    button_0: Később
+    button_0_reopen: Vissza
+
+  setup_applying:
+    title: Csatlakozás
+    body: |-
+      Az AirDot alkalmazza a beállításokat
+      és kapcsolódik a hálózathoz.
+    button_0: Kérlek várj…
+
+  setup_complete:
+    title: AirDot beállítva
+    body: |-
+      Mostantól nyomon követheted
+      a levegőminőséget.
+    countdown: Áttekintés megnyitása {seconds} másodperc múlva…

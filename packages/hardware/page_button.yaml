@@ -62,9 +62,8 @@ script:
             - lambda: |-
                 id(page_button_factory_reset_started) = 1;
                 id(display_sleep_wake_until_ms) = 0;
-                id(display_panel).set_screen_powered(true);
-                AirDot::onboarding::apply_display_brightness(
-                  id(display_backlight), id(ambient_light_sensor).state,
+                AirDot::onboarding::wake_display_with_brightness(
+                  id(display_panel), id(display_backlight), id(ambient_light_sensor).state,
                   ${display_auto_dim_min_lux}, ${display_auto_dim_max_lux},
                   ${display_auto_dim_min_brightness});
                 const auto ui_language = AirDot::onboarding::load_ui_language();
@@ -209,10 +208,10 @@ script:
             return;
           }
 
+          AirDot::onboarding::save_display_power_enabled(true);
           id(display_sleep_wake_until_ms) = millis() + 10000UL;
-          id(display_panel).set_screen_powered(true);
-          AirDot::onboarding::apply_display_brightness(
-            id(display_backlight), id(ambient_light_sensor).state,
+          AirDot::onboarding::wake_display_with_brightness(
+            id(display_panel), id(display_backlight), id(ambient_light_sensor).state,
             ${display_auto_dim_min_lux}, ${display_auto_dim_max_lux},
             ${display_auto_dim_min_brightness});
       - if:
@@ -241,8 +240,7 @@ interval:
               AirDot::onboarding::screen_off_window_active_at_utc(static_cast<uint32_t>(now.timestamp)) &&
               id(ui_alert_active) == 0 &&
               !setup_or_onboarding_active) {
-            id(display_backlight).turn_off().perform();
-            id(display_panel).set_screen_powered(false);
+            AirDot::onboarding::apply_night_screen_state(id(display_panel), id(display_backlight));
           }
 
 binary_sensor:
@@ -267,10 +265,17 @@ binary_sensor:
             id(page_button_factory_reset_started) = 0;
             id(page_button_long_press_handled) = 0;
             const auto now = id(sntp_time).utcnow();
-            id(page_button_wake_only_release) =
+            const bool sleep_window_active =
               now.is_valid() &&
-              AirDot::onboarding::screen_off_window_active_at_utc(static_cast<uint32_t>(now.timestamp)) &&
-              !id(display_panel).is_screen_powered();
+              AirDot::onboarding::screen_off_window_active_at_utc(static_cast<uint32_t>(now.timestamp));
+            const bool sleep_wake_active =
+              id(display_sleep_wake_until_ms) != 0 &&
+              static_cast<int32_t>(millis() - id(display_sleep_wake_until_ms)) < 0;
+            id(page_button_wake_only_release) =
+              !AirDot::onboarding::load_display_power_enabled() ||
+              (sleep_window_active &&
+               !sleep_wake_active &&
+               (AirDot::onboarding::load_night_screen_dim_enabled() || !id(display_panel).is_screen_powered()));
         - if:
             condition:
               lambda: |-

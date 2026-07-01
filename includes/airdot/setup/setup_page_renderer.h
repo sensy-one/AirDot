@@ -106,6 +106,7 @@ class SetupPageRenderer {
     const bool auto_dim_enabled = load_auto_dim_enabled();
     const bool auto_page_switch_enabled = load_auto_page_switch_enabled();
     const bool stored_night_screen_off_enabled = load_night_screen_off_enabled();
+    const NightScreenMode night_screen_mode = load_night_screen_mode();
     const std::string screen_off_start_value = time_input_value_(load_screen_off_start_minutes());
     const std::string screen_off_end_value = time_input_value_(load_screen_off_end_minutes());
     const uint8_t monitoring_update_interval_seconds = load_monitoring_update_interval_seconds();
@@ -169,6 +170,7 @@ class SetupPageRenderer {
     const bool ha_discovery_enabled = wifi_configured && stored_ha_discovery_enabled;
     const bool mqtt_enabled = wifi_configured && stored_mqtt_enabled;
     const bool night_screen_off_enabled = local_time_enabled && stored_night_screen_off_enabled;
+    const bool night_screen_dim_enabled = night_screen_mode == NIGHT_SCREEN_MODE_DIM;
     ChunkedResponse html(request, "text/html; charset=utf-8");
     html.reserve(40000);
     html += R"html(<!doctype html>
@@ -1309,7 +1311,7 @@ class SetupPageRenderer {
     html += text.time_server_title;
     html += R"html(">
 )html";
-    html += "                  <input id=\"time_server_enabled\" type=\"checkbox\" name=\"time_server_enabled\" value=\"1\" aria-controls=\"time_source_mode manual_time_fields night_screen_off_row screen_off_fields\"";
+    html += "                  <input id=\"time_server_enabled\" type=\"checkbox\" name=\"time_server_enabled\" value=\"1\" aria-controls=\"time_source_mode manual_time_fields night_screen_off_row night_screen_mode_field screen_off_fields\"";
     if (time_sync_enabled)
       html += " checked";
     html += R"html(>
@@ -1433,7 +1435,7 @@ class SetupPageRenderer {
     html += text.night_screen_off_title;
     html += R"html(">
 )html";
-    html += "                  <input id=\"night_screen_off\" type=\"checkbox\" name=\"night_screen_off\" value=\"1\" aria-controls=\"screen_off_fields\"";
+    html += "                  <input id=\"night_screen_off\" type=\"checkbox\" name=\"night_screen_off\" value=\"1\" aria-controls=\"night_screen_mode_field screen_off_fields\"";
     if (night_screen_off_enabled)
       html += " checked";
     if (!local_time_enabled)
@@ -1441,6 +1443,43 @@ class SetupPageRenderer {
     html += R"html(>
                   <span class="slider" aria-hidden="true"></span>
                 </label>
+              </div>
+
+              <div id="night_screen_mode_field" class="field night-screen-mode-field")html";
+    if (!night_screen_off_enabled || !local_time_enabled)
+      html += " hidden";
+    html += R"html(>
+)html";
+    html += "                <label for=\"night_screen_mode_off\" data-i18n=\"night_screen_mode_label\">";
+    html += text.night_screen_mode_label;
+    html += "</label>\n                <div class=\"segmented\" role=\"radiogroup\" data-i18n-aria-label=\"night_screen_mode_label\" aria-label=\"";
+    html += text.night_screen_mode_label;
+    html += R"html(">
+                  <label class="segment" for="night_screen_mode_off">
+                    <input id="night_screen_mode_off" type="radio" name="night_screen_mode" value="off")html";
+    if (!night_screen_dim_enabled)
+      html += " checked";
+    if (!night_screen_off_enabled || !local_time_enabled)
+      html += " disabled";
+    html += R"html(>
+)html";
+    html += "                    <span data-i18n=\"night_screen_mode_off_label\">";
+    html += text.night_screen_mode_off_label;
+    html += R"html(</span>
+                  </label>
+                  <label class="segment" for="night_screen_mode_dim">
+                    <input id="night_screen_mode_dim" type="radio" name="night_screen_mode" value="dim")html";
+    if (night_screen_dim_enabled)
+      html += " checked";
+    if (!night_screen_off_enabled || !local_time_enabled)
+      html += " disabled";
+    html += R"html(>
+)html";
+    html += "                    <span data-i18n=\"night_screen_mode_dim_label\">";
+    html += text.night_screen_mode_dim_label;
+    html += R"html(</span>
+                  </label>
+                </div>
               </div>
 
               <input id="screen_off_start" name="screen_off_start" type="hidden" value=")html";
@@ -2056,6 +2095,8 @@ class SetupPageRenderer {
             const nightScreenOffRow = document.getElementById("night_screen_off_row");
             const timeZoneScheduleInput = document.getElementById("time_zone_offset_schedule");
             const nightScreenOffInput = document.getElementById("night_screen_off");
+            const nightScreenModeField = document.getElementById("night_screen_mode_field");
+            const nightScreenModeInputs = Array.from(document.querySelectorAll("input[name='night_screen_mode']"));
             const screenOffFields = document.getElementById("screen_off_fields");
             const screenOffStartInput = document.getElementById("screen_off_start");
             const screenOffEndInput = document.getElementById("screen_off_end");
@@ -2519,6 +2560,8 @@ class SetupPageRenderer {
               const timeAvailable = localTimeSelected();
               if (!timeAvailable && nightScreenOffInput) nightScreenOffInput.checked = false;
               const enabled = timeAvailable && (!nightScreenOffInput || nightScreenOffInput.checked);
+              if (nightScreenModeField) nightScreenModeField.hidden = !enabled;
+              setDisabled(nightScreenModeInputs, !enabled);
               if (screenOffFields) screenOffFields.hidden = !enabled;
               [screenOffStartControl, screenOffEndControl].forEach((control) => {
                 if (control) control.classList.toggle("is-disabled", !enabled);

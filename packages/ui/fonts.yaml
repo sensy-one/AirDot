@@ -2,7 +2,7 @@ font:
   - file: "gfonts://Roboto"
     id: ui_font_large
     size: 48
-    glyphs: "-.0123456789CDEFGHIKLMNOPRSTUVx₀₁₂₄"
+    glyphs: "-.0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZÁÉÍÓÖŐÚÜŰĚx₀₁₂₄₅"
   - file: "gfonts://Roboto"
     id: ui_font_metric_unit
     size: 26
@@ -31,11 +31,11 @@ font:
   - file: "gfonts://Roboto"
     id: ui_font_status
     size: 52
-    glyphs: " -0123456789:ABCDEFGHIKLMNOPQRSTUVWYZÄ"
+    glyphs: " -0123456789:ABCDEFGHIJKLMNOPQRSTUVWXYZÁÄÉÍÓÖŐÚÜŰŠ"
   - file: "gfonts://Roboto"
     id: ui_font_action
     size: 26
-    glyphs: " -0123456789ABCDEFGHIJKLMNOPRSTUVWYZabcdefghijklmnoprstuvwxyzÄÉÛäèéöü’"
+    glyphs: " -,.0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyzÁÄÉÍÓÖŐÚÜŰČĚŘáäéíóöőúüűčěňřšťůýžèûÛ’"
   - file: "gfonts://Roboto"
     id: ui_font_time_suffix
     size: 20
