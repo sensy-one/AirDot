@@ -18,6 +18,7 @@ esphome:
     - includes/airdot/generated/i18n_texts.h
     - includes/airdot/air_quality/classification.h
     - includes/airdot/ui/display_runtime.h
+    - includes/airdot/ui/snapshot_alert.h
     - includes/airdot/network/connectivity.h
     - includes/airdot/network/time_client.h
     - includes/airdot/network/weather_client.h

@@ -31,6 +31,14 @@ globals:
     type: int
     restore_value: false
     initial_value: "0"
+  - id: setup_portal_lan_active
+    type: int
+    restore_value: false
+    initial_value: "0"
+  - id: setup_portal_local_url
+    type: std::string
+    restore_value: false
+    initial_value: '""'
   - id: setup_portal_saved
     type: int
     restore_value: false
@@ -109,6 +117,18 @@ script:
           if (lv_screen_active() != nullptr)
             lv_obj_invalidate(lv_screen_active());
 
+  - id: ui_snapshot_restore_display_bandwidth
+    mode: restart
+    then:
+      - delay: 500ms
+      - lambda: |-
+          if (AirDot::onboarding::setup_or_onboarding_active(
+                  id(setup_ap_active), id(setup_portal_active), id(onboarding_ui_active)))
+            return;
+          id(display_panel).set_low_bandwidth_mode(false);
+          if (lv_screen_active() != nullptr)
+            lv_obj_invalidate(lv_screen_active());
+
   - id: setup_ap_start
     mode: restart
     then:
@@ -149,15 +169,40 @@ script:
           id(setup_firmware_update_active) = 0;
           id(setup_pending_sen66_co2_calibration) = 0;
           id(setup_pending_sen66_co2_reference_ppm) = 427;
-      - script.execute: setup_ap_start
-      - delay: 1500ms
-      - lambda: |-
-          AirDot::onboarding::start_setup_mdns(id(home_assistant_mdns));
-          AirDot::onboarding::request_setup_network_scan();
-          AirDot::onboarding::refresh_setup_network_scan_cache();
-      - lambda: |-
-          AirDot::onboarding::start_setup_web_server(
-              &id(setup_portal_web_server_started));
+          id(setup_portal_lan_active) = 0;
+          id(setup_portal_local_url).clear();
+          if (AirDot::onboarding::has_saved_wifi_settings() &&
+              AirDot::onboarding::wifi_connected()) {
+            id(setup_portal_local_url) = AirDot::onboarding::local_setup_url();
+            if (!id(setup_portal_local_url).empty())
+              id(setup_portal_lan_active) = 1;
+          }
+      - if:
+          condition:
+            lambda: "return id(setup_portal_lan_active) == 1;"
+          then:
+            - lambda: |-
+                id(setup_ap_active) = 0;
+                id(display_panel).set_low_bandwidth_mode(true);
+                AirDot::onboarding::start_setup_mdns(id(home_assistant_mdns));
+                AirDot::onboarding::request_setup_network_scan();
+                AirDot::onboarding::refresh_setup_network_scan_cache();
+                AirDot::onboarding::start_setup_web_server(
+                    &id(setup_portal_web_server_started));
+            - script.execute: ui_refresh_onboarding_overlay
+            - component.update: display_panel
+          else:
+            - lambda: |-
+                id(setup_portal_lan_active) = 0;
+                id(setup_portal_local_url).clear();
+            - script.execute: setup_ap_start
+            - delay: 1500ms
+            - lambda: |-
+                AirDot::onboarding::start_setup_mdns(id(home_assistant_mdns));
+                AirDot::onboarding::request_setup_network_scan();
+                AirDot::onboarding::refresh_setup_network_scan_cache();
+                AirDot::onboarding::start_setup_web_server(
+                    &id(setup_portal_web_server_started));
 
   - id: setup_portal_stop
     mode: restart
@@ -165,16 +210,20 @@ script:
       - script.stop: setup_portal_start
       - script.stop: setup_ap_start
       - lambda: |-
+          const bool lan_setup_active = id(setup_portal_lan_active) == 1;
           id(setup_portal_saved) = 0;
           id(setup_portal_active) = 0;
           id(setup_portal_last_activity_ms) = 0;
+          id(setup_portal_lan_active) = 0;
+          id(setup_portal_local_url).clear();
           id(setup_firmware_update_active) = 0;
           AirDot::onboarding::clear_pending_wifi_setup(
               id(setup_pending_wifi_save), id(setup_pending_wifi_ssid), id(setup_pending_wifi_password));
           id(setup_pending_sen66_co2_calibration) = 0;
           id(setup_pending_sen66_co2_reference_ppm) = 427;
           AirDot::onboarding::finish_home_assistant_api_pause(id(home_assistant_api));
-          AirDot::onboarding::restore_setup_wifi_backup();
+          if (!lan_setup_active)
+            AirDot::onboarding::restore_setup_wifi_backup();
           AirDot::onboarding::stop_setup_web_server(
               &id(setup_portal_web_server_started));
           AirDot::onboarding::restore_home_assistant_mdns(id(home_assistant_mdns));
@@ -205,6 +254,8 @@ script:
           id(setup_portal_saved) = 0;
           id(setup_portal_active) = 0;
           id(setup_portal_last_activity_ms) = 0;
+          id(setup_portal_lan_active) = 0;
+          id(setup_portal_local_url).clear();
           id(onboarding_complete_countdown) = 5;
           AirDot::onboarding::stop_setup_web_server(
               &id(setup_portal_web_server_started));
@@ -264,11 +315,17 @@ script:
                             AirDot::onboarding::forget_saved_wifi_settings();
                             AirDot::onboarding::clear_pending_wifi_setup(
                                 id(setup_pending_wifi_save), id(setup_pending_wifi_ssid), id(setup_pending_wifi_password));
-                        - if:
-                            condition:
-                              lambda: "return id(setup_ap_active) == 1;"
-                            then:
-                              - script.execute: setup_ap_stop
+                            AirDot::onboarding::pause_mqtt_for_network_change(id(mqtt_client));
+                            AirDot::onboarding::pause_home_assistant_api_for_network_change(id(home_assistant_api));
+                            id(setup_ap_active) = 0;
+                            id(setup_portal_lan_active) = 0;
+                            id(setup_portal_local_url).clear();
+                        - delay: 150ms
+                        - wifi.disable:
+                        - delay: 100ms
+                        - lambda: |-
+                            AirDot::onboarding::finish_home_assistant_api_pause(id(home_assistant_api));
+                        - script.execute: setup_display_restore_bandwidth
             - lambda: |-
                 AirDot::onboarding::apply_runtime_settings(
                   id(home_assistant_api),
@@ -389,6 +446,8 @@ script:
     mode: restart
     then:
       - lambda: |-
+          AirDot::snapshot_alert::clear_active_snapshot(id(modal_overlay_snapshot_container));
+          lv_obj_clear_flag(id(modal_overlay_content_stack), LV_OBJ_FLAG_HIDDEN);
           auto ui_language = AirDot::onboarding::load_ui_language();
           if (id(onboarding_ui_screen) == AirDot::onboarding::SETUP_LANGUAGE) {
             ui_language = AirDot::normalize_ui_language(
@@ -414,9 +473,15 @@ script:
           lv_label_set_text(id(modal_overlay_primary_button_right_bracket_label), "");
           lv_obj_add_flag(id(modal_overlay_primary_button_left_bracket_label), LV_OBJ_FLAG_HIDDEN);
           lv_obj_add_flag(id(modal_overlay_primary_button_right_bracket_label), LV_OBJ_FLAG_HIDDEN);
-          lv_label_set_text(id(modal_overlay_title_label), content.title);
+          const std::string title_text = content.title == nullptr ? std::string() : std::string(content.title);
+          lv_label_set_text(id(modal_overlay_title_label), title_text.c_str());
           std::string body_text = content.body == nullptr ? std::string() : std::string(content.body);
-          if (id(onboarding_ui_screen) == AirDot::onboarding::SETUP_CONNECT) {
+          if (id(onboarding_ui_screen) == AirDot::onboarding::SETUP_CONNECT &&
+              id(setup_portal_lan_active) == 1 &&
+              !id(setup_portal_local_url).empty()) {
+            body_text = AirDot::onboarding::local_setup_instruction_text(
+                ui_language, id(setup_portal_local_url));
+          } else if (id(onboarding_ui_screen) == AirDot::onboarding::SETUP_CONNECT) {
             body_text = AirDot::onboarding::setup_connect_instruction_text(
                 ui_language, id(setup_wifi_last_error) != 0);
           }
@@ -482,6 +547,14 @@ script:
           id(ui_alert_message).clear();
           id(ui_alert_text_color) = 0;
           id(ui_alert_text_color_set) = 0;
+          AirDot::snapshot_alert::clear_active_snapshot(id(modal_overlay_snapshot_container));
+          lv_obj_clear_flag(id(modal_overlay_content_stack), LV_OBJ_FLAG_HIDDEN);
+          if (!AirDot::onboarding::setup_or_onboarding_active(
+                  id(setup_ap_active), id(setup_portal_active), id(onboarding_ui_active))) {
+            id(display_panel).set_low_bandwidth_mode(false);
+            if (lv_screen_active() != nullptr)
+              lv_obj_invalidate(lv_screen_active());
+          }
       - if:
           condition:
             lambda: "return id(onboarding_ui_active) == 0;"
@@ -497,6 +570,8 @@ script:
           then:
             - lambda: |-
                 id(ui_alert_active) = 1;
+                AirDot::snapshot_alert::clear_active_snapshot(id(modal_overlay_snapshot_container));
+                lv_obj_clear_flag(id(modal_overlay_content_stack), LV_OBJ_FLAG_HIDDEN);
 
                 const auto ui_language = AirDot::onboarding::load_ui_language();
                 const std::string title =
@@ -720,6 +795,55 @@ interval:
             - lambda: |-
                 id(air_quality_summary_page)->get_parent()->show_page(
                     id(air_quality_summary_page)->index, LV_SCREEN_LOAD_ANIM_NONE, 0);
+      - lambda: |-
+          uint16_t snapshot_duration_seconds = 0;
+          bool snapshot_sound_enabled = false;
+          uint16_t snapshot_sound_duration_ms = 0;
+          const int snapshot_result =
+              AirDot::snapshot_alert::consume_snapshot_result(
+                  id(modal_overlay_snapshot_container), snapshot_duration_seconds,
+                  snapshot_sound_enabled, snapshot_sound_duration_ms);
+          if (snapshot_result < 0) {
+            id(ui_hide_display_alert).execute();
+            return;
+          }
+          if (snapshot_result != 1)
+            return;
+
+          if (AirDot::onboarding::setup_or_onboarding_active(
+                  id(setup_ap_active), id(setup_portal_active), id(onboarding_ui_active))) {
+            AirDot::snapshot_alert::clear_active_snapshot(id(modal_overlay_snapshot_container));
+            return;
+          }
+
+          id(ui_stop_display_alert_sound).execute();
+          id(ui_alert_active) = 1;
+          id(ui_alert_title).clear();
+          id(ui_alert_message).clear();
+          id(ui_alert_text_color) = 0;
+          id(ui_alert_text_color_set) = 0;
+          id(ui_alert_until_ms) = snapshot_duration_seconds == 0
+              ? 0
+              : millis() + static_cast<uint32_t>(snapshot_duration_seconds) * 1000UL;
+
+          lv_obj_add_flag(id(modal_overlay_content_stack), LV_OBJ_FLAG_HIDDEN);
+          lv_obj_clear_flag(id(modal_overlay_snapshot_container), LV_OBJ_FLAG_HIDDEN);
+          lv_obj_move_foreground(id(modal_overlay_snapshot_container));
+          lv_obj_set_style_bg_color(id(modal_overlay_layer), lv_color_hex(0x000000), LV_PART_MAIN);
+          lv_obj_set_style_bg_opa(id(modal_overlay_layer), LV_OPA_COVER, LV_PART_MAIN);
+          lv_obj_clear_flag(id(modal_overlay_layer), LV_OBJ_FLAG_HIDDEN);
+          id(display_panel).set_screen_powered(true);
+
+          if (AirDot::onboarding::load_display_alert_wake_screen_enabled()) {
+            AirDot::onboarding::wake_display_with_brightness(
+              id(display_panel), id(display_backlight), id(ambient_light_sensor).state,
+              ${display_auto_dim_min_lux}, ${display_auto_dim_max_lux},
+              ${display_auto_dim_min_brightness});
+          }
+
+          if (snapshot_sound_enabled && snapshot_sound_duration_ms > 0)
+            id(ui_play_display_alert_sound).execute(static_cast<int>(snapshot_sound_duration_ms));
+          id(ui_snapshot_restore_display_bandwidth).execute();
       - if:
           condition:
             lambda: |-

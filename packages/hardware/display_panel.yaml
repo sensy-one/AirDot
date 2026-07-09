@@ -2,6 +2,7 @@ display:
   - platform: nhd_2_1_480480af_asxp
     id: display_panel
     pclk_frequency: ${display_panel_pclk_frequency}
+    pclk_inverted: false
     hsync_front_porch: 50
     hsync_back_porch: 50
     vsync_front_porch: 50

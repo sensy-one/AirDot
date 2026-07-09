@@ -8,6 +8,7 @@
 #include "esphome/components/api/api_server.h"
 #include "esphome/components/mdns/mdns_component.h"
 #include "esphome/components/mqtt/mqtt_client.h"
+#include "esphome/components/network/ip_address.h"
 #include "esphome/components/wifi/wifi_component.h"
 #include "esphome/core/entity_base.h"
 #include "esphome/core/hal.h"
@@ -72,6 +73,60 @@ inline bool online_runtime_available(int setup_ap_active, int setup_portal_activ
   return !setup_or_onboarding_active(setup_ap_active, setup_portal_active, onboarding_ui_active) &&
          esphome::wifi::global_wifi_component != nullptr &&
          esphome::wifi::global_wifi_component->is_connected();
+}
+
+inline bool wifi_connected() {
+  return esphome::wifi::global_wifi_component != nullptr &&
+         esphome::wifi::global_wifi_component->is_connected();
+}
+
+inline std::string local_setup_url() {
+  if (esphome::wifi::global_wifi_component == nullptr)
+    return std::string();
+
+  const auto addresses = esphome::wifi::global_wifi_component->wifi_sta_ip_addresses();
+  for (const auto &address : addresses) {
+    if (!address.is_set() || !address.is_ip4())
+      continue;
+    char address_buffer[esphome::network::IP_ADDRESS_BUFFER_SIZE];
+    return std::string("http://") + address.str_to(address_buffer);
+  }
+  for (const auto &address : addresses) {
+    if (!address.is_set())
+      continue;
+    char address_buffer[esphome::network::IP_ADDRESS_BUFFER_SIZE];
+    return address.is_ip6() ? std::string("http://[") + address.str_to(address_buffer) + "]"
+                            : std::string("http://") + address.str_to(address_buffer);
+  }
+  return std::string();
+}
+
+inline std::string local_setup_instruction_text(AirDot::UiLanguage language, const std::string &url) {
+  const char *prefix = "Open AirDot setup in your browser:";
+  switch (language) {
+    case AirDot::UiLanguage::DE:
+      prefix = "AirDot Setup im Browser öffnen:";
+      break;
+    case AirDot::UiLanguage::NL:
+      prefix = "Open AirDot setup in je browser:";
+      break;
+    case AirDot::UiLanguage::FR:
+      prefix = "Ouvrez la configuration AirDot dans votre navigateur:";
+      break;
+    case AirDot::UiLanguage::HU:
+      prefix = "Nyisd meg az AirDot beállítást a böngészőben:";
+      break;
+    case AirDot::UiLanguage::CS:
+      prefix = "Otevřete nastavení AirDotu v prohlížeči:";
+      break;
+    case AirDot::UiLanguage::IT:
+      prefix = "Apri la configurazione AirDot nel browser:";
+      break;
+    case AirDot::UiLanguage::EN:
+    default:
+      break;
+  }
+  return std::string(prefix) + "\n\n" + url;
 }
 
 inline bool time_server_runtime_allowed(int setup_ap_active, int setup_portal_active, int onboarding_ui_active) {
@@ -528,7 +583,7 @@ template<typename MqttClient> inline void apply_mqtt_settings(MqttClient *mqtt_c
   mqtt_client->set_username(username);
   mqtt_client->set_password(password);
   mqtt_client->set_clean_session(true);
-  mqtt_client->set_topic_prefix(topic_prefix, AIRDOT_DEFAULT_MQTT_TOPIC_PREFIX);
+  mqtt_client->set_topic_prefix(topic_prefix, std::string());
 #ifdef USE_MQTT
   const std::string availability_topic = topic_prefix + "/availability";
   mqtt_client->set_birth_message(esphome::mqtt::MQTTMessage{availability_topic, "online", 1, true});

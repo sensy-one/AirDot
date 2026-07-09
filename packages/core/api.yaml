@@ -56,6 +56,49 @@ api:
                           return sound_duration_ms > 30000 ? 30000 : sound_duration_ms;
               - script.execute: ui_show_display_alert
 
+    - action: show_snapshot_alert
+      variables:
+        image_url: string
+        duration_seconds: int
+        sound_enabled: bool
+        sound_duration_ms: int
+      then:
+        - if:
+            condition:
+              lambda: |-
+                return !AirDot::onboarding::setup_or_onboarding_active(
+                    id(setup_ap_active), id(setup_portal_active), id(onboarding_ui_active));
+            then:
+              - script.stop: ui_snapshot_restore_display_bandwidth
+              - lambda: |-
+                  if (AirDot::snapshot_alert::request_running())
+                    return;
+
+                  id(display_panel).set_low_bandwidth_mode(true);
+                  if (lv_screen_active() != nullptr)
+                    lv_obj_invalidate(lv_screen_active());
+
+                  id(ui_alert_active) = 0;
+                  id(ui_alert_until_ms) = 0;
+                  id(ui_alert_title).clear();
+                  id(ui_alert_message).clear();
+                  id(ui_alert_text_color) = 0;
+                  id(ui_alert_text_color_set) = 0;
+                  AirDot::snapshot_alert::clear_active_snapshot(id(modal_overlay_snapshot_container));
+                  lv_obj_clear_flag(id(modal_overlay_content_stack), LV_OBJ_FLAG_HIDDEN);
+                  lv_obj_add_flag(id(modal_overlay_layer), LV_OBJ_FLAG_HIDDEN);
+                  const bool started = AirDot::snapshot_alert::start_snapshot_request(
+                      image_url, duration_seconds, sound_enabled, sound_duration_ms);
+                  if (!started) {
+                    id(display_panel).set_low_bandwidth_mode(false);
+                    if (lv_screen_active() != nullptr)
+                      lv_obj_invalidate(lv_screen_active());
+                  }
+
+    - action: clear_snapshot_alert
+      then:
+        - script.execute: ui_hide_display_alert
+
     - action: clear_display_alert
       then:
         - script.execute: ui_hide_display_alert

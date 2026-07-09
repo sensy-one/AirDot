@@ -23,7 +23,8 @@ script:
             id(air_quality_hazard_sound_snooze_until_ms) = sound_snooze_until_ms;
             id(air_quality_hazard_last_chirp_ms) = 0;
             id(hazard_alert_chirp).stop();
-            id(alert_buzzer_pwm).turn_off();
+            if (id(ha_buzzer_active) != 1)
+              id(alert_buzzer_pwm).turn_off();
           }
 
           id(air_quality_hazard_focus_snooze_until_ms) = focus_snooze_until_ms;
@@ -63,7 +64,8 @@ script:
             id(air_quality_hazard_sound_snooze_until_ms) = now_ms + SOUND_SNOOZE_MS;
             id(air_quality_hazard_last_chirp_ms) = 0;
             id(hazard_alert_chirp).stop();
-            id(alert_buzzer_pwm).turn_off();
+            if (id(ha_buzzer_active) != 1)
+              id(alert_buzzer_pwm).turn_off();
           };
 
           const bool hazard_focus_pending_or_active =

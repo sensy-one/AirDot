@@ -1,3 +1,9 @@
+image:
+  - file: banner.webp
+    id: snapshot_placeholder_image
+    type: RGB565
+    resize: 1x1
+
 lvgl:
   displays:
     - display_panel

@@ -7,6 +7,10 @@ globals:
     type: uint32_t
     restore_value: false
     initial_value: "0"
+  - id: ha_buzzer_active
+    type: int
+    restore_value: false
+    initial_value: "0"
 
 script:
   - id: ui_play_display_alert_sound
@@ -24,7 +28,8 @@ script:
               const bool setup_or_onboarding_active =
                 AirDot::onboarding::setup_or_onboarding_active(
                   id(setup_ap_active), id(setup_portal_active), id(onboarding_ui_active));
-              if (duration_ms <= 0 || warmup_active || setup_or_onboarding_active) {
+              if (duration_ms <= 0 || warmup_active || setup_or_onboarding_active ||
+                  !AirDot::onboarding::load_audio_alerts_enabled()) {
                 return false;
               }
               return true;
@@ -37,7 +42,9 @@ script:
                 level: 50%
             - delay: !lambda |-
                 return duration_ms;
-            - output.turn_off: alert_buzzer_pwm
+            - lambda: |-
+                if (id(ha_buzzer_active) != 1)
+                  id(alert_buzzer_pwm).turn_off();
 
   - id: ui_stop_display_alert_sound
     mode: restart
@@ -45,7 +52,7 @@ script:
       - script.stop: ui_play_display_alert_sound
       - if:
           condition:
-            lambda: "return !id(hazard_alert_chirp).is_running();"
+            lambda: "return !id(hazard_alert_chirp).is_running() && id(ha_buzzer_active) != 1;"
           then:
             - output.turn_off: alert_buzzer_pwm
 
@@ -76,4 +83,6 @@ script:
                 id: alert_buzzer_pwm
                 level: 50%
             - delay: 150ms
-            - output.turn_off: alert_buzzer_pwm
+            - lambda: |-
+                if (id(ha_buzzer_active) != 1)
+                  id(alert_buzzer_pwm).turn_off();

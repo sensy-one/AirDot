@@ -1,0 +1,259 @@
+language:
+  id: 6
+  code: it
+  label: Italiano
+
+setup_page:
+  html_title: Configura AirDot
+  hero_title: Configura AirDot
+  hero_body: Configura connessione, ora, display e integrazioni.
+
+  saved: Impostazioni salvate
+
+  network_title: Connessione
+  network_note: Scegli una rete Wi-Fi o usa AirDot senza Wi-Fi.
+  wifi_ssid_label: Rete Wi-Fi
+  wifi_password_label: Password Wi-Fi
+  wifi_password_placeholder: Inserisci la password
+  password_visibility_toggle_label: Mostra o nascondi la password
+  offline_option: Continua senza Wi-Fi
+  no_networks: Nessuna rete Wi-Fi trovata
+
+  integrations_title: Integrazioni
+  integrations_note: Collega AirDot a Home Assistant o a un server MQTT.
+
+  ha_discovery_title: Home Assistant
+  ha_discovery_description: Rendi AirDot rilevabile automaticamente in Home Assistant.
+
+  mqtt_title: MQTT
+  mqtt_description: Invia i dati di misurazione a un server MQTT.
+  mqtt_broker_label: Server
+  mqtt_broker_placeholder: 192.168.1.10
+  mqtt_port_label: Porta
+  mqtt_username_label: Nome utente
+  mqtt_password_label: Password
+  mqtt_topic_prefix_label: Prefisso topic
+  optional_placeholder: Facoltativo
+  air_quality_title: Qualità dell'aria
+  air_quality_note: Scegli la linea guida usata da AirDot per valutare la qualità dell'aria.
+  air_quality_profile_label: Linea guida
+
+  sensor_calibration_title: Calibrazione del sensore
+  sensor_calibration_note: Regola la lettura della temperatura integrata.
+  sen66_temperature_offset_label: Il SEN66 sovrastima di
+  sen66_co2_reference_label: Baseline CO₂
+  sen66_co2_calibration_title: Forza la calibrazione della baseline CO₂
+  sen66_co2_calibration_description: Metti AirDot all'aria aperta per almeno 3 minuti, quindi salva.
+
+  alerts_title: Avvisi
+  alerts_note: Imposta quando AirDot deve avvisarti.
+
+  display_alert_wake_screen_title: Riattiva schermo
+  display_alert_wake_screen_description: Accendi il display quando Home Assistant invia un avviso.
+
+  audio_alerts_title: Avvisi sonori
+  audio_alerts_description: Riproduci un segnale acustico quando una misurazione raggiunge un livello pericoloso.
+
+  hazard_focus_title: Focus sui valori critici
+  hazard_focus_description: Mostra automaticamente il grafico del sensore con il livello di rischio più alto.
+
+  firmware_title: Aggiornamento firmware
+  firmware_note: Seleziona un file OTA .bin per aggiornare il firmware di AirDot.
+  firmware_file_label: File firmware
+  firmware_select_button: Scegli file firmware
+  firmware_upload_button: Aggiorna firmware
+  firmware_success: Aggiornamento riuscito
+  firmware_no_file: Seleziona prima un file firmware
+  firmware_failed: Aggiornamento non riuscito
+
+  time_title: Ora
+  time_note: Imposta data, ora e formato dell'ora.
+
+  time_server_title: Data e ora
+  time_server_description: Lascia che AirDot aggiorni l'ora automaticamente oppure imposta data e ora manualmente.
+  time_source_label: Impostazione dell'ora
+  time_source_network_label: Automatica
+  time_source_manual_label: Manuale
+
+  manual_time_label: Data e ora
+
+  time_format_label: Formato ora
+  time_24h_label: 24 ore
+  time_12h_label: 12 ore
+
+  night_screen_off_title: Modalità notte
+  night_screen_off_description: Attenua il display o spegnilo durante le ore selezionate.
+  night_screen_mode_label: Display in modalità notte
+  night_screen_mode_off_label: Display spento
+  night_screen_mode_dim_label: Display attenuato
+
+  location_title: Posizione
+  location_note: Imposta la posizione esatta usata per meteo e radar aereo.
+  exact_location_title: Posizione esatta
+  exact_location_description: Usa queste coordinate per meteo e radar aereo.
+  location_latitude_label: Latitudine
+  location_longitude_label: Longitudine
+
+  flight_radar_title: Radar aereo
+  flight_radar_note: Imposta portata e traffico visibile.
+  flight_radar_enabled_title: Radar aereo
+  flight_radar_enabled_description: Mostra il traffico aereo in tempo reale nella schermata radar.
+  flight_radar_range_label: Portata
+  flight_radar_traffic_label: Traffico
+  flight_radar_traffic_all_label: Tutti gli aeromobili
+  flight_radar_traffic_military_label: Solo militari
+
+  weather_title: Meteo
+  weather_note: Mostra il meteo locale esterno sul display.
+
+  weather_sync_title: Aggiornamenti meteo
+  weather_sync_description: Usa il rilevamento automatico o la posizione esatta configurata.
+  weather_location_mode_label: Posizione
+  weather_location_ip_label: Automatica
+  weather_location_manual_label: Imposta posizione
+
+  display_title: Display
+  display_note: Imposta lingua, unità, luminosità e aspetto.
+
+  language_label: Lingua
+  units_label: Unità
+  metric_label: Metrico
+  imperial_label: Imperiale
+
+  brightness_label: Luminosità
+  brightness_low: Bassa
+  brightness_medium: Media
+  brightness_high: Alta
+
+  dark_mode_title: Modalità scura
+  dark_mode_description: Usa un tema scuro per il display.
+
+  adaptive_brightness_title: Luminosità automatica
+  adaptive_brightness_description: Regola automaticamente la luminosità in base alla luce ambientale.
+
+  auto_page_switch_title: Cambio schermata automatico
+  auto_page_switch_description: Scorri automaticamente le schermate del display.
+  update_interval_label: Intervallo di aggiornamento
+
+  save_button: Salva
+  footer_note: Tieni premuto il pulsante azione per riaprire la configurazione in seguito.
+
+air_quality:
+  balanced:
+    status: BUONA
+    action: Nessuna azione necessaria
+  moderate:
+    status: MODERATA
+    action: Monitora i valori
+  poor:
+    status: SCARSA
+    action: Arieggia la stanza
+  unhealthy:
+    status: INSALUBRE
+    action: Limita l'esposizione
+  hazardous:
+    status: CRITICA
+    action: Agisci immediatamente
+
+factory_reset:
+  factory_reset_countdown:
+    title: Ripristino di fabbrica
+    body: |-
+      Continua a tenere premuto per
+      ripristinare AirDot.
+
+      Ripristino tra {seconds}...
+connection:
+  indoor: Interno
+  outdoor: Esterno
+
+weather:
+  clear: Sereno
+  cloudy: Nuvoloso
+  fog: Nebbia
+  drizzle: Pioviggine
+  freezing_drizzle: Pioviggine gelata
+  rain: Pioggia
+  freezing_rain: Pioggia gelata
+  snow: Neve
+  snow_grains: Nevischio
+  rain_showers: Rovesci di pioggia
+  snow_showers: Rovesci di neve
+  thunderstorm: Temporale
+  thunderstorm_hail: Temporale con grandine
+  high_label: A
+  low_label: B
+
+notification:
+  fallback: Notifica
+  dismiss: Chiudi
+
+date:
+  format: "{weekday} {day} {month}"
+  weekdays:
+    sunday: DOM
+    monday: LUN
+    tuesday: MAR
+    wednesday: MER
+    thursday: GIO
+    friday: VEN
+    saturday: SAB
+  months:
+    january: GEN
+    february: FEB
+    march: MAR
+    april: APR
+    may: MAG
+    june: GIU
+    july: LUG
+    august: AGO
+    september: SET
+    october: OTT
+    november: NOV
+    december: DIC
+
+history:
+  pm1_title: PM₁
+  pm25_title: PM₂
+  pm4_title: PM₄
+  pm10_title: PM₁₀
+  co2_title: CO₂
+  voc_title: VOC
+  nox_title: NOx
+  temperature_title: TEMP
+  humidity_title: UR
+  pressure_title: PRESS
+  light_title: LUCE
+  min_pattern: "{value} min"
+  max_pattern: "{value} max"
+
+onboarding:
+  setup_language:
+    title: Scegli la lingua
+    body: |-
+      Premi brevemente per cambiare.
+      Tieni premuto per confermare.
+  setup_connect:
+    title: Configura AirDot
+    body: |-
+      Apri il Wi-Fi sul telefono
+      e scegli AirDot-XXXXXX.
+
+      Poi apri il browser
+      e vai su 192.168.4.1
+    button_0: Più tardi
+    button_0_reopen: Indietro
+
+  setup_applying:
+    title: Connessione in corso
+    body: |-
+      AirDot sta applicando le impostazioni
+      e si sta connettendo.
+    button_0: Attendi…
+
+  setup_complete:
+    title: AirDot è configurato
+    body: |-
+      Ora puoi monitorare
+      la qualità dell'aria.
+    countdown: Panoramica tra {seconds}…

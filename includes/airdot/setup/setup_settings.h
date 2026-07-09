@@ -237,6 +237,15 @@ inline std::string setup_connect_instruction_text(AirDot::UiLanguage language, b
     case AirDot::UiLanguage::FR:
       return std::string("Ouvrez le Wi-Fi sur votre téléphone\net choisissez ") + ssid +
              ".\n\nOuvrez ensuite votre navigateur\net allez sur 192.168.4.1";
+    case AirDot::UiLanguage::HU:
+      return std::string("Nyisd meg a Wi-Fi-t a telefonodon,\nés válaszd ezt: ") + ssid +
+             ".\n\nEzután nyisd meg a böngészőt,\nés lépj a 192.168.4.1 címre.";
+    case AirDot::UiLanguage::CS:
+      return std::string("Otevřete Wi-Fi v telefonu\na vyberte ") + ssid +
+             ".\n\nPoté otevřete prohlížeč\na přejděte na 192.168.4.1";
+    case AirDot::UiLanguage::IT:
+      return std::string("Apri il Wi-Fi sul telefono\ne scegli ") + ssid +
+             ".\n\nPoi apri il browser\ne vai su 192.168.4.1";
     case AirDot::UiLanguage::EN:
     default:
       return std::string("Open Wi-Fi on your phone\nand choose ") + ssid +

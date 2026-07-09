@@ -66,7 +66,7 @@ static constexpr uint8_t D_E8_0C[] = {0x00, 0x0C};
 static constexpr uint8_t D_E8_00[] = {0x00, 0x00};
 static constexpr uint8_t D_E6_167C[] = {0x16, 0x7C};
 static constexpr uint8_t D_FF_00[] = {0x77, 0x01, 0x00, 0x00, 0x00};
-static constexpr uint8_t D_3A[] = {0x55};
+static constexpr uint8_t D_3A[] = {0x66};
 static constexpr uint8_t D_36[] = {0x00};
 static constexpr uint8_t D_C7[] = {0x00};
 
@@ -241,6 +241,7 @@ void Nhd21480480AfAsxp::common_setup_() {
   config.bounce_buffer_size_px = this->width_ * 30;
   config.dma_burst_size = 64;
   config.num_fbs = 1;
+  config.bits_per_pixel = 16;
   config.timings.h_res = this->width_;
   config.timings.v_res = this->height_;
   config.timings.hsync_pulse_width = this->hsync_pulse_width_;

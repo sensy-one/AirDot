@@ -14,6 +14,28 @@ widgets:
       scrollable: false
       widgets:
         - obj:
+            id: modal_overlay_snapshot_container
+            hidden: true
+            align: CENTER
+            width: 480
+            height: 480
+            bg_color: 0x000000
+            bg_opa: COVER
+            border_width: 0
+            radius: 0
+            pad_all: 0
+            scrollbar_mode: "OFF"
+            scrollable: false
+            widgets:
+              - image:
+                  id: modal_overlay_snapshot_image
+                  src: snapshot_placeholder_image
+                  align: CENTER
+                  width: 480
+                  height: 480
+                  antialias: true
+
+        - obj:
             id: modal_overlay_content_stack
             align: CENTER
             width: 380

@@ -1417,95 +1417,6 @@ class SetupPageRenderer {
                 </div>
               </div>
 
-              <div id="night_screen_off_row" class="toggle-row night-screen-off-row")html";
-    if (!local_time_enabled)
-      html += " hidden";
-    html += R"html(>
-                <div class="toggle-copy">
-)html";
-    html += "                  <p class=\"toggle-title\" data-i18n=\"night_screen_off_title\">";
-    html += text.night_screen_off_title;
-    html += "</p>\n                  <p class=\"toggle-description\" data-i18n=\"night_screen_off_description\">";
-    html += text.night_screen_off_description;
-    html += R"html(</p>
-                </div>
-
-)html";
-    html += "                <label class=\"switch\" data-i18n-aria-label=\"night_screen_off_title\" aria-label=\"";
-    html += text.night_screen_off_title;
-    html += R"html(">
-)html";
-    html += "                  <input id=\"night_screen_off\" type=\"checkbox\" name=\"night_screen_off\" value=\"1\" aria-controls=\"night_screen_mode_field screen_off_fields\"";
-    if (night_screen_off_enabled)
-      html += " checked";
-    if (!local_time_enabled)
-      html += " disabled";
-    html += R"html(>
-                  <span class="slider" aria-hidden="true"></span>
-                </label>
-              </div>
-
-              <div id="night_screen_mode_field" class="field night-screen-mode-field")html";
-    if (!night_screen_off_enabled || !local_time_enabled)
-      html += " hidden";
-    html += R"html(>
-)html";
-    html += "                <label for=\"night_screen_mode_off\" data-i18n=\"night_screen_mode_label\">";
-    html += text.night_screen_mode_label;
-    html += "</label>\n                <div class=\"segmented\" role=\"radiogroup\" data-i18n-aria-label=\"night_screen_mode_label\" aria-label=\"";
-    html += text.night_screen_mode_label;
-    html += R"html(">
-                  <label class="segment" for="night_screen_mode_off">
-                    <input id="night_screen_mode_off" type="radio" name="night_screen_mode" value="off")html";
-    if (!night_screen_dim_enabled)
-      html += " checked";
-    if (!night_screen_off_enabled || !local_time_enabled)
-      html += " disabled";
-    html += R"html(>
-)html";
-    html += "                    <span data-i18n=\"night_screen_mode_off_label\">";
-    html += text.night_screen_mode_off_label;
-    html += R"html(</span>
-                  </label>
-                  <label class="segment" for="night_screen_mode_dim">
-                    <input id="night_screen_mode_dim" type="radio" name="night_screen_mode" value="dim")html";
-    if (night_screen_dim_enabled)
-      html += " checked";
-    if (!night_screen_off_enabled || !local_time_enabled)
-      html += " disabled";
-    html += R"html(>
-)html";
-    html += "                    <span data-i18n=\"night_screen_mode_dim_label\">";
-    html += text.night_screen_mode_dim_label;
-    html += R"html(</span>
-                  </label>
-                </div>
-              </div>
-
-              <input id="screen_off_start" name="screen_off_start" type="hidden" value=")html";
-    html += screen_off_start_value;
-    html += R"html(">
-                <input id="screen_off_end" name="screen_off_end" type="hidden" value=")html";
-    html += screen_off_end_value;
-    html += R"html(">
-              <div id="screen_off_fields" class="time-range")html";
-    if (!night_screen_off_enabled || !local_time_enabled)
-      html += " hidden";
-    html += R"html(>
-)html";
-    html += R"html(                <label id="screen_off_start_control" class="time-control time-picker-control" for="screen_off_start_display">
-                  <span id="screen_off_start_text" class="time-picker-value"></span>
-                  <input id="screen_off_start_display" type="time" step="60" value=")html";
-    html += screen_off_start_value;
-    html += R"html(">
-                </label>
-                <label id="screen_off_end_control" class="time-control time-picker-control" for="screen_off_end_display">
-                  <span id="screen_off_end_text" class="time-picker-value"></span>
-                  <input id="screen_off_end_display" type="time" step="60" value=")html";
-    html += screen_off_end_value;
-    html += R"html(">
-                </label>
-              </div>
             </section>
 
             <section id="location_section" class="section)html";
@@ -1876,6 +1787,96 @@ class SetupPageRenderer {
     html += R"html(</span>
                 </label>
                 </div>
+              </div>
+
+              <div id="night_screen_off_row" class="toggle-row night-screen-off-row")html";
+    if (!local_time_enabled)
+      html += " hidden";
+    html += R"html(>
+                <div class="toggle-copy">
+)html";
+    html += "                  <p class=\"toggle-title\" data-i18n=\"night_screen_off_title\">";
+    html += text.night_screen_off_title;
+    html += "</p>\n                  <p class=\"toggle-description\" data-i18n=\"night_screen_off_description\">";
+    html += text.night_screen_off_description;
+    html += R"html(</p>
+                </div>
+
+)html";
+    html += "                <label class=\"switch\" data-i18n-aria-label=\"night_screen_off_title\" aria-label=\"";
+    html += text.night_screen_off_title;
+    html += R"html(">
+)html";
+    html += "                  <input id=\"night_screen_off\" type=\"checkbox\" name=\"night_screen_off\" value=\"1\" aria-controls=\"night_screen_mode_field screen_off_fields\"";
+    if (night_screen_off_enabled)
+      html += " checked";
+    if (!local_time_enabled)
+      html += " disabled";
+    html += R"html(>
+                  <span class="slider" aria-hidden="true"></span>
+                </label>
+              </div>
+
+              <div id="night_screen_mode_field" class="field night-screen-mode-field")html";
+    if (!night_screen_off_enabled || !local_time_enabled)
+      html += " hidden";
+    html += R"html(>
+)html";
+    html += "                <label for=\"night_screen_mode_off\" data-i18n=\"night_screen_mode_label\">";
+    html += text.night_screen_mode_label;
+    html += "</label>\n                <div class=\"segmented\" role=\"radiogroup\" data-i18n-aria-label=\"night_screen_mode_label\" aria-label=\"";
+    html += text.night_screen_mode_label;
+    html += R"html(">
+                  <label class="segment" for="night_screen_mode_off">
+                    <input id="night_screen_mode_off" type="radio" name="night_screen_mode" value="off")html";
+    if (!night_screen_dim_enabled)
+      html += " checked";
+    if (!night_screen_off_enabled || !local_time_enabled)
+      html += " disabled";
+    html += R"html(>
+)html";
+    html += "                    <span data-i18n=\"night_screen_mode_off_label\">";
+    html += text.night_screen_mode_off_label;
+    html += R"html(</span>
+                  </label>
+                  <label class="segment" for="night_screen_mode_dim">
+                    <input id="night_screen_mode_dim" type="radio" name="night_screen_mode" value="dim")html";
+    if (night_screen_dim_enabled)
+      html += " checked";
+    if (!night_screen_off_enabled || !local_time_enabled)
+      html += " disabled";
+    html += R"html(>
+)html";
+    html += "                    <span data-i18n=\"night_screen_mode_dim_label\">";
+    html += text.night_screen_mode_dim_label;
+    html += R"html(</span>
+                  </label>
+                </div>
+              </div>
+
+              <input id="screen_off_start" name="screen_off_start" type="hidden" value=")html";
+    html += screen_off_start_value;
+    html += R"html(">
+                <input id="screen_off_end" name="screen_off_end" type="hidden" value=")html";
+    html += screen_off_end_value;
+    html += R"html(">
+              <div id="screen_off_fields" class="time-range")html";
+    if (!night_screen_off_enabled || !local_time_enabled)
+      html += " hidden";
+    html += R"html(>
+)html";
+    html += R"html(                <label id="screen_off_start_control" class="time-control time-picker-control" for="screen_off_start_display">
+                  <span id="screen_off_start_text" class="time-picker-value"></span>
+                  <input id="screen_off_start_display" type="time" step="60" value=")html";
+    html += screen_off_start_value;
+    html += R"html(">
+                </label>
+                <label id="screen_off_end_control" class="time-control time-picker-control" for="screen_off_end_display">
+                  <span id="screen_off_end_text" class="time-picker-value"></span>
+                  <input id="screen_off_end_display" type="time" step="60" value=")html";
+    html += screen_off_end_value;
+    html += R"html(">
+                </label>
               </div>
 
               <div class="toggle-row">

@@ -35,7 +35,7 @@ font:
   - file: "gfonts://Roboto"
     id: ui_font_action
     size: 26
-    glyphs: " -,.0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyzÁÄÉÍÓÖŐÚÜŰČĚŘáäéíóöőúüűčěňřšťůýžèûÛ’"
+    glyphs: " -,'.0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyzÁÄÉÍÓÖŐÚÜŰČĚŘáäéíóöőúüűčěňřšťůýžèûÛ’"
   - file: "gfonts://Roboto"
     id: ui_font_time_suffix
     size: 20
