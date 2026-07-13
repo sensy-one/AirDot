@@ -122,6 +122,9 @@ inline std::string local_setup_instruction_text(AirDot::UiLanguage language, con
     case AirDot::UiLanguage::IT:
       prefix = "Apri la configurazione AirDot nel browser:";
       break;
+    case AirDot::UiLanguage::RO:
+      prefix = "Deschide configurarea AirDot în browser:";
+      break;
     case AirDot::UiLanguage::EN:
     default:
       break;

@@ -1,0 +1,259 @@
+language:
+  id: 7
+  code: ro
+  label: Română
+
+setup_page:
+  html_title: Configurează AirDot
+  hero_title: Configurează AirDot
+  hero_body: Configurează conexiunea, ora, afișajul și integrările.
+
+  saved: Setări salvate
+
+  network_title: Conexiune
+  network_note: Alege o rețea Wi-Fi sau folosește AirDot fără Wi-Fi.
+  wifi_ssid_label: Rețea Wi-Fi
+  wifi_password_label: Parolă Wi-Fi
+  wifi_password_placeholder: Introdu parola
+  password_visibility_toggle_label: Afișează sau ascunde parola
+  offline_option: Continuă fără Wi-Fi
+  no_networks: Nu s-au găsit rețele Wi-Fi
+
+  integrations_title: Integrări
+  integrations_note: Conectează AirDot la Home Assistant sau la un server MQTT.
+
+  ha_discovery_title: Home Assistant
+  ha_discovery_description: Fă AirDot detectabil automat în Home Assistant.
+
+  mqtt_title: MQTT
+  mqtt_description: Trimite datele măsurate către un server MQTT.
+  mqtt_broker_label: Server
+  mqtt_broker_placeholder: 192.168.1.10
+  mqtt_port_label: Port
+  mqtt_username_label: Nume utilizator
+  mqtt_password_label: Parolă
+  mqtt_topic_prefix_label: Prefix topic
+  optional_placeholder: Opțional
+  air_quality_title: Calitatea aerului
+  air_quality_note: Alege ghidul pe care AirDot îl folosește pentru a evalua calitatea aerului.
+  air_quality_profile_label: Ghid
+
+  sensor_calibration_title: Calibrare senzor
+  sensor_calibration_note: Ajustează citirea temperaturii interne.
+  sen66_temperature_offset_label: SEN66 citește mai mult cu
+  sen66_co2_reference_label: Referință CO2
+  sen66_co2_calibration_title: Forțează calibrarea referinței CO2
+  sen66_co2_calibration_description: Pune AirDot în aer proaspăt de afară timp de cel puțin 3 minute, apoi salvează.
+
+  alerts_title: Alerte
+  alerts_note: Setează când AirDot trebuie să te alerteze.
+
+  display_alert_wake_screen_title: Trezire ecran
+  display_alert_wake_screen_description: Pornește afișajul când Home Assistant trimite o alertă.
+
+  audio_alerts_title: Alerte sonore
+  audio_alerts_description: Redă un ton de avertizare când o măsurătoare atinge un nivel periculos.
+
+  hazard_focus_title: Focus pe valori critice
+  hazard_focus_description: Afișează automat graficul senzorului cu cel mai mare nivel de risc.
+
+  firmware_title: Actualizare firmware
+  firmware_note: Selectează un fișier OTA .bin pentru actualizarea firmware-ului AirDot.
+  firmware_file_label: Fișier firmware
+  firmware_select_button: Alege fișier firmware
+  firmware_upload_button: Actualizează firmware
+  firmware_success: Actualizare reușită
+  firmware_no_file: Selectează mai întâi un fișier firmware
+  firmware_failed: Actualizare eșuată
+
+  time_title: Oră
+  time_note: Setează data, ora și formatul orei.
+
+  time_server_title: Data și ora
+  time_server_description: Lasă AirDot să actualizeze ora automat sau setează data și ora manual.
+  time_source_label: Setare oră
+  time_source_network_label: Automat
+  time_source_manual_label: Manual
+
+  manual_time_label: Data și ora
+
+  time_format_label: Format oră
+  time_24h_label: 24 de ore
+  time_12h_label: 12 ore
+
+  night_screen_off_title: Mod noapte
+  night_screen_off_description: Diminuează afișajul sau oprește-l în intervalul selectat.
+  night_screen_mode_label: Afișaj în modul noapte
+  night_screen_mode_off_label: Afișaj oprit
+  night_screen_mode_dim_label: Afișaj diminuat
+
+  location_title: Locație
+  location_note: Setează locația exactă folosită pentru vreme și radarul de zbor.
+  exact_location_title: Locație exactă
+  exact_location_description: Folosește aceste coordonate pentru vreme și radarul de zbor.
+  location_latitude_label: Latitudine
+  location_longitude_label: Longitudine
+
+  flight_radar_title: Radar de zbor
+  flight_radar_note: Setează raza și traficul vizibil.
+  flight_radar_enabled_title: Radar de zbor
+  flight_radar_enabled_description: Afișează traficul aerian live pe ecranul radar.
+  flight_radar_range_label: Rază
+  flight_radar_traffic_label: Trafic
+  flight_radar_traffic_all_label: Toate aeronavele
+  flight_radar_traffic_military_label: Doar militar
+
+  weather_title: Vreme
+  weather_note: Afișează vremea locală de afară pe ecran.
+
+  weather_sync_title: Actualizări meteo
+  weather_sync_description: Folosește detectarea automată sau locația exactă configurată.
+  weather_location_mode_label: Locație
+  weather_location_ip_label: Automat
+  weather_location_manual_label: Setează locația
+
+  display_title: Afișaj
+  display_note: Setează limba, unitățile, luminozitatea și aspectul.
+
+  language_label: Limbă
+  units_label: Unități
+  metric_label: Metric
+  imperial_label: Imperial
+
+  brightness_label: Luminozitate
+  brightness_low: Scăzută
+  brightness_medium: Medie
+  brightness_high: Ridicată
+
+  dark_mode_title: Mod întunecat
+  dark_mode_description: Folosește o temă întunecată pentru afișaj.
+
+  adaptive_brightness_title: Luminozitate automată
+  adaptive_brightness_description: Ajustează automat luminozitatea în funcție de lumina ambientală.
+
+  auto_page_switch_title: Comutare automată ecrane
+  auto_page_switch_description: Parcurge automat ecranele afișajului.
+  update_interval_label: Interval de actualizare
+
+  save_button: Salvează
+  footer_note: Ține apăsat butonul de acțiune pentru a redeschide configurarea mai târziu.
+
+air_quality:
+  balanced:
+    status: BUNĂ
+    action: Nicio acțiune necesară
+  moderate:
+    status: MODERATĂ
+    action: Monitorizează valorile
+  poor:
+    status: SLABĂ
+    action: Aerisește camera
+  unhealthy:
+    status: NOCIVĂ
+    action: Limitează expunerea
+  hazardous:
+    status: CRITICĂ
+    action: Acționează imediat
+
+factory_reset:
+  factory_reset_countdown:
+    title: Resetare fabrică
+    body: |-
+      Ține apăsat pentru
+      a reseta AirDot.
+
+      Resetare în {seconds}...
+connection:
+  indoor: Interior
+  outdoor: Exterior
+
+weather:
+  clear: Senin
+  cloudy: Înnorat
+  fog: Ceață
+  drizzle: Burniță
+  freezing_drizzle: Burniță înghețată
+  rain: Ploaie
+  freezing_rain: Ploaie înghețată
+  snow: Ninsoare
+  snow_grains: Ninsoare granulară
+  rain_showers: Averse de ploaie
+  snow_showers: Averse de ninsoare
+  thunderstorm: Furtună
+  thunderstorm_hail: Furtună cu grindină
+  high_label: Max
+  low_label: Min
+
+notification:
+  fallback: Notificare
+  dismiss: Închide
+
+date:
+  format: "{weekday} {day} {month}"
+  weekdays:
+    sunday: DUM
+    monday: LUN
+    tuesday: MAR
+    wednesday: MIE
+    thursday: JOI
+    friday: VIN
+    saturday: SÂM
+  months:
+    january: IAN
+    february: FEB
+    march: MAR
+    april: APR
+    may: MAI
+    june: IUN
+    july: IUL
+    august: AUG
+    september: SEP
+    october: OCT
+    november: NOV
+    december: DEC
+
+history:
+  pm1_title: PM₁
+  pm25_title: PM₂
+  pm4_title: PM₄
+  pm10_title: PM₁₀
+  co2_title: CO₂
+  voc_title: VOC
+  nox_title: NOx
+  temperature_title: TEMP
+  humidity_title: UR
+  pressure_title: PRES
+  light_title: LUMINĂ
+  min_pattern: "{value} min"
+  max_pattern: "{value} max"
+
+onboarding:
+  setup_language:
+    title: Alege limba
+    body: |-
+      Apasă scurt ca să schimbi.
+      Ține apăsat ca să confirmi.
+  setup_connect:
+    title: Configurează AirDot
+    body: |-
+      Deschide Wi-Fi pe telefon
+      și alege AirDot-XXXXXX.
+
+      Apoi deschide browserul
+      și mergi la 192.168.4.1
+    button_0: Mai târziu
+    button_0_reopen: Înapoi
+
+  setup_applying:
+    title: Se conectează
+    body: |-
+      AirDot aplică setările
+      și se conectează.
+    button_0: Așteaptă…
+
+  setup_complete:
+    title: AirDot este configurat
+    body: |-
+      Acum poți urmări
+      calitatea aerului.
+    countdown: Rezumatul se deschide în {seconds}…

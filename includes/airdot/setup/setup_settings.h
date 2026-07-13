@@ -246,6 +246,9 @@ inline std::string setup_connect_instruction_text(AirDot::UiLanguage language, b
     case AirDot::UiLanguage::IT:
       return std::string("Apri il Wi-Fi sul telefono\ne scegli ") + ssid +
              ".\n\nPoi apri il browser\ne vai su 192.168.4.1";
+    case AirDot::UiLanguage::RO:
+      return std::string("Deschide Wi-Fi pe telefon\nși alege ") + ssid +
+             ".\n\nApoi deschide browserul\nși mergi la 192.168.4.1";
     case AirDot::UiLanguage::EN:
     default:
       return std::string("Open Wi-Fi on your phone\nand choose ") + ssid +

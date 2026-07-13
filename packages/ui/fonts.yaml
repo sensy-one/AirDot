@@ -2,7 +2,7 @@ font:
   - file: "gfonts://Roboto"
     id: ui_font_large
     size: 48
-    glyphs: "-.0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZÁÉÍÓÖŐÚÜŰĚx₀₁₂₄₅"
+    glyphs: "-.0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZÁÂĂÉÍÎÓÖŐȘȚÚÜŰĚx₀₁₂₄₅"
   - file: "gfonts://Roboto"
     id: ui_font_metric_unit
     size: 26
@@ -14,6 +14,7 @@ font:
       - ' !"#$%&''()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_`abcdefghijklmnopqrstuvwxyz{|}~'
       - '¡¢£¤¥¦§¨©ª«¬­®¯°±²³´µ¶·¸¹º»¼½¾¿ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖ×ØÙÚÛÜÝÞßàáâãäåæçèéêëìíîïðñòóôõö÷øùúûüýþÿ'
       - 'ĀāĂăĄąĆćĈĉĊċČčĎďĐđĒēĔĕĖėĘęĚěĜĝĞğĠġĢģĤĥĦħĨĩĪīĬĭĮįİıĲĳĴĵĶķĸĹĺĻļĽľĿŀŁłŃńŅņŇňŉŊŋŌōŎŏŐőŒœŔŕŖŗŘřŚśŜŝŞşŠšŢţŤťŦŧŨũŪūŬŭŮůŰűŲųŴŵŶŷŸŹźŻżŽžſ'
+      - 'ȘșȚț'
       - '‐‑–—―‗‘’‚‛“”„†‡•‥…‧‰′″‹›‼⁄₣₤₦₧₨₩₪₫€₱₹₺₼₽℅ℓ№™Ω℮■◊○●⁰⁴⁵⁶⁷⁸⁹⁺⁻⁼⁽⁾ⁿ₀₁₂₃₄₅₆₇₈₉₊₋₌₍₎'
     extras: &alert_emoji_font_extras
       - file: "gfonts://Noto Emoji"
@@ -31,11 +32,11 @@ font:
   - file: "gfonts://Roboto"
     id: ui_font_status
     size: 52
-    glyphs: " -0123456789:ABCDEFGHIJKLMNOPQRSTUVWXYZÁÄÉÍÓÖŐÚÜŰŠ"
+    glyphs: " -0123456789:ABCDEFGHIJKLMNOPQRSTUVWXYZÁÂĂÄÉÍÎÓÖŐȘȚÚÜŰŠ"
   - file: "gfonts://Roboto"
     id: ui_font_action
     size: 26
-    glyphs: " -,'.0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyzÁÄÉÍÓÖŐÚÜŰČĚŘáäéíóöőúüűčěňřšťůýžèûÛ’"
+    glyphs: " -,'.0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyzÁÂĂÄÉÍÎÓÖŐȘȚÚÜŰČĚŘáâăäéîíóöőșțúüűčěňřšťůýžèûÛ’"
   - file: "gfonts://Roboto"
     id: ui_font_time_suffix
     size: 20

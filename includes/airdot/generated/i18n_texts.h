@@ -16,6 +16,7 @@ enum class UiLanguage : uint8_t {
   HU = 4,
   CS = 5,
   IT = 6,
+  RO = 7,
 };
 
 struct AirQualityText {
@@ -60,6 +61,8 @@ inline UiLanguage normalize_ui_language(uint8_t value) {
       return UiLanguage::CS;
     case UiLanguage::IT:
       return UiLanguage::IT;
+    case UiLanguage::RO:
+      return UiLanguage::RO;
     default:
       return UiLanguage::EN;
   }
@@ -109,7 +112,7 @@ inline AirQualityText air_quality_text(int level, UiLanguage language) {
       return {"BON", "Aucune action nécessaire"};
     case UiLanguage::HU:
       if (level == 1)
-        return {"MÉRSEKELT", "Ellenőrizd az értékeket"};
+        return {"MÉRSÉKELT", "Ellenőrizd az értékeket"};
       if (level == 2)
         return {"ROSSZ", "Szellőztesd ki a helyiséget"};
       if (level == 3)
@@ -137,6 +140,16 @@ inline AirQualityText air_quality_text(int level, UiLanguage language) {
       if (level >= 4)
         return {"CRITICA", "Agisci immediatamente"};
       return {"BUONA", "Nessuna azione necessaria"};
+    case UiLanguage::RO:
+      if (level == 1)
+        return {"MODERATĂ", "Monitorizează valorile"};
+      if (level == 2)
+        return {"SLABĂ", "Aerisește camera"};
+      if (level == 3)
+        return {"NOCIVĂ", "Limitează expunerea"};
+      if (level >= 4)
+        return {"CRITICĂ", "Acționează imediat"};
+      return {"BUNĂ", "Nicio acțiune necesară"};
     default:
       return air_quality_text(level, UiLanguage::EN);
   }
@@ -162,6 +175,8 @@ inline TitleBodyText factory_reset_countdown_text(UiLanguage language) {
       return {"Obnovení továrního nastavení", "Držte tlačítko dál\npro reset AirDotu.\n\nReset za {seconds}...\n"};
     case UiLanguage::IT:
       return {"Ripristino di fabbrica", "Continua a tenere premuto per\nripristinare AirDot.\n\nRipristino tra {seconds}..."};
+    case UiLanguage::RO:
+      return {"Resetare fabrică", "Ține apăsat pentru\na reseta AirDot.\n\nResetare în {seconds}..."};
     default:
       return factory_reset_countdown_text(UiLanguage::EN);
   }
@@ -233,6 +248,8 @@ inline const char *weather_text(int code, UiLanguage language) {
             return "Jasno";
           case UiLanguage::IT:
             return "Sereno";
+          case UiLanguage::RO:
+            return "Senin";
           default:
             return "Clear";
         }
@@ -252,6 +269,8 @@ inline const char *weather_text(int code, UiLanguage language) {
             return "Oblačno";
           case UiLanguage::IT:
             return "Nuvoloso";
+          case UiLanguage::RO:
+            return "Înnorat";
           default:
             return "Cloudy";
         }
@@ -271,6 +290,8 @@ inline const char *weather_text(int code, UiLanguage language) {
             return "Mlha";
           case UiLanguage::IT:
             return "Nebbia";
+          case UiLanguage::RO:
+            return "Ceață";
           default:
             return "Fog";
         }
@@ -290,6 +311,8 @@ inline const char *weather_text(int code, UiLanguage language) {
             return "Mrholení";
           case UiLanguage::IT:
             return "Pioviggine";
+          case UiLanguage::RO:
+            return "Burniță";
           default:
             return "Drizzle";
         }
@@ -309,6 +332,8 @@ inline const char *weather_text(int code, UiLanguage language) {
             return "Namrzající mrholení";
           case UiLanguage::IT:
             return "Pioviggine gelata";
+          case UiLanguage::RO:
+            return "Burniță înghețată";
           default:
             return "Freezing drizzle";
         }
@@ -328,6 +353,8 @@ inline const char *weather_text(int code, UiLanguage language) {
             return "Déšť";
           case UiLanguage::IT:
             return "Pioggia";
+          case UiLanguage::RO:
+            return "Ploaie";
           default:
             return "Rain";
         }
@@ -347,6 +374,8 @@ inline const char *weather_text(int code, UiLanguage language) {
             return "Namrzající déšť";
           case UiLanguage::IT:
             return "Pioggia gelata";
+          case UiLanguage::RO:
+            return "Ploaie înghețată";
           default:
             return "Freezing rain";
         }
@@ -366,6 +395,8 @@ inline const char *weather_text(int code, UiLanguage language) {
             return "Sněžení";
           case UiLanguage::IT:
             return "Neve";
+          case UiLanguage::RO:
+            return "Ninsoare";
           default:
             return "Snow";
         }
@@ -385,6 +416,8 @@ inline const char *weather_text(int code, UiLanguage language) {
             return "Sněhová zrna";
           case UiLanguage::IT:
             return "Nevischio";
+          case UiLanguage::RO:
+            return "Ninsoare granulară";
           default:
             return "Snow grains";
         }
@@ -404,6 +437,8 @@ inline const char *weather_text(int code, UiLanguage language) {
             return "Dešťové přeháňky";
           case UiLanguage::IT:
             return "Rovesci di pioggia";
+          case UiLanguage::RO:
+            return "Averse de ploaie";
           default:
             return "Rain showers";
         }
@@ -423,6 +458,8 @@ inline const char *weather_text(int code, UiLanguage language) {
             return "Sněhové přeháňky";
           case UiLanguage::IT:
             return "Rovesci di neve";
+          case UiLanguage::RO:
+            return "Averse de ninsoare";
           default:
             return "Snow showers";
         }
@@ -442,6 +479,8 @@ inline const char *weather_text(int code, UiLanguage language) {
             return "Bouřka";
           case UiLanguage::IT:
             return "Temporale";
+          case UiLanguage::RO:
+            return "Furtună";
           default:
             return "Thunderstorm";
         }
@@ -461,6 +500,8 @@ inline const char *weather_text(int code, UiLanguage language) {
             return "Bouřka s kroupami";
           case UiLanguage::IT:
             return "Temporale con grandine";
+          case UiLanguage::RO:
+            return "Furtună cu grindină";
           default:
             return "Thunderstorm with hail";
         }
@@ -485,6 +526,8 @@ inline const char *weather_high_temperature_label(UiLanguage language) {
       return "H";
     case UiLanguage::IT:
       return "A";
+    case UiLanguage::RO:
+      return "Max";
     default:
       return "H";
   }
@@ -506,6 +549,8 @@ inline const char *weather_low_temperature_label(UiLanguage language) {
       return "L";
     case UiLanguage::IT:
       return "B";
+    case UiLanguage::RO:
+      return "Min";
     default:
       return "L";
   }
@@ -528,6 +573,8 @@ inline const char *connection_location_text(bool outdoor, UiLanguage language) {
         return "Venku";
       case UiLanguage::IT:
         return "Esterno";
+      case UiLanguage::RO:
+        return "Exterior";
       default:
         return "Outdoor";
     }
@@ -548,6 +595,8 @@ inline const char *connection_location_text(bool outdoor, UiLanguage language) {
         return "Uvnitř";
       case UiLanguage::IT:
         return "Interno";
+      case UiLanguage::RO:
+        return "Interior";
       default:
         return "Indoor";
     }
@@ -568,6 +617,8 @@ inline const char *date_format_text(UiLanguage language) {
     case UiLanguage::CS:
       return "{weekday} {day} {month}";
     case UiLanguage::IT:
+      return "{weekday} {day} {month}";
+    case UiLanguage::RO:
       return "{weekday} {day} {month}";
     default:
       return "{weekday} {month} {day}";
@@ -700,6 +751,24 @@ inline const char *weekday_text(uint8_t day_of_week, UiLanguage language) {
           return "VEN";
         case 7:
           return "SAB";
+      }
+      return "LUN";
+    case UiLanguage::RO:
+      switch (day_of_week) {
+        case 1:
+          return "DUM";
+        case 2:
+          return "LUN";
+        case 3:
+          return "MAR";
+        case 4:
+          return "MIE";
+        case 5:
+          return "JOI";
+        case 6:
+          return "VIN";
+        case 7:
+          return "SÂM";
       }
       return "LUN";
     default:
@@ -905,6 +974,34 @@ inline const char *month_text(uint8_t month, UiLanguage language) {
           return "DIC";
       }
       return "GEN";
+    case UiLanguage::RO:
+      switch (month) {
+        case 1:
+          return "IAN";
+        case 2:
+          return "FEB";
+        case 3:
+          return "MAR";
+        case 4:
+          return "APR";
+        case 5:
+          return "MAI";
+        case 6:
+          return "IUN";
+        case 7:
+          return "IUL";
+        case 8:
+          return "AUG";
+        case 9:
+          return "SEP";
+        case 10:
+          return "OCT";
+        case 11:
+          return "NOV";
+        case 12:
+          return "DEC";
+      }
+      return "IAN";
     default:
       return month_text(month, UiLanguage::EN);
   }
@@ -1044,6 +1141,22 @@ inline HistoryText history_text(UiLanguage language) {
         "UR",
         "PRESS",
         "LUCE",
+        "{value} min",
+        "{value} max",
+      };
+    case UiLanguage::RO:
+      return {
+        "PM₁",
+        "PM₂",
+        "PM₄",
+        "PM₁₀",
+        "CO₂",
+        "VOC",
+        "NOx",
+        "TEMP",
+        "UR",
+        "PRES",
+        "LUMINĂ",
         "{value} min",
         "{value} max",
       };
@@ -1189,6 +1302,8 @@ inline const char *ui_language_value(AirDot::UiLanguage language) {
       return "cs";
     case AirDot::UiLanguage::IT:
       return "it";
+    case AirDot::UiLanguage::RO:
+      return "ro";
     default:
       return "en";
   }
@@ -1210,12 +1325,14 @@ inline const char *ui_language_label(AirDot::UiLanguage language) {
       return "Čeština";
     case UiLanguage::IT:
       return "Italiano";
+    case UiLanguage::RO:
+      return "Română";
     default:
       return "English";
   }
 }
 
-inline uint8_t ui_language_count() { return 7; }
+inline uint8_t ui_language_count() { return 8; }
 
 inline AirDot::UiLanguage ui_language_at(uint8_t index) {
   switch (index) {
@@ -1233,6 +1350,8 @@ inline AirDot::UiLanguage ui_language_at(uint8_t index) {
       return AirDot::UiLanguage::CS;
     case 6:
       return AirDot::UiLanguage::IT;
+    case 7:
+      return AirDot::UiLanguage::RO;
     default:
       return AirDot::UiLanguage::EN;
   }
@@ -1253,6 +1372,8 @@ inline AirDot::UiLanguage ui_language_from_value(const std::string &value) {
     return AirDot::UiLanguage::CS;
   if (value == "it")
     return AirDot::UiLanguage::IT;
+  if (value == "ro")
+    return AirDot::UiLanguage::RO;
   return AirDot::UiLanguage::EN;
 }
 
@@ -2021,6 +2142,115 @@ inline SetupPageText setup_page_text(AirDot::UiLanguage language) {
         "Continua senza Wi-Fi",
         "Nessuna rete Wi-Fi trovata",
       };
+    case AirDot::UiLanguage::RO:
+      return {
+        "Configurează AirDot",
+        "Configurează AirDot",
+        "Configurează conexiunea, ora, afișajul și integrările.",
+        "Setări salvate",
+        "Conexiune",
+        "Alege o rețea Wi-Fi sau folosește AirDot fără Wi-Fi.",
+        "Rețea Wi-Fi",
+        "Parolă Wi-Fi",
+        "Introdu parola",
+        "Afișează sau ascunde parola",
+        "Oră",
+        "Setează data, ora și formatul orei.",
+        "Data și ora",
+        "Lasă AirDot să actualizeze ora automat sau setează data și ora manual.",
+        "Setare oră",
+        "Automat",
+        "Manual",
+        "Data și ora",
+        "Home Assistant",
+        "Fă AirDot detectabil automat în Home Assistant.",
+        "MQTT",
+        "Trimite datele măsurate către un server MQTT.",
+        "Server",
+        "192.168.1.10",
+        "Port",
+        "Nume utilizator",
+        "Parolă",
+        "Prefix topic",
+        "Opțional",
+        "Calitatea aerului",
+        "Alege ghidul pe care AirDot îl folosește pentru a evalua calitatea aerului.",
+        "Ghid",
+        "Calibrare senzor",
+        "Ajustează citirea temperaturii interne.",
+        "SEN66 citește mai mult cu",
+        "Referință CO2",
+        "Forțează calibrarea referinței CO2",
+        "Pune AirDot în aer proaspăt de afară timp de cel puțin 3 minute, apoi salvează.",
+        "Alerte",
+        "Setează când AirDot trebuie să te alerteze.",
+        "Trezire ecran",
+        "Pornește afișajul când Home Assistant trimite o alertă.",
+        "Integrări",
+        "Conectează AirDot la Home Assistant sau la un server MQTT.",
+        "Alerte sonore",
+        "Redă un ton de avertizare când o măsurătoare atinge un nivel periculos.",
+        "Locație",
+        "Setează locația exactă folosită pentru vreme și radarul de zbor.",
+        "Locație exactă",
+        "Folosește aceste coordonate pentru vreme și radarul de zbor.",
+        "Latitudine",
+        "Longitudine",
+        "Radar de zbor",
+        "Setează raza și traficul vizibil.",
+        "Radar de zbor",
+        "Afișează traficul aerian live pe ecranul radar.",
+        "Rază",
+        "Trafic",
+        "Toate aeronavele",
+        "Doar militar",
+        "Vreme",
+        "Afișează vremea locală de afară pe ecran.",
+        "Actualizări meteo",
+        "Folosește detectarea automată sau locația exactă configurată.",
+        "Locație",
+        "Automat",
+        "Setează locația",
+        "Afișaj",
+        "Setează limba, unitățile, luminozitatea și aspectul.",
+        "Limbă",
+        "Unități",
+        "Metric",
+        "Imperial",
+        "Format oră",
+        "24 de ore",
+        "12 ore",
+        "Luminozitate",
+        "Scăzută",
+        "Medie",
+        "Ridicată",
+        "Mod întunecat",
+        "Folosește o temă întunecată pentru afișaj.",
+        "Luminozitate automată",
+        "Ajustează automat luminozitatea în funcție de lumina ambientală.",
+        "Comutare automată ecrane",
+        "Parcurge automat ecranele afișajului.",
+        "Interval de actualizare",
+        "Mod noapte",
+        "Diminuează afișajul sau oprește-l în intervalul selectat.",
+        "Afișaj în modul noapte",
+        "Afișaj oprit",
+        "Afișaj diminuat",
+        "Focus pe valori critice",
+        "Afișează automat graficul senzorului cu cel mai mare nivel de risc.",
+        "Actualizare firmware",
+        "Selectează un fișier OTA .bin pentru actualizarea firmware-ului AirDot.",
+        "Fișier firmware",
+        "Alege fișier firmware",
+        "Actualizează firmware",
+        "Actualizare reușită",
+        "Selectează mai întâi un fișier firmware",
+        "Actualizare eșuată",
+        "Salvează",
+        "Ține apăsat butonul de acțiune pentru a redeschide configurarea mai târziu.",
+        "Continuă fără Wi-Fi",
+        "Nu s-au găsit rețele Wi-Fi",
+      };
     default:
       return setup_page_text(AirDot::UiLanguage::EN);
   }
@@ -2430,6 +2660,42 @@ inline ScreenContent screen_content(int screen, AirDot::UiLanguage language) {
           };
       }
       break;
+    case AirDot::UiLanguage::RO:
+      switch (screen) {
+        case 0:
+          return {
+            "Configurează AirDot",
+            "Deschide Wi-Fi pe telefon\nși alege AirDot-XXXXXX.\n\nApoi deschide browserul\nși mergi la 192.168.4.1",
+            "Mai târziu",
+            "Înapoi",
+            nullptr,
+          };
+        case 1:
+          return {
+            "Se conectează",
+            "AirDot aplică setările\nși se conectează.",
+            "Așteaptă…",
+            nullptr,
+            nullptr,
+          };
+        case 2:
+          return {
+            "AirDot este configurat",
+            "Acum poți urmări\ncalitatea aerului.",
+            nullptr,
+            nullptr,
+            "Rezumatul se deschide în {seconds}…",
+          };
+        case 3:
+          return {
+            "Alege limba",
+            "Apasă scurt ca să schimbi.\nȚine apăsat ca să confirmi.",
+            nullptr,
+            nullptr,
+            nullptr,
+          };
+      }
+      break;
     default:
       return screen_content(screen, AirDot::UiLanguage::EN);
   }
@@ -2452,6 +2718,8 @@ inline const char *notification_title_text(AirDot::UiLanguage language) {
       return "Upozornění";
     case UiLanguage::IT:
       return "Notifica";
+    case UiLanguage::RO:
+      return "Notificare";
     default:
       return "Notification";
   }
@@ -2473,6 +2741,8 @@ inline const char *dismiss_button_text(AirDot::UiLanguage language) {
       return "Zavřít";
     case UiLanguage::IT:
       return "Chiudi";
+    case UiLanguage::RO:
+      return "Închide";
     default:
       return "Close";
   }

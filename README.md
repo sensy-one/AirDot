@@ -266,7 +266,7 @@ The Action Button is also available in Home Assistant and MQTT.
 
 The setup page lets you configure:
 
-- Language: English, German, Dutch, French, Hungarian, Czech, or Italian
+- Language: English, German, Dutch, French, Hungarian, Czech, Italian, or Romanian
 - Units: metric or imperial
 - Brightness: low, medium, or high
 - Dark mode
