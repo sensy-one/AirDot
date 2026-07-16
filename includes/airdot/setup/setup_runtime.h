@@ -586,7 +586,7 @@ template<typename MqttClient> inline void apply_mqtt_settings(MqttClient *mqtt_c
   mqtt_client->set_username(username);
   mqtt_client->set_password(password);
   mqtt_client->set_clean_session(true);
-  mqtt_client->set_topic_prefix(topic_prefix, std::string());
+  mqtt_client->set_topic_prefix(topic_prefix, AIRDOT_DEFAULT_MQTT_TOPIC_PREFIX);
 #ifdef USE_MQTT
   const std::string availability_topic = topic_prefix + "/availability";
   mqtt_client->set_birth_message(esphome::mqtt::MQTTMessage{availability_topic, "online", 1, true});

@@ -63,6 +63,8 @@ static constexpr uint32_t NIGHT_SCREEN_MODE_PREF_KEY = 2918394850UL;
 static constexpr uint32_t DISPLAY_BRIGHTNESS_PERCENT_PREF_KEY = 2918394851UL;
 static constexpr uint32_t DISPLAY_POWER_PREF_KEY = 2918394852UL;
 static constexpr uint32_t DISPLAY_POWER_HA_CONTROL_RECOVERY_PREF_KEY = 2918394853UL;
+static constexpr uint32_t AUTO_PAGE_SWITCH_MODE_PREF_KEY = 2918394854UL;
+static constexpr uint32_t AUTO_PAGE_SWITCH_SCREENS_PREF_KEY = 2918394855UL;
 static constexpr int32_t LATITUDE_MIN_E7 = -900000000;
 static constexpr int32_t LATITUDE_MAX_E7 = 900000000;
 static constexpr int32_t LONGITUDE_MIN_E7 = -1800000000;
@@ -119,6 +121,31 @@ enum NightScreenMode : uint8_t {
   NIGHT_SCREEN_MODE_OFF = 0,
   NIGHT_SCREEN_MODE_DIM = 1,
 };
+
+enum AutoPageSwitchMode : uint8_t {
+  AUTO_PAGE_SWITCH_MODE_ALL = 0,
+  AUTO_PAGE_SWITCH_MODE_CUSTOM = 1,
+};
+
+static constexpr uint16_t AUTO_PAGE_SCREEN_SUMMARY = 1U << 0;
+static constexpr uint16_t AUTO_PAGE_SCREEN_TIME_WEATHER = 1U << 1;
+static constexpr uint16_t AUTO_PAGE_SCREEN_FLIGHT_RADAR = 1U << 2;
+static constexpr uint16_t AUTO_PAGE_SCREEN_PM1 = 1U << 3;
+static constexpr uint16_t AUTO_PAGE_SCREEN_PM25 = 1U << 4;
+static constexpr uint16_t AUTO_PAGE_SCREEN_PM4 = 1U << 5;
+static constexpr uint16_t AUTO_PAGE_SCREEN_PM10 = 1U << 6;
+static constexpr uint16_t AUTO_PAGE_SCREEN_CO2 = 1U << 7;
+static constexpr uint16_t AUTO_PAGE_SCREEN_VOC = 1U << 8;
+static constexpr uint16_t AUTO_PAGE_SCREEN_NOX = 1U << 9;
+static constexpr uint16_t AUTO_PAGE_SCREEN_TEMPERATURE = 1U << 10;
+static constexpr uint16_t AUTO_PAGE_SCREEN_HUMIDITY = 1U << 11;
+static constexpr uint16_t AUTO_PAGE_SCREEN_PRESSURE = 1U << 12;
+static constexpr uint16_t AUTO_PAGE_SCREEN_LIGHT = 1U << 13;
+static constexpr uint16_t AUTO_PAGE_SCREEN_ALL_MASK =
+    AUTO_PAGE_SCREEN_SUMMARY | AUTO_PAGE_SCREEN_TIME_WEATHER | AUTO_PAGE_SCREEN_FLIGHT_RADAR |
+    AUTO_PAGE_SCREEN_PM1 | AUTO_PAGE_SCREEN_PM25 | AUTO_PAGE_SCREEN_PM4 | AUTO_PAGE_SCREEN_PM10 |
+    AUTO_PAGE_SCREEN_CO2 | AUTO_PAGE_SCREEN_VOC | AUTO_PAGE_SCREEN_NOX | AUTO_PAGE_SCREEN_TEMPERATURE |
+    AUTO_PAGE_SCREEN_HUMIDITY | AUTO_PAGE_SCREEN_PRESSURE | AUTO_PAGE_SCREEN_LIGHT;
 
 struct SetupWifiBackup {
   bool valid;
@@ -868,6 +895,18 @@ inline CachedUint8Preference &display_alert_wake_screen_pref_() {
 
 inline CachedUint8Preference &auto_page_switch_pref_() {
   static CachedUint8Preference cache{AUTO_PAGE_SWITCH_PREF_KEY, 0, 0, false, false, {}};
+  return cache;
+}
+
+inline CachedUint8Preference &auto_page_switch_mode_pref_() {
+  static CachedUint8Preference cache{
+      AUTO_PAGE_SWITCH_MODE_PREF_KEY, AUTO_PAGE_SWITCH_MODE_ALL, AUTO_PAGE_SWITCH_MODE_ALL, false, false, {}};
+  return cache;
+}
+
+inline CachedUint16Preference &auto_page_switch_screens_pref_() {
+  static CachedUint16Preference cache{
+      AUTO_PAGE_SWITCH_SCREENS_PREF_KEY, AUTO_PAGE_SCREEN_SUMMARY, AUTO_PAGE_SCREEN_SUMMARY, false, false, {}};
   return cache;
 }
 
@@ -1710,6 +1749,37 @@ inline bool load_auto_page_switch_enabled() {
 inline void save_auto_page_switch_enabled(bool enabled) {
   uint8_t value = enabled ? 1 : 0;
   save_cached_uint8_preference_(auto_page_switch_pref_(), value);
+}
+
+inline AutoPageSwitchMode normalize_auto_page_switch_mode_(uint8_t mode) {
+  return mode == AUTO_PAGE_SWITCH_MODE_CUSTOM ? AUTO_PAGE_SWITCH_MODE_CUSTOM : AUTO_PAGE_SWITCH_MODE_ALL;
+}
+
+inline uint16_t normalize_auto_page_switch_screens_(uint16_t screens) {
+  screens &= AUTO_PAGE_SCREEN_ALL_MASK;
+  return screens != 0 ? screens : AUTO_PAGE_SCREEN_SUMMARY;
+}
+
+inline AutoPageSwitchMode load_auto_page_switch_mode() {
+  return normalize_auto_page_switch_mode_(load_cached_uint8_preference_(auto_page_switch_mode_pref_()));
+}
+
+inline void save_auto_page_switch_mode(AutoPageSwitchMode mode) {
+  save_cached_uint8_preference_(auto_page_switch_mode_pref_(), static_cast<uint8_t>(normalize_auto_page_switch_mode_(mode)));
+}
+
+inline uint16_t load_auto_page_switch_screens() {
+  return normalize_auto_page_switch_screens_(load_cached_uint16_preference_(auto_page_switch_screens_pref_()));
+}
+
+inline void save_auto_page_switch_screens(uint16_t screens) {
+  save_cached_uint16_preference_(auto_page_switch_screens_pref_(), normalize_auto_page_switch_screens_(screens));
+}
+
+inline bool auto_page_switch_screen_enabled(uint16_t screen) {
+  if (load_auto_page_switch_mode() == AUTO_PAGE_SWITCH_MODE_ALL)
+    return true;
+  return (load_auto_page_switch_screens() & screen) != 0;
 }
 
 inline bool load_hazard_focus_mode_enabled() {

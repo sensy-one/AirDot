@@ -19,6 +19,7 @@ external_components:
     components:
       - nhd_2_1_480480af_asxp
       - ltr303als
+      - web_server_idf
 
 psram:
   mode: octal

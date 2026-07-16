@@ -798,11 +798,10 @@ interval:
       - lambda: |-
           uint16_t snapshot_duration_seconds = 0;
           bool snapshot_sound_enabled = false;
-          uint16_t snapshot_sound_duration_ms = 0;
           const int snapshot_result =
               AirDot::snapshot_alert::consume_snapshot_result(
                   id(modal_overlay_snapshot_container), snapshot_duration_seconds,
-                  snapshot_sound_enabled, snapshot_sound_duration_ms);
+                  snapshot_sound_enabled);
           if (snapshot_result < 0) {
             id(ui_hide_display_alert).execute();
             return;
@@ -841,8 +840,8 @@ interval:
               ${display_auto_dim_min_brightness});
           }
 
-          if (snapshot_sound_enabled && snapshot_sound_duration_ms > 0)
-            id(ui_play_display_alert_sound).execute(static_cast<int>(snapshot_sound_duration_ms));
+          if (snapshot_sound_enabled)
+            id(ui_play_display_alert_sound).execute();
           id(ui_snapshot_restore_display_bandwidth).execute();
       - if:
           condition:

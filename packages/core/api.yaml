@@ -8,7 +8,6 @@ api:
         message: string
         duration_seconds: int
         sound_enabled: bool
-        sound_duration_ms: int
         text_color: string
       then:
         - if:
@@ -35,25 +34,9 @@ api:
               - if:
                   condition:
                     lambda: |-
-                      if (!sound_enabled || sound_duration_ms <= 0)
-                        return false;
-                      const uint32_t now = millis();
-                      const bool warmup_active =
-                        id(air_quality_warmup_until_ms) != 0 &&
-                        static_cast<int32_t>(now - id(air_quality_warmup_until_ms)) < 0;
-                      if (warmup_active) {
-                        return false;
-                      }
-
-                      const auto air_quality_profile = AirDot::onboarding::load_air_quality_profile();
-                      const int level = AirDot::sanitized_air_quality_level(
-                        air_quality_profile, id(pm25).state, id(pm10).state, id(voc).state, id(nox).state, id(co2).state);
-                      return !(level >= 4 && AirDot::onboarding::load_audio_alerts_enabled());
+                      return sound_enabled;
                   then:
-                    - script.execute:
-                        id: ui_play_display_alert_sound
-                        duration_ms: !lambda |-
-                          return sound_duration_ms > 30000 ? 30000 : sound_duration_ms;
+                    - script.execute: ui_play_display_alert_sound
               - script.execute: ui_show_display_alert
 
     - action: show_snapshot_alert
@@ -61,7 +44,6 @@ api:
         image_url: string
         duration_seconds: int
         sound_enabled: bool
-        sound_duration_ms: int
       then:
         - if:
             condition:
@@ -88,7 +70,7 @@ api:
                   lv_obj_clear_flag(id(modal_overlay_content_stack), LV_OBJ_FLAG_HIDDEN);
                   lv_obj_add_flag(id(modal_overlay_layer), LV_OBJ_FLAG_HIDDEN);
                   const bool started = AirDot::snapshot_alert::start_snapshot_request(
-                      image_url, duration_seconds, sound_enabled, sound_duration_ms);
+                      image_url, duration_seconds, sound_enabled);
                   if (!started) {
                     id(display_panel).set_low_bandwidth_mode(false);
                     if (lv_screen_active() != nullptr)

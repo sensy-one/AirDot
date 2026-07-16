@@ -133,6 +133,24 @@ setup_page:
 
   auto_page_switch_title: Changement automatique d’écran
   auto_page_switch_description: Faites défiler automatiquement les écrans.
+  auto_page_switch_mode_label: Écrans à faire défiler
+  auto_page_switch_mode_all_label: Tous
+  auto_page_switch_mode_custom_label: Personnalisé
+  auto_page_switch_screens_label: Écrans personnalisés
+  auto_page_screen_summary_label: Vue d’ensemble
+  auto_page_screen_time_weather_label: Heure & météo
+  auto_page_screen_flight_radar_label: Radar aérien
+  auto_page_screen_pm1_label: PM1
+  auto_page_screen_pm25_label: PM2.5
+  auto_page_screen_pm4_label: PM4
+  auto_page_screen_pm10_label: PM10
+  auto_page_screen_co2_label: CO2
+  auto_page_screen_voc_label: VOC
+  auto_page_screen_nox_label: NOx
+  auto_page_screen_temperature_label: Température
+  auto_page_screen_humidity_label: Humidité
+  auto_page_screen_pressure_label: Pression
+  auto_page_screen_light_label: Lumière
   update_interval_label: Intervalle de mise à jour
 
   save_button: Enregistrer

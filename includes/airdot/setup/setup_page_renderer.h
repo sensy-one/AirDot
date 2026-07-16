@@ -105,6 +105,10 @@ class SetupPageRenderer {
     const bool dark_mode_enabled = load_dark_mode_enabled();
     const bool auto_dim_enabled = load_auto_dim_enabled();
     const bool auto_page_switch_enabled = load_auto_page_switch_enabled();
+    const AutoPageSwitchMode auto_page_switch_mode = load_auto_page_switch_mode();
+    const bool auto_page_switch_custom = auto_page_switch_mode == AUTO_PAGE_SWITCH_MODE_CUSTOM;
+    const uint16_t auto_page_switch_screens =
+        auto_page_switch_custom ? load_auto_page_switch_screens() : AUTO_PAGE_SCREEN_SUMMARY;
     const bool stored_night_screen_off_enabled = load_night_screen_off_enabled();
     const NightScreenMode night_screen_mode = load_night_screen_mode();
     const std::string screen_off_start_value = time_input_value_(load_screen_off_start_minutes());
@@ -173,6 +177,23 @@ class SetupPageRenderer {
     const bool night_screen_dim_enabled = night_screen_mode == NIGHT_SCREEN_MODE_DIM;
     ChunkedResponse html(request, "text/html; charset=utf-8");
     html.reserve(40000);
+    auto append_auto_page_screen_option = [&](const char *id, const char *name, uint16_t screen, const char *i18n_key,
+                                              const char *label) {
+      html += "                  <label class=\"screen-option\" for=\"";
+      html += id;
+      html += "\">\n                    <input id=\"";
+      html += id;
+      html += "\" type=\"checkbox\" name=\"";
+      html += name;
+      html += "\" value=\"1\"";
+      if ((auto_page_switch_screens & screen) != 0)
+        html += " checked";
+      html += ">\n                    <span data-i18n=\"";
+      html += i18n_key;
+      html += "\">";
+      html += html_escape_(label);
+      html += "</span>\n                  </label>\n";
+    };
     html += R"html(<!doctype html>
 <html lang=")html";
     html += ui_language_value(ui_language);
@@ -709,6 +730,51 @@ class SetupPageRenderer {
       cursor: not-allowed;
     }
     .segment input:disabled + span {
+      opacity: 0.45;
+    }
+    .screen-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(116px, 1fr));
+      gap: 8px;
+    }
+    .screen-option {
+      position: relative;
+      min-width: 0;
+      min-height: 42px;
+      border-radius: 13px;
+      overflow: hidden;
+    }
+    .screen-option input {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      width: 100%;
+      height: 100%;
+      cursor: pointer;
+    }
+    .screen-option span {
+      display: grid;
+      place-items: center;
+      min-height: 42px;
+      padding: 0 10px;
+      border: 1px solid rgba(255, 255, 255, 0.13);
+      border-radius: 13px;
+      color: rgba(245, 247, 251, 0.78);
+      background: rgba(255, 255, 255, 0.055);
+      font-size: 13px;
+      line-height: 1.2;
+      text-align: center;
+      transition: background 160ms ease, border-color 160ms ease, color 160ms ease;
+    }
+    .screen-option input:checked + span {
+      color: #111111;
+      background: #f5f5f5;
+      border-color: #f5f5f5;
+    }
+    .screen-option input:disabled {
+      cursor: not-allowed;
+    }
+    .screen-option input:disabled + span {
       opacity: 0.45;
     }
     .actions {
@@ -1949,6 +2015,83 @@ class SetupPageRenderer {
               </div>
 
 )html";
+    html += "              <div id=\"auto_page_switch_mode_field\" class=\"field\"";
+    if (!auto_page_switch_enabled)
+      html += " hidden";
+    html += ">\n                <label for=\"auto_page_switch_mode_all\" data-i18n=\"auto_page_switch_mode_label\">";
+    html += text.auto_page_switch_mode_label;
+    html += "</label>\n                <div class=\"segmented\" role=\"radiogroup\" data-i18n-aria-label=\"auto_page_switch_mode_label\" aria-label=\"";
+    html += html_escape_(text.auto_page_switch_mode_label);
+    html += R"html(">
+                <label class="segment" for="auto_page_switch_mode_all">
+)html";
+    html += "                  <input id=\"auto_page_switch_mode_all\" type=\"radio\" name=\"auto_page_switch_mode\" value=\"all\"";
+    if (!auto_page_switch_custom)
+      html += " checked";
+    html += R"html(>
+                  <span data-i18n="auto_page_switch_mode_all_label">)html";
+    html += text.auto_page_switch_mode_all_label;
+    html += R"html(</span>
+                </label>
+                <label class="segment" for="auto_page_switch_mode_custom">
+)html";
+    html += "                  <input id=\"auto_page_switch_mode_custom\" type=\"radio\" name=\"auto_page_switch_mode\" value=\"custom\"";
+    if (auto_page_switch_custom)
+      html += " checked";
+    html += R"html(>
+                  <span data-i18n="auto_page_switch_mode_custom_label">)html";
+    html += text.auto_page_switch_mode_custom_label;
+    html += R"html(</span>
+                </label>
+                </div>
+              </div>
+
+)html";
+    html += "              <div id=\"auto_page_switch_screens\" class=\"field\"";
+    if (!auto_page_switch_enabled || !auto_page_switch_custom)
+      html += " hidden";
+    html += ">\n                <label data-i18n=\"auto_page_switch_screens_label\">";
+    html += text.auto_page_switch_screens_label;
+    html += R"html(</label>
+                <div class="screen-grid">
+)html";
+    append_auto_page_screen_option("auto_page_screen_summary", "auto_page_screen_summary", AUTO_PAGE_SCREEN_SUMMARY,
+                                   "auto_page_screen_summary_label", text.auto_page_screen_summary_label);
+    append_auto_page_screen_option("auto_page_screen_time_weather", "auto_page_screen_time_weather",
+                                   AUTO_PAGE_SCREEN_TIME_WEATHER, "auto_page_screen_time_weather_label",
+                                   text.auto_page_screen_time_weather_label);
+    append_auto_page_screen_option("auto_page_screen_flight_radar", "auto_page_screen_flight_radar",
+                                   AUTO_PAGE_SCREEN_FLIGHT_RADAR, "auto_page_screen_flight_radar_label",
+                                   text.auto_page_screen_flight_radar_label);
+    append_auto_page_screen_option("auto_page_screen_pm1", "auto_page_screen_pm1", AUTO_PAGE_SCREEN_PM1,
+                                   "auto_page_screen_pm1_label", text.auto_page_screen_pm1_label);
+    append_auto_page_screen_option("auto_page_screen_pm25", "auto_page_screen_pm25", AUTO_PAGE_SCREEN_PM25,
+                                   "auto_page_screen_pm25_label", text.auto_page_screen_pm25_label);
+    append_auto_page_screen_option("auto_page_screen_pm4", "auto_page_screen_pm4", AUTO_PAGE_SCREEN_PM4,
+                                   "auto_page_screen_pm4_label", text.auto_page_screen_pm4_label);
+    append_auto_page_screen_option("auto_page_screen_pm10", "auto_page_screen_pm10", AUTO_PAGE_SCREEN_PM10,
+                                   "auto_page_screen_pm10_label", text.auto_page_screen_pm10_label);
+    append_auto_page_screen_option("auto_page_screen_co2", "auto_page_screen_co2", AUTO_PAGE_SCREEN_CO2,
+                                   "auto_page_screen_co2_label", text.auto_page_screen_co2_label);
+    append_auto_page_screen_option("auto_page_screen_voc", "auto_page_screen_voc", AUTO_PAGE_SCREEN_VOC,
+                                   "auto_page_screen_voc_label", text.auto_page_screen_voc_label);
+    append_auto_page_screen_option("auto_page_screen_nox", "auto_page_screen_nox", AUTO_PAGE_SCREEN_NOX,
+                                   "auto_page_screen_nox_label", text.auto_page_screen_nox_label);
+    append_auto_page_screen_option("auto_page_screen_temperature", "auto_page_screen_temperature",
+                                   AUTO_PAGE_SCREEN_TEMPERATURE, "auto_page_screen_temperature_label",
+                                   text.auto_page_screen_temperature_label);
+    append_auto_page_screen_option("auto_page_screen_humidity", "auto_page_screen_humidity",
+                                   AUTO_PAGE_SCREEN_HUMIDITY, "auto_page_screen_humidity_label",
+                                   text.auto_page_screen_humidity_label);
+    append_auto_page_screen_option("auto_page_screen_pressure", "auto_page_screen_pressure",
+                                   AUTO_PAGE_SCREEN_PRESSURE, "auto_page_screen_pressure_label",
+                                   text.auto_page_screen_pressure_label);
+    append_auto_page_screen_option("auto_page_screen_light", "auto_page_screen_light", AUTO_PAGE_SCREEN_LIGHT,
+                                   "auto_page_screen_light_label", text.auto_page_screen_light_label);
+    html += R"html(                </div>
+              </div>
+
+)html";
     html += "              <div id=\"auto_page_switch_interval\" class=\"field\"";
     if (!auto_page_switch_enabled)
       html += " hidden";
@@ -2080,6 +2223,10 @@ class SetupPageRenderer {
             const integrationsSection = document.getElementById("integrations_section");
             const integrationInterval = document.getElementById("integration_interval");
             const autoPageSwitchInterval = document.getElementById("auto_page_switch_interval");
+            const autoPageSwitchModeField = document.getElementById("auto_page_switch_mode_field");
+            const autoPageSwitchModeInputs = Array.from(document.querySelectorAll("input[name='auto_page_switch_mode']"));
+            const autoPageSwitchScreens = document.getElementById("auto_page_switch_screens");
+            const autoPageSwitchScreenInputs = Array.from(document.querySelectorAll("input[name^='auto_page_screen_']"));
             const updateIntervalValue = document.getElementById("update_interval_value");
             const haDiscoveryInput = document.getElementById("ha_discovery");
             const haRow = document.getElementById("ha_row");
@@ -2167,6 +2314,16 @@ class SetupPageRenderer {
             }
             function flightRadarSelected() {
               return wifiOnlineSelected() && flightRadarEnabledInput ? flightRadarEnabledInput.checked : false;
+            }
+            function autoPageSwitchCustomSelected() {
+              const selected = document.querySelector("input[name='auto_page_switch_mode']:checked");
+              return selected ? selected.value === "custom" : false;
+            }
+            function ensureAutoPageScreenSelection(fallbackInput) {
+              if (!autoPageSwitchCustomSelected()) return;
+              if (autoPageSwitchScreenInputs.some((input) => input.checked)) return;
+              const fallback = fallbackInput || autoPageSwitchScreenInputs[0];
+              if (fallback) fallback.checked = true;
             }
             function selectedUnitSystem() {
               const selected = document.querySelector("input[name='units']:checked");
@@ -2388,10 +2545,16 @@ class SetupPageRenderer {
               const integrationActive = online &&
                 ((haDiscoveryInput && haDiscoveryInput.checked) || (mqttEnabledInput && mqttEnabledInput.checked));
               const autoPageSwitchActive = switchEnabled(autoPageSwitchInput);
+              const autoPageSwitchCustom = autoPageSwitchActive && autoPageSwitchCustomSelected();
               if (integrationInterval) integrationInterval.hidden = !integrationActive;
+              if (autoPageSwitchModeField) autoPageSwitchModeField.hidden = !autoPageSwitchActive;
+              if (autoPageSwitchScreens) autoPageSwitchScreens.hidden = !autoPageSwitchCustom;
               if (autoPageSwitchInterval) autoPageSwitchInterval.hidden = !autoPageSwitchActive;
               setDisabled(integrationIntervalInputs, !integrationActive);
+              setDisabled(autoPageSwitchModeInputs, !autoPageSwitchActive);
+              setDisabled(autoPageSwitchScreenInputs, !autoPageSwitchActive);
               setDisabled(autoPageSwitchIntervalInputs, !autoPageSwitchActive);
+              ensureAutoPageScreenSelection();
               syncUpdateIntervalControls();
               updateNightScreenOffControls();
               updatePasswordToggleButtons();
@@ -2865,6 +3028,15 @@ class SetupPageRenderer {
             updateIntervalInputs.forEach((input) => {
               input.addEventListener("change", () => {
                 if (input.checked) setUpdateInterval(input.value);
+              });
+            });
+            autoPageSwitchModeInputs.forEach((input) => {
+              input.addEventListener("change", updateDependentControls);
+            });
+            autoPageSwitchScreenInputs.forEach((input) => {
+              input.addEventListener("change", () => {
+                ensureAutoPageScreenSelection(input);
+                updateDependentControls();
               });
             });
             if (exactLocationInput) {

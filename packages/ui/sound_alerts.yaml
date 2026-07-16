@@ -15,8 +15,6 @@ globals:
 script:
   - id: ui_play_display_alert_sound
     mode: restart
-    parameters:
-      duration_ms: int
     then:
       - if:
           condition:
@@ -28,8 +26,7 @@ script:
               const bool setup_or_onboarding_active =
                 AirDot::onboarding::setup_or_onboarding_active(
                   id(setup_ap_active), id(setup_portal_active), id(onboarding_ui_active));
-              if (duration_ms <= 0 || warmup_active || setup_or_onboarding_active ||
-                  !AirDot::onboarding::load_audio_alerts_enabled()) {
+              if (warmup_active || setup_or_onboarding_active) {
                 return false;
               }
               return true;
@@ -40,8 +37,7 @@ script:
             - output.set_level:
                 id: alert_buzzer_pwm
                 level: 50%
-            - delay: !lambda |-
-                return duration_ms;
+            - delay: 150ms
             - lambda: |-
                 if (id(ha_buzzer_active) != 1)
                   id(alert_buzzer_pwm).turn_off();

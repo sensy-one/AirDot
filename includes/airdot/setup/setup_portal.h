@@ -243,6 +243,13 @@ class SetupHandler : public AsyncWebHandler {
     save_auto_dim_enabled(request->hasArg("auto_dim"));
     const bool auto_page_switch_enabled = bounded_arg_(request, "auto_page_switch", 1) == "1";
     save_auto_page_switch_enabled(auto_page_switch_enabled);
+    if (auto_page_switch_enabled) {
+      const AutoPageSwitchMode auto_page_switch_mode =
+          parse_auto_page_switch_mode_(bounded_arg_(request, "auto_page_switch_mode", 8));
+      save_auto_page_switch_mode(auto_page_switch_mode);
+      if (auto_page_switch_mode == AUTO_PAGE_SWITCH_MODE_CUSTOM)
+        save_auto_page_switch_screens(parse_auto_page_switch_screens_(request));
+    }
     const NightScreenMode night_screen_mode =
         request->hasArg("night_screen_mode") ? parse_night_screen_mode_(bounded_arg_(request, "night_screen_mode", 8))
                                              : load_night_screen_mode();
@@ -387,6 +394,43 @@ class SetupHandler : public AsyncWebHandler {
 
   static NightScreenMode parse_night_screen_mode_(const std::string &value) {
     return value == "dim" ? NIGHT_SCREEN_MODE_DIM : NIGHT_SCREEN_MODE_OFF;
+  }
+
+  static AutoPageSwitchMode parse_auto_page_switch_mode_(const std::string &value) {
+    return value == "custom" ? AUTO_PAGE_SWITCH_MODE_CUSTOM : AUTO_PAGE_SWITCH_MODE_ALL;
+  }
+
+  static uint16_t parse_auto_page_switch_screens_(AsyncWebServerRequest *request) {
+    uint16_t screens = 0;
+    if (request->hasArg("auto_page_screen_summary"))
+      screens |= AUTO_PAGE_SCREEN_SUMMARY;
+    if (request->hasArg("auto_page_screen_time_weather"))
+      screens |= AUTO_PAGE_SCREEN_TIME_WEATHER;
+    if (request->hasArg("auto_page_screen_flight_radar"))
+      screens |= AUTO_PAGE_SCREEN_FLIGHT_RADAR;
+    if (request->hasArg("auto_page_screen_pm1"))
+      screens |= AUTO_PAGE_SCREEN_PM1;
+    if (request->hasArg("auto_page_screen_pm25"))
+      screens |= AUTO_PAGE_SCREEN_PM25;
+    if (request->hasArg("auto_page_screen_pm4"))
+      screens |= AUTO_PAGE_SCREEN_PM4;
+    if (request->hasArg("auto_page_screen_pm10"))
+      screens |= AUTO_PAGE_SCREEN_PM10;
+    if (request->hasArg("auto_page_screen_co2"))
+      screens |= AUTO_PAGE_SCREEN_CO2;
+    if (request->hasArg("auto_page_screen_voc"))
+      screens |= AUTO_PAGE_SCREEN_VOC;
+    if (request->hasArg("auto_page_screen_nox"))
+      screens |= AUTO_PAGE_SCREEN_NOX;
+    if (request->hasArg("auto_page_screen_temperature"))
+      screens |= AUTO_PAGE_SCREEN_TEMPERATURE;
+    if (request->hasArg("auto_page_screen_humidity"))
+      screens |= AUTO_PAGE_SCREEN_HUMIDITY;
+    if (request->hasArg("auto_page_screen_pressure"))
+      screens |= AUTO_PAGE_SCREEN_PRESSURE;
+    if (request->hasArg("auto_page_screen_light"))
+      screens |= AUTO_PAGE_SCREEN_LIGHT;
+    return normalize_auto_page_switch_screens_(screens);
   }
 
   static bool parse_manual_time_epoch_(const std::string &value, uint32_t &epoch) {

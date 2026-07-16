@@ -5,7 +5,9 @@
 #include <esp_err.h>
 #include <esp_heap_caps.h>
 #include <esp_http_client.h>
+#include <esp_netif.h>
 #include <jpeg_decoder.h>
+#include <mdns.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/semphr.h>
 #include <freertos/task.h>
@@ -19,6 +21,7 @@
 
 #include <algorithm>
 #include <atomic>
+#include <cstdio>
 #include <cstdint>
 #include <cstring>
 #include <string>
@@ -35,11 +38,11 @@ inline constexpr uint16_t SNAPSHOT_DISPLAY_MAX_WIDTH = 480;
 inline constexpr uint16_t SNAPSHOT_DISPLAY_MAX_HEIGHT = 480;
 inline constexpr uint16_t SNAPSHOT_DEFAULT_DURATION_SECONDS = 30;
 inline constexpr uint16_t SNAPSHOT_MAX_DURATION_SECONDS = 3600;
-inline constexpr uint16_t SNAPSHOT_MAX_SOUND_DURATION_MS = 30000;
 inline constexpr uint32_t SNAPSHOT_HTTP_TASK_STACK_SIZE = 24576;
 inline constexpr int SNAPSHOT_HTTP_TIMEOUT_MS = 8000;
+inline constexpr uint32_t SNAPSHOT_MDNS_TIMEOUT_MS = 1500;
 inline constexpr uint32_t SNAPSHOT_TASK_TIMEOUT_MS = 45000;
-inline constexpr size_t SNAPSHOT_MAX_JPEG_BYTES = 1920 * 1920;
+inline constexpr size_t SNAPSHOT_MAX_JPEG_BYTES = 8 * 1024 * 1024;
 inline constexpr uint32_t SNAPSHOT_MAX_SOURCE_PIXELS = 1920UL * 1920UL;
 inline constexpr uint8_t SNAPSHOT_RGB888_BYTES_PER_PIXEL = 3;
 inline constexpr uint8_t SNAPSHOT_RGB565_BYTES_PER_PIXEL = 2;
@@ -49,14 +52,12 @@ struct SnapshotImage {
   uint8_t *pixels{nullptr};
   uint16_t duration_seconds{SNAPSHOT_DEFAULT_DURATION_SECONDS};
   bool sound_enabled{false};
-  uint16_t sound_duration_ms{0};
 };
 
 struct SnapshotRequest {
   char *url{nullptr};
   uint16_t duration_seconds{SNAPSHOT_DEFAULT_DURATION_SECONDS};
   bool sound_enabled{false};
-  uint16_t sound_duration_ms{0};
   uint32_t generation{0};
 };
 
@@ -66,6 +67,16 @@ struct HttpResponse {
   size_t capacity{0};
   size_t max_length{0};
   bool overflow{false};
+};
+
+struct ParsedHttpUrl {
+  std::string scheme;
+  std::string host;
+  std::string host_header;
+  std::string path_query;
+  uint16_t port{0};
+  bool https{false};
+  bool valid{false};
 };
 
 class BufferGuard {
@@ -203,14 +214,6 @@ inline uint16_t normalize_duration_seconds_(int duration_seconds) {
   return static_cast<uint16_t>(duration_seconds);
 }
 
-inline uint16_t normalize_sound_duration_ms_(int duration_ms) {
-  if (duration_ms <= 0)
-    return 0;
-  if (duration_ms > SNAPSHOT_MAX_SOUND_DURATION_MS)
-    return SNAPSHOT_MAX_SOUND_DURATION_MS;
-  return static_cast<uint16_t>(duration_ms);
-}
-
 inline bool source_size_supported_(uint32_t width, uint32_t height) {
   if (width == 0 || height == 0)
     return false;
@@ -302,6 +305,104 @@ inline void sample_area_rgb888_(const uint8_t *source, uint32_t source_width, ui
   target_pixel[2] = static_cast<uint8_t>((blue + count / 2U) / count);
 }
 
+inline void reset_http_response_(HttpResponse &response) {
+  const size_t max_length = response.max_length;
+  if (response.body != nullptr)
+    heap_caps_free(response.body);
+  response = HttpResponse{};
+  response.max_length = max_length;
+}
+
+inline ParsedHttpUrl parse_http_url_(const std::string &url) {
+  ParsedHttpUrl parsed{};
+  const std::string trimmed = AirDot::connectivity::trim_copy(url);
+  const std::string lowered = AirDot::connectivity::ascii_lower_copy(trimmed);
+
+  size_t offset = std::string::npos;
+  if (lowered.rfind("http://", 0) == 0) {
+    parsed.scheme = "http";
+    parsed.https = false;
+    offset = 7;
+  } else if (lowered.rfind("https://", 0) == 0) {
+    parsed.scheme = "https";
+    parsed.https = true;
+    offset = 8;
+  }
+  if (offset == std::string::npos)
+    return parsed;
+
+  const uint16_t default_port = parsed.https ? 443 : 80;
+  const auto authority_end = trimmed.find_first_of("/?#", offset);
+  std::string authority = authority_end == std::string::npos
+                              ? trimmed.substr(offset)
+                              : trimmed.substr(offset, authority_end - offset);
+  authority = AirDot::connectivity::trim_copy(authority);
+  if (authority.empty())
+    return parsed;
+
+  const auto at_pos = authority.rfind('@');
+  parsed.host_header = at_pos == std::string::npos ? authority : authority.substr(at_pos + 1);
+  parsed.host_header = AirDot::connectivity::trim_copy(parsed.host_header);
+
+  if (authority_end == std::string::npos) {
+    parsed.path_query = "/";
+  } else {
+    parsed.path_query = trimmed.substr(authority_end);
+    const auto fragment = parsed.path_query.find('#');
+    if (fragment != std::string::npos)
+      parsed.path_query.resize(fragment);
+    if (parsed.path_query.empty() || parsed.path_query.front() == '?')
+      parsed.path_query.insert(parsed.path_query.begin(), '/');
+  }
+
+  const auto host_port = AirDot::connectivity::normalize_host_port_input(authority, default_port, default_port);
+  parsed.host = host_port.host;
+  parsed.port = host_port.port;
+  parsed.valid = host_port.host_valid && host_port.port_valid && !parsed.host_header.empty();
+  return parsed;
+}
+
+inline bool host_is_mdns_local_(const std::string &host) {
+  const std::string lowered = AirDot::connectivity::ascii_lower_copy(host);
+  return lowered.size() > 6 && lowered.compare(lowered.size() - 6, 6, ".local") == 0;
+}
+
+inline bool build_mdns_ipv4_url_(const ParsedHttpUrl &parsed, std::string &resolved_url, std::string &host_header) {
+  if (!parsed.valid || parsed.https || !host_is_mdns_local_(parsed.host))
+    return false;
+
+  std::string mdns_host = parsed.host.substr(0, parsed.host.size() - 6);
+  while (!mdns_host.empty() && mdns_host.back() == '.')
+    mdns_host.pop_back();
+  if (mdns_host.empty() || mdns_host.find(':') != std::string::npos)
+    return false;
+
+  (void) mdns_init();
+
+  esp_ip4_addr_t address{};
+  if (mdns_query_a(mdns_host.c_str(), SNAPSHOT_MDNS_TIMEOUT_MS, &address) != ESP_OK)
+    return false;
+
+  char ip_address[16]{};
+  if (esp_ip4addr_ntoa(&address, ip_address, sizeof(ip_address)) == nullptr || ip_address[0] == '\0')
+    return false;
+
+  resolved_url = parsed.scheme + "://" + ip_address;
+  if (parsed.port != 80) {
+    char port[8]{};
+    std::snprintf(port, sizeof(port), ":%u", static_cast<unsigned>(parsed.port));
+    resolved_url += port;
+  }
+  resolved_url += parsed.path_query.empty() ? "/" : parsed.path_query;
+  host_header = parsed.host_header;
+  return true;
+}
+
+inline bool response_has_jpeg_magic_(const HttpResponse &response) {
+  return response.length >= 2 && response.body != nullptr &&
+         response.body[0] == 0xFF && response.body[1] == 0xD8;
+}
+
 inline bool ensure_http_response_capacity_(HttpResponse *response, size_t required) {
   if (response == nullptr || response->max_length == 0 || required > response->max_length) {
     if (response != nullptr)
@@ -349,17 +450,18 @@ inline esp_err_t http_response_event_handler_(esp_http_client_event_t *event) {
   return ESP_OK;
 }
 
-inline bool download_snapshot_jpeg_(const char *url, HttpResponse &response) {
+inline bool download_snapshot_jpeg_once_(const char *url, const char *host_header, HttpResponse &response) {
   esp_http_client_config_t config{};
   config.url = url;
   config.method = HTTP_METHOD_GET;
   config.timeout_ms = SNAPSHOT_HTTP_TIMEOUT_MS;
+  config.max_redirection_count = 3;
   config.event_handler = http_response_event_handler_;
   config.user_data = &response;
-  config.buffer_size = 1024;
-  config.buffer_size_tx = 512;
-  config.user_agent = "";
-  config.addr_type = HTTP_ADDR_TYPE_INET;
+  config.buffer_size = 4096;
+  config.buffer_size_tx = 1024;
+  config.user_agent = "AirDot";
+  config.addr_type = HTTP_ADDR_TYPE_UNSPEC;
 #if CONFIG_MBEDTLS_CERTIFICATE_BUNDLE
   config.crt_bundle_attach = esp_crt_bundle_attach;
 #endif
@@ -368,6 +470,8 @@ inline bool download_snapshot_jpeg_(const char *url, HttpResponse &response) {
   if (client == nullptr)
     return false;
 
+  if (host_header != nullptr && host_header[0] != '\0')
+    esp_http_client_set_header(client, "Host", host_header);
   esp_http_client_set_header(client, "Accept", "image/jpeg,image/*;q=0.9,*/*;q=0.1");
   esp_http_client_set_header(client, "Cache-Control", "no-cache, no-store");
   esp_http_client_set_header(client, "Pragma", "no-cache");
@@ -377,15 +481,30 @@ inline bool download_snapshot_jpeg_(const char *url, HttpResponse &response) {
   const int status_code = esp_http_client_get_status_code(client);
   esp_http_client_cleanup(client);
 
-  if (error != ESP_OK || status_code != 200 || response.overflow || response.length == 0)
+  if (error != ESP_OK || status_code != 200 || response.overflow || !response_has_jpeg_magic_(response))
     return false;
 
   return true;
 }
 
+inline bool download_snapshot_jpeg_(const char *url, HttpResponse &response) {
+  reset_http_response_(response);
+  if (download_snapshot_jpeg_once_(url, nullptr, response))
+    return true;
+
+  const ParsedHttpUrl parsed = parse_http_url_(url);
+  std::string resolved_url;
+  std::string host_header;
+  if (!build_mdns_ipv4_url_(parsed, resolved_url, host_header))
+    return false;
+
+  reset_http_response_(response);
+  return download_snapshot_jpeg_once_(resolved_url.c_str(), host_header.c_str(), response);
+}
+
 inline bool resample_rgb888_to_rgb565_(const uint8_t *source, uint32_t source_width, uint32_t source_height,
                                        uint32_t source_stride, SnapshotImage &snapshot, uint16_t duration_seconds,
-                                       bool sound_enabled, uint16_t sound_duration_ms) {
+                                       bool sound_enabled) {
   uint16_t target_width = 0;
   uint16_t target_height = 0;
   target_size_for_(source_width, source_height, target_width, target_height);
@@ -441,13 +560,12 @@ inline bool resample_rgb888_to_rgb565_(const uint8_t *source, uint32_t source_wi
   snapshot.pixels = target.release();
   snapshot.duration_seconds = duration_seconds;
   snapshot.sound_enabled = sound_enabled;
-  snapshot.sound_duration_ms = sound_duration_ms;
   return true;
 }
 
 inline bool decode_snapshot_jpeg_(const uint8_t *jpeg_data, size_t jpeg_size,
                                   SnapshotImage &snapshot, uint16_t duration_seconds,
-                                  bool sound_enabled, uint16_t sound_duration_ms) {
+                                  bool sound_enabled) {
   esp_jpeg_image_cfg_t jpeg_cfg{};
   jpeg_cfg.indata = const_cast<uint8_t *>(jpeg_data);
   jpeg_cfg.indata_size = static_cast<uint32_t>(jpeg_size);
@@ -487,7 +605,7 @@ inline bool decode_snapshot_jpeg_(const uint8_t *jpeg_data, size_t jpeg_size,
   const uint32_t decoded_stride = static_cast<uint32_t>(decoded_info.width) * SNAPSHOT_RGB888_BYTES_PER_PIXEL;
   if (!resample_rgb888_to_rgb565_(
           decoded.get(), decoded_info.width, decoded_info.height, decoded_stride, snapshot, duration_seconds,
-          sound_enabled, sound_duration_ms))
+          sound_enabled))
     return false;
 
   return true;
@@ -538,7 +656,7 @@ inline void snapshot_task_(void *arg) {
   if (request != nullptr && request->url != nullptr &&
       download_snapshot_jpeg_(request->url, response) &&
       decode_snapshot_jpeg_(response.body, response.length, decoded_snapshot, request->duration_seconds,
-                            request->sound_enabled, request->sound_duration_ms)) {
+                            request->sound_enabled)) {
     if (request->generation == snapshot_generation_().load(std::memory_order_acquire))
       ok = true;
   }
@@ -562,8 +680,7 @@ inline bool request_running() {
   return snapshot_task_state_().load(std::memory_order_acquire) == SNAPSHOT_TASK_RUNNING;
 }
 
-inline bool start_snapshot_request(const std::string &url, int duration_seconds,
-                                   bool sound_enabled = false, int sound_duration_ms = 0) {
+inline bool start_snapshot_request(const std::string &url, int duration_seconds, bool sound_enabled = false) {
   recover_snapshot_state_for_new_request_();
 
   if (!esphome::network::is_connected())
@@ -596,7 +713,6 @@ inline bool start_snapshot_request(const std::string &url, int duration_seconds,
   request->url = url_copy;
   request->duration_seconds = normalize_duration_seconds_(duration_seconds);
   request->sound_enabled = sound_enabled;
-  request->sound_duration_ms = normalize_sound_duration_ms_(sound_duration_ms);
   request->generation = request_generation;
 
   const BaseType_t created = xTaskCreate(
@@ -644,8 +760,7 @@ inline void clear_active_snapshot(lv_obj_t *container) {
   free_snapshot_image_(active_snapshot_());
 }
 
-inline int consume_snapshot_result(lv_obj_t *container, uint16_t &duration_seconds,
-                                   bool &sound_enabled, uint16_t &sound_duration_ms) {
+inline int consume_snapshot_result(lv_obj_t *container, uint16_t &duration_seconds, bool &sound_enabled) {
   const int state = snapshot_task_state_().load(std::memory_order_acquire);
   if (state == SNAPSHOT_TASK_FAILED) {
     SnapshotLock lock(5);
@@ -686,7 +801,6 @@ inline int consume_snapshot_result(lv_obj_t *container, uint16_t &duration_secon
   active_snapshot_() = snapshot;
   duration_seconds = active_snapshot_().duration_seconds;
   sound_enabled = active_snapshot_().sound_enabled;
-  sound_duration_ms = active_snapshot_().sound_duration_ms;
   ::lv_image_set_src(image, &active_snapshot_().dsc);
   lv_obj_set_size(image, active_snapshot_().dsc.header.w, active_snapshot_().dsc.header.h);
   lv_obj_center(image);
@@ -699,9 +813,9 @@ inline int consume_snapshot_result(lv_obj_t *container, uint16_t &duration_secon
 
 #else
 inline bool request_running() { return false; }
-inline bool start_snapshot_request(const std::string &, int, bool = false, int = 0) { return false; }
+inline bool start_snapshot_request(const std::string &, int, bool = false) { return false; }
 inline void clear_active_snapshot(lv_obj_t *) {}
-inline int consume_snapshot_result(lv_obj_t *, uint16_t &, bool &, uint16_t &) { return 0; }
+inline int consume_snapshot_result(lv_obj_t *, uint16_t &, bool &) { return 0; }
 #endif
 
 }

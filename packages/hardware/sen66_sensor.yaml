@@ -111,7 +111,7 @@ sensor:
           - script.execute: ui_refresh_air_quality_summary
     voc:
       id: voc
-      name: VOC Index
+      name: VOC
       internal: true
       icon: mdi:molecule
       on_value:
@@ -127,7 +127,7 @@ sensor:
           - script.execute: ui_refresh_air_quality_summary
     nox:
       id: nox
-      name: NOx Index
+      name: NOx
       internal: true
       device_class: aqi
       filters:

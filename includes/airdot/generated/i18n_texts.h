@@ -1256,6 +1256,24 @@ struct SetupPageText {
   const char *adaptive_brightness_description;
   const char *auto_page_switch_title;
   const char *auto_page_switch_description;
+  const char *auto_page_switch_mode_label;
+  const char *auto_page_switch_mode_all_label;
+  const char *auto_page_switch_mode_custom_label;
+  const char *auto_page_switch_screens_label;
+  const char *auto_page_screen_summary_label;
+  const char *auto_page_screen_time_weather_label;
+  const char *auto_page_screen_flight_radar_label;
+  const char *auto_page_screen_pm1_label;
+  const char *auto_page_screen_pm25_label;
+  const char *auto_page_screen_pm4_label;
+  const char *auto_page_screen_pm10_label;
+  const char *auto_page_screen_co2_label;
+  const char *auto_page_screen_voc_label;
+  const char *auto_page_screen_nox_label;
+  const char *auto_page_screen_temperature_label;
+  const char *auto_page_screen_humidity_label;
+  const char *auto_page_screen_pressure_label;
+  const char *auto_page_screen_light_label;
   const char *update_interval_label;
   const char *night_screen_off_title;
   const char *night_screen_off_description;
@@ -1467,6 +1485,24 @@ inline SetupPageText setup_page_text(AirDot::UiLanguage language) {
         "Adjust brightness automatically based on ambient light.",
         "Automatic screen switching",
         "Cycle through the display screens automatically.",
+        "Screens to cycle",
+        "All",
+        "Custom",
+        "Custom screens",
+        "Overview",
+        "Time & weather",
+        "Flight radar",
+        "PM1",
+        "PM2.5",
+        "PM4",
+        "PM10",
+        "CO2",
+        "VOC",
+        "NOx",
+        "Temperature",
+        "Humidity",
+        "Pressure",
+        "Light",
         "Update interval",
         "Night mode",
         "Dim the display or turn it off during the selected hours.",
@@ -1576,6 +1612,24 @@ inline SetupPageText setup_page_text(AirDot::UiLanguage language) {
         "Passe die Helligkeit automatisch an das Umgebungslicht an.",
         "Automatischer Bildschirmwechsel",
         "Wechselt automatisch zwischen den Bildschirmen.",
+        "Zu wechselnde Bildschirme",
+        "Alle",
+        "Eigene",
+        "Eigene Bildschirme",
+        "Übersicht",
+        "Zeit & Wetter",
+        "Flugradar",
+        "PM1",
+        "PM2.5",
+        "PM4",
+        "PM10",
+        "CO2",
+        "VOC",
+        "NOx",
+        "Temperatur",
+        "Luftfeuchte",
+        "Luftdruck",
+        "Licht",
         "Aktualisierungsintervall",
         "Nachtmodus",
         "Display während der eingestellten Zeiten dimmen oder ausschalten.",
@@ -1685,6 +1739,24 @@ inline SetupPageText setup_page_text(AirDot::UiLanguage language) {
         "Pas de helderheid automatisch aan op basis van het omgevingslicht.",
         "Automatisch scherm wisselen",
         "Wissel automatisch tussen de schermen.",
+        "Schermen om te wisselen",
+        "Alle",
+        "Aangepast",
+        "Aangepaste schermen",
+        "Overzicht",
+        "Tijd & weer",
+        "Vluchtradar",
+        "PM1",
+        "PM2.5",
+        "PM4",
+        "PM10",
+        "CO2",
+        "VOC",
+        "NOx",
+        "Temperatuur",
+        "Luchtvochtigheid",
+        "Luchtdruk",
+        "Licht",
         "Update-interval",
         "Nachtstand",
         "Dim het scherm of zet het uit tijdens de ingestelde tijden.",
@@ -1794,6 +1866,24 @@ inline SetupPageText setup_page_text(AirDot::UiLanguage language) {
         "Ajustez automatiquement la luminosité selon la lumière ambiante.",
         "Changement automatique d’écran",
         "Faites défiler automatiquement les écrans.",
+        "Écrans à faire défiler",
+        "Tous",
+        "Personnalisé",
+        "Écrans personnalisés",
+        "Vue d’ensemble",
+        "Heure & météo",
+        "Radar aérien",
+        "PM1",
+        "PM2.5",
+        "PM4",
+        "PM10",
+        "CO2",
+        "VOC",
+        "NOx",
+        "Température",
+        "Humidité",
+        "Pression",
+        "Lumière",
         "Intervalle de mise à jour",
         "Mode nuit",
         "Atténuer ou éteindre l’écran pendant les heures définies.",
@@ -1903,6 +1993,24 @@ inline SetupPageText setup_page_text(AirDot::UiLanguage language) {
         "A fényerő automatikus beállítása a környezeti fényviszonyok alapján.",
         "Automatikus képernyőváltás",
         "A kijelző oldalainak automatikus váltogatása körforgásban.",
+        "Váltandó képernyők",
+        "Összes",
+        "Egyéni",
+        "Egyéni képernyők",
+        "Áttekintés",
+        "Idő & időjárás",
+        "Repülőradar",
+        "PM1",
+        "PM2.5",
+        "PM4",
+        "PM10",
+        "CO2",
+        "VOC",
+        "NOx",
+        "Hőmérséklet",
+        "Páratartalom",
+        "Légnyomás",
+        "Fény",
         "Frissítési időköz",
         "Éjszakai mód",
         "Halványítsd el vagy kapcsold ki a kijelzőt a kiválasztott időszakban.",
@@ -2012,6 +2120,24 @@ inline SetupPageText setup_page_text(AirDot::UiLanguage language) {
         "Automaticky upravovat jas podle okolního světla.",
         "Automatické přepínání obrazovek",
         "Automaticky střídat obrazovky displeje.",
+        "Obrazovky pro střídání",
+        "Všechny",
+        "Vlastní",
+        "Vlastní obrazovky",
+        "Přehled",
+        "Čas & počasí",
+        "Letecký radar",
+        "PM1",
+        "PM2.5",
+        "PM4",
+        "PM10",
+        "CO2",
+        "VOC",
+        "NOx",
+        "Teplota",
+        "Vlhkost",
+        "Tlak",
+        "Světlo",
         "Interval aktualizace",
         "Noční režim",
         "Ztlumit displej nebo ho vypnout během nastavených časů.",
@@ -2121,6 +2247,24 @@ inline SetupPageText setup_page_text(AirDot::UiLanguage language) {
         "Regola automaticamente la luminosità in base alla luce ambientale.",
         "Cambio schermata automatico",
         "Scorri automaticamente le schermate del display.",
+        "Schermate da scorrere",
+        "Tutte",
+        "Personalizzate",
+        "Schermate personalizzate",
+        "Panoramica",
+        "Ora & meteo",
+        "Radar voli",
+        "PM1",
+        "PM2.5",
+        "PM4",
+        "PM10",
+        "CO2",
+        "VOC",
+        "NOx",
+        "Temperatura",
+        "Umidità",
+        "Pressione",
+        "Luce",
         "Intervallo di aggiornamento",
         "Modalità notte",
         "Attenua il display o spegnilo durante le ore selezionate.",
@@ -2230,6 +2374,24 @@ inline SetupPageText setup_page_text(AirDot::UiLanguage language) {
         "Ajustează automat luminozitatea în funcție de lumina ambientală.",
         "Comutare automată ecrane",
         "Parcurge automat ecranele afișajului.",
+        "Ecrane de parcurs",
+        "Toate",
+        "Personalizat",
+        "Ecrane personalizate",
+        "Prezentare",
+        "Ora & vremea",
+        "Radar avioane",
+        "PM1",
+        "PM2.5",
+        "PM4",
+        "PM10",
+        "CO2",
+        "VOC",
+        "NOx",
+        "Temperatură",
+        "Umiditate",
+        "Presiune",
+        "Lumină",
         "Interval de actualizare",
         "Mod noapte",
         "Diminuează afișajul sau oprește-l în intervalul selectat.",
@@ -2383,6 +2545,24 @@ inline void append_setup_page_translation_json(std::string &html, AirDot::UiLang
   append_json_field_(html, "adaptive_brightness_description", text.adaptive_brightness_description, first);
   append_json_field_(html, "auto_page_switch_title", text.auto_page_switch_title, first);
   append_json_field_(html, "auto_page_switch_description", text.auto_page_switch_description, first);
+  append_json_field_(html, "auto_page_switch_mode_label", text.auto_page_switch_mode_label, first);
+  append_json_field_(html, "auto_page_switch_mode_all_label", text.auto_page_switch_mode_all_label, first);
+  append_json_field_(html, "auto_page_switch_mode_custom_label", text.auto_page_switch_mode_custom_label, first);
+  append_json_field_(html, "auto_page_switch_screens_label", text.auto_page_switch_screens_label, first);
+  append_json_field_(html, "auto_page_screen_summary_label", text.auto_page_screen_summary_label, first);
+  append_json_field_(html, "auto_page_screen_time_weather_label", text.auto_page_screen_time_weather_label, first);
+  append_json_field_(html, "auto_page_screen_flight_radar_label", text.auto_page_screen_flight_radar_label, first);
+  append_json_field_(html, "auto_page_screen_pm1_label", text.auto_page_screen_pm1_label, first);
+  append_json_field_(html, "auto_page_screen_pm25_label", text.auto_page_screen_pm25_label, first);
+  append_json_field_(html, "auto_page_screen_pm4_label", text.auto_page_screen_pm4_label, first);
+  append_json_field_(html, "auto_page_screen_pm10_label", text.auto_page_screen_pm10_label, first);
+  append_json_field_(html, "auto_page_screen_co2_label", text.auto_page_screen_co2_label, first);
+  append_json_field_(html, "auto_page_screen_voc_label", text.auto_page_screen_voc_label, first);
+  append_json_field_(html, "auto_page_screen_nox_label", text.auto_page_screen_nox_label, first);
+  append_json_field_(html, "auto_page_screen_temperature_label", text.auto_page_screen_temperature_label, first);
+  append_json_field_(html, "auto_page_screen_humidity_label", text.auto_page_screen_humidity_label, first);
+  append_json_field_(html, "auto_page_screen_pressure_label", text.auto_page_screen_pressure_label, first);
+  append_json_field_(html, "auto_page_screen_light_label", text.auto_page_screen_light_label, first);
   append_json_field_(html, "update_interval_label", text.update_interval_label, first);
   append_json_field_(html, "night_screen_off_title", text.night_screen_off_title, first);
   append_json_field_(html, "night_screen_off_description", text.night_screen_off_description, first);

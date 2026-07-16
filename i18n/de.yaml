@@ -133,6 +133,24 @@ setup_page:
 
   auto_page_switch_title: Automatischer Bildschirmwechsel
   auto_page_switch_description: Wechselt automatisch zwischen den Bildschirmen.
+  auto_page_switch_mode_label: Zu wechselnde Bildschirme
+  auto_page_switch_mode_all_label: Alle
+  auto_page_switch_mode_custom_label: Eigene
+  auto_page_switch_screens_label: Eigene Bildschirme
+  auto_page_screen_summary_label: Übersicht
+  auto_page_screen_time_weather_label: Zeit & Wetter
+  auto_page_screen_flight_radar_label: Flugradar
+  auto_page_screen_pm1_label: PM1
+  auto_page_screen_pm25_label: PM2.5
+  auto_page_screen_pm4_label: PM4
+  auto_page_screen_pm10_label: PM10
+  auto_page_screen_co2_label: CO2
+  auto_page_screen_voc_label: VOC
+  auto_page_screen_nox_label: NOx
+  auto_page_screen_temperature_label: Temperatur
+  auto_page_screen_humidity_label: Luftfeuchte
+  auto_page_screen_pressure_label: Luftdruck
+  auto_page_screen_light_label: Licht
   update_interval_label: Aktualisierungsintervall
 
   save_button: Speichern

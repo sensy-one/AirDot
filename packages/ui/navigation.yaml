@@ -124,84 +124,150 @@ script:
             id(flight_radar_request_update_after_page_show).execute();
           };
 
-          if (id(air_quality_summary_page)->is_showing()) {
-            if (time_page_available) {
-              id(time_page)->get_parent()->show_page(
-                id(time_page)->index, LV_SCREEN_LOAD_ANIM_NONE, 0);
-            } else if (flight_radar_page_available) {
-              show_flight_radar_page();
-            } else {
-              id(pm1_history_page)->get_parent()->show_page(
-                id(pm1_history_page)->index, LV_SCREEN_LOAD_ANIM_NONE, 0);
+          auto auto_cycle_screen_enabled = [&](uint16_t screen) -> bool {
+            return user_initiated || AirDot::onboarding::auto_page_switch_screen_enabled(screen);
+          };
+
+          auto page_index_enabled = [&](uint8_t page_index) -> bool {
+            switch (page_index) {
+              case 0:
+                return auto_cycle_screen_enabled(AirDot::onboarding::AUTO_PAGE_SCREEN_SUMMARY);
+              case 1:
+                return time_page_available &&
+                       auto_cycle_screen_enabled(AirDot::onboarding::AUTO_PAGE_SCREEN_TIME_WEATHER);
+              case 2:
+                return flight_radar_page_available &&
+                       auto_cycle_screen_enabled(AirDot::onboarding::AUTO_PAGE_SCREEN_FLIGHT_RADAR);
+              case 3:
+                return auto_cycle_screen_enabled(AirDot::onboarding::AUTO_PAGE_SCREEN_PM1);
+              case 4:
+                return auto_cycle_screen_enabled(AirDot::onboarding::AUTO_PAGE_SCREEN_PM25);
+              case 5:
+                return auto_cycle_screen_enabled(AirDot::onboarding::AUTO_PAGE_SCREEN_PM4);
+              case 6:
+                return auto_cycle_screen_enabled(AirDot::onboarding::AUTO_PAGE_SCREEN_PM10);
+              case 7:
+                return auto_cycle_screen_enabled(AirDot::onboarding::AUTO_PAGE_SCREEN_CO2);
+              case 8:
+                return auto_cycle_screen_enabled(AirDot::onboarding::AUTO_PAGE_SCREEN_VOC);
+              case 9:
+                return auto_cycle_screen_enabled(AirDot::onboarding::AUTO_PAGE_SCREEN_NOX);
+              case 10:
+                return auto_cycle_screen_enabled(AirDot::onboarding::AUTO_PAGE_SCREEN_TEMPERATURE);
+              case 11:
+                return auto_cycle_screen_enabled(AirDot::onboarding::AUTO_PAGE_SCREEN_HUMIDITY);
+              case 12:
+                return auto_cycle_screen_enabled(AirDot::onboarding::AUTO_PAGE_SCREEN_PRESSURE);
+              case 13:
+                return auto_cycle_screen_enabled(AirDot::onboarding::AUTO_PAGE_SCREEN_LIGHT);
+              default:
+                return false;
             }
-            return;
-          }
-          if (id(time_page)->is_showing()) {
-            if (flight_radar_page_available) {
-              show_flight_radar_page();
-            } else {
-              id(pm1_history_page)->get_parent()->show_page(
-                id(pm1_history_page)->index, LV_SCREEN_LOAD_ANIM_NONE, 0);
+          };
+
+          auto show_page_index = [&](uint8_t page_index) {
+            switch (page_index) {
+              case 0:
+                id(air_quality_summary_page)->get_parent()->show_page(
+                  id(air_quality_summary_page)->index, LV_SCREEN_LOAD_ANIM_NONE, 0);
+                break;
+              case 1:
+                id(time_page)->get_parent()->show_page(
+                  id(time_page)->index, LV_SCREEN_LOAD_ANIM_NONE, 0);
+                break;
+              case 2:
+                show_flight_radar_page();
+                break;
+              case 3:
+                id(pm1_history_page)->get_parent()->show_page(
+                  id(pm1_history_page)->index, LV_SCREEN_LOAD_ANIM_NONE, 0);
+                break;
+              case 4:
+                id(pm25_history_page)->get_parent()->show_page(
+                  id(pm25_history_page)->index, LV_SCREEN_LOAD_ANIM_NONE, 0);
+                break;
+              case 5:
+                id(pm4_history_page)->get_parent()->show_page(
+                  id(pm4_history_page)->index, LV_SCREEN_LOAD_ANIM_NONE, 0);
+                break;
+              case 6:
+                id(pm10_history_page)->get_parent()->show_page(
+                  id(pm10_history_page)->index, LV_SCREEN_LOAD_ANIM_NONE, 0);
+                break;
+              case 7:
+                id(co2_history_page)->get_parent()->show_page(
+                  id(co2_history_page)->index, LV_SCREEN_LOAD_ANIM_NONE, 0);
+                break;
+              case 8:
+                id(voc_history_page)->get_parent()->show_page(
+                  id(voc_history_page)->index, LV_SCREEN_LOAD_ANIM_NONE, 0);
+                break;
+              case 9:
+                id(nox_history_page)->get_parent()->show_page(
+                  id(nox_history_page)->index, LV_SCREEN_LOAD_ANIM_NONE, 0);
+                break;
+              case 10:
+                id(temp_history_page)->get_parent()->show_page(
+                  id(temp_history_page)->index, LV_SCREEN_LOAD_ANIM_NONE, 0);
+                break;
+              case 11:
+                id(hum_history_page)->get_parent()->show_page(
+                  id(hum_history_page)->index, LV_SCREEN_LOAD_ANIM_NONE, 0);
+                break;
+              case 12:
+                id(pressure_history_page)->get_parent()->show_page(
+                  id(pressure_history_page)->index, LV_SCREEN_LOAD_ANIM_NONE, 0);
+                break;
+              case 13:
+              default:
+                id(lux_history_page)->get_parent()->show_page(
+                  id(lux_history_page)->index, LV_SCREEN_LOAD_ANIM_NONE, 0);
+                break;
             }
-            return;
+          };
+
+          auto current_page_index = [&]() -> uint8_t {
+            if (id(air_quality_summary_page)->is_showing())
+              return 0;
+            if (id(time_page)->is_showing())
+              return 1;
+            if (id(flight_radar_page)->is_showing())
+              return 2;
+            if (id(pm1_history_page)->is_showing())
+              return 3;
+            if (id(pm25_history_page)->is_showing())
+              return 4;
+            if (id(pm4_history_page)->is_showing())
+              return 5;
+            if (id(pm10_history_page)->is_showing())
+              return 6;
+            if (id(co2_history_page)->is_showing())
+              return 7;
+            if (id(voc_history_page)->is_showing())
+              return 8;
+            if (id(nox_history_page)->is_showing())
+              return 9;
+            if (id(temp_history_page)->is_showing())
+              return 10;
+            if (id(hum_history_page)->is_showing())
+              return 11;
+            if (id(pressure_history_page)->is_showing())
+              return 12;
+            if (id(lux_history_page)->is_showing())
+              return 13;
+            return 13;
+          };
+
+          constexpr uint8_t PAGE_COUNT = 14;
+          const uint8_t current_index = current_page_index();
+          for (uint8_t offset = 1; offset <= PAGE_COUNT; offset++) {
+            const uint8_t next_index = static_cast<uint8_t>((current_index + offset) % PAGE_COUNT);
+            if (page_index_enabled(next_index)) {
+              show_page_index(next_index);
+              return;
+            }
           }
-          if (id(flight_radar_page)->is_showing()) {
-            id(pm1_history_page)->get_parent()->show_page(
-              id(pm1_history_page)->index, LV_SCREEN_LOAD_ANIM_NONE, 0);
-            return;
-          }
-          if (id(pm1_history_page)->is_showing()) {
-            id(pm25_history_page)->get_parent()->show_page(
-              id(pm25_history_page)->index, LV_SCREEN_LOAD_ANIM_NONE, 0);
-            return;
-          }
-          if (id(pm25_history_page)->is_showing()) {
-            id(pm4_history_page)->get_parent()->show_page(
-              id(pm4_history_page)->index, LV_SCREEN_LOAD_ANIM_NONE, 0);
-            return;
-          }
-          if (id(pm4_history_page)->is_showing()) {
-            id(pm10_history_page)->get_parent()->show_page(
-              id(pm10_history_page)->index, LV_SCREEN_LOAD_ANIM_NONE, 0);
-            return;
-          }
-          if (id(pm10_history_page)->is_showing()) {
-            id(co2_history_page)->get_parent()->show_page(
-              id(co2_history_page)->index, LV_SCREEN_LOAD_ANIM_NONE, 0);
-            return;
-          }
-          if (id(co2_history_page)->is_showing()) {
-            id(voc_history_page)->get_parent()->show_page(
-              id(voc_history_page)->index, LV_SCREEN_LOAD_ANIM_NONE, 0);
-            return;
-          }
-          if (id(voc_history_page)->is_showing()) {
-            id(nox_history_page)->get_parent()->show_page(
-              id(nox_history_page)->index, LV_SCREEN_LOAD_ANIM_NONE, 0);
-            return;
-          }
-          if (id(nox_history_page)->is_showing()) {
-            id(temp_history_page)->get_parent()->show_page(
-              id(temp_history_page)->index, LV_SCREEN_LOAD_ANIM_NONE, 0);
-            return;
-          }
-          if (id(temp_history_page)->is_showing()) {
-            id(hum_history_page)->get_parent()->show_page(
-              id(hum_history_page)->index, LV_SCREEN_LOAD_ANIM_NONE, 0);
-            return;
-          }
-          if (id(hum_history_page)->is_showing()) {
-            id(pressure_history_page)->get_parent()->show_page(
-              id(pressure_history_page)->index, LV_SCREEN_LOAD_ANIM_NONE, 0);
-            return;
-          }
-          if (id(pressure_history_page)->is_showing()) {
-            id(lux_history_page)->get_parent()->show_page(
-              id(lux_history_page)->index, LV_SCREEN_LOAD_ANIM_NONE, 0);
-            return;
-          }
-          id(air_quality_summary_page)->get_parent()->show_page(
-            id(air_quality_summary_page)->index, LV_SCREEN_LOAD_ANIM_NONE, 0);
+          show_page_index(0);
 
 interval:
   - interval: 1s
