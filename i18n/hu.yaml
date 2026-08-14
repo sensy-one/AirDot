@@ -95,9 +95,11 @@ setup_page:
   location_longitude_label: Hosszúság (Longitude)
 
   flight_radar_title: Repülőgép-radar
-  flight_radar_note: Hatótávolság és a megjelenített forgalom beállítása.
+  flight_radar_note: Helyi ADS-B vevőt használ (tar1090, readsb vagy dump1090-fa). Hatótávolság és a megjelenített forgalom beállítása.
   flight_radar_enabled_title: Repülőgép-radar
   flight_radar_enabled_description: Élő repülőgép-forgalom megjelenítése a radarképernyőn.
+  flight_radar_feeder_label: Vevő címe
+  flight_radar_feeder_placeholder: 192.168.1.50 vagy adsb.local/tar1090
   flight_radar_range_label: Hatótávolság
   flight_radar_traffic_label: Forgalom
   flight_radar_traffic_all_label: Összes repülőgép

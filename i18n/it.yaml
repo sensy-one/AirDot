@@ -95,9 +95,11 @@ setup_page:
   location_longitude_label: Longitudine
 
   flight_radar_title: Radar aereo
-  flight_radar_note: Imposta portata e traffico visibile.
+  flight_radar_note: Utilizza il tuo ricevitore ADS-B locale (tar1090, readsb o dump1090-fa). Imposta portata e traffico visibile.
   flight_radar_enabled_title: Radar aereo
   flight_radar_enabled_description: Mostra il traffico aereo in tempo reale nella schermata radar.
+  flight_radar_feeder_label: Indirizzo del ricevitore
+  flight_radar_feeder_placeholder: 192.168.1.50 o adsb.local/tar1090
   flight_radar_range_label: Portata
   flight_radar_traffic_label: Traffico
   flight_radar_traffic_all_label: Tutti gli aeromobili

@@ -95,9 +95,11 @@ setup_page:
   location_longitude_label: Longitudine
 
   flight_radar_title: Radar de zbor
-  flight_radar_note: Setează raza și traficul vizibil.
+  flight_radar_note: Folosește receptorul tău ADS-B local (tar1090, readsb sau dump1090-fa). Setează raza și traficul vizibil.
   flight_radar_enabled_title: Radar de zbor
   flight_radar_enabled_description: Afișează traficul aerian live pe ecranul radar.
+  flight_radar_feeder_label: Adresa receptorului
+  flight_radar_feeder_placeholder: 192.168.1.50 sau adsb.local/tar1090
   flight_radar_range_label: Rază
   flight_radar_traffic_label: Trafic
   flight_radar_traffic_all_label: Toate aeronavele

@@ -95,9 +95,11 @@ setup_page:
   location_longitude_label: Lengtegraad
 
   flight_radar_title: Vluchtradar
-  flight_radar_note: Stel bereik en zichtbaar verkeer in.
+  flight_radar_note: Gebruikt je lokale ADS-B-ontvanger (tar1090, readsb of dump1090-fa). Stel bereik en zichtbaar verkeer in.
   flight_radar_enabled_title: Vluchtradar
   flight_radar_enabled_description: Toon live vliegtuigverkeer op het radarscherm.
+  flight_radar_feeder_label: Adres van de ontvanger
+  flight_radar_feeder_placeholder: 192.168.1.50 of adsb.local/tar1090
   flight_radar_range_label: Bereik
   flight_radar_traffic_label: Verkeer
   flight_radar_traffic_all_label: Alle vliegtuigen

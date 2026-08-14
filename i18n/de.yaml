@@ -95,9 +95,11 @@ setup_page:
   location_longitude_label: Längengrad
 
   flight_radar_title: Flugradar
-  flight_radar_note: Lege Reichweite und sichtbaren Verkehr fest.
+  flight_radar_note: Nutzt deinen lokalen ADS-B-Empfänger (tar1090, readsb oder dump1090-fa). Lege Reichweite und sichtbaren Verkehr fest.
   flight_radar_enabled_title: Flugradar
   flight_radar_enabled_description: Zeige Live-Flugverkehr auf dem Radarschirm.
+  flight_radar_feeder_label: Feeder-Adresse
+  flight_radar_feeder_placeholder: 192.168.1.50 oder adsb.local/tar1090
   flight_radar_range_label: Reichweite
   flight_radar_traffic_label: Verkehr
   flight_radar_traffic_all_label: Alle Flugzeuge

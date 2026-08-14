@@ -1,7 +1,6 @@
 #pragma once
 
 #ifdef USE_ESP32
-#include <esp_crt_bundle.h>
 #include <esp_err.h>
 #include <esp_heap_caps.h>
 #include <esp_http_client.h>
@@ -58,14 +57,16 @@ inline constexpr int FLIGHT_RADAR_TASK_SUCCESS = 2;
 inline constexpr int FLIGHT_RADAR_TASK_FAILED = 3;
 inline constexpr uint32_t FLIGHT_RADAR_HTTP_TASK_STACK_SIZE = 12288;
 inline constexpr int FLIGHT_RADAR_HTTP_TIMEOUT_MS = 3500;
-inline constexpr size_t FLIGHT_RADAR_MAX_RESPONSE_BYTES = 16384;
-inline constexpr uint16_t FLIGHT_RADAR_MAX_PARSED_AIRCRAFT_OBJECTS = 96;
+// The local feeder's aircraft.json contains every aircraft the receiver sees,
+// not just nearby traffic, so the buffer must hold a few hundred entries.
+inline constexpr size_t FLIGHT_RADAR_MAX_RESPONSE_BYTES = 262144;
+inline constexpr uint16_t FLIGHT_RADAR_MAX_PARSED_AIRCRAFT_OBJECTS = 1024;
+inline constexpr size_t FLIGHT_RADAR_FEEDER_ADDRESS_BUFFER = 128;
 inline constexpr uint8_t FLIGHT_RADAR_LOCATION_COORDS = 0;
 inline constexpr uint8_t FLIGHT_RADAR_LOCATION_IP = 1;
 inline constexpr float DEG_TO_RAD = 0.017453292519943295769f;
 inline constexpr float RAD_TO_DEG = 57.295779513082320876f;
 inline constexpr float EARTH_RADIUS_KM = 6371.0f;
-inline constexpr float KM_PER_NAUTICAL_MILE = 1.852f;
 
 inline bool coordinates_are_valid_(float latitude, float longitude) {
   return std::isfinite(latitude) && std::isfinite(longitude) &&
@@ -110,6 +111,13 @@ inline std::atomic<uint8_t> &request_range_km_() {
 inline std::atomic<uint8_t> &request_military_only_() {
   static std::atomic<uint8_t> military_only{0};
   return military_only;
+}
+
+// Written by the start functions only after winning the IDLE->RUNNING CAS, read
+// by the single worker task, so no extra locking is needed.
+inline char *request_feeder_address_() {
+  static char address[FLIGHT_RADAR_FEEDER_ADDRESS_BUFFER]{};
+  return address;
 }
 
 inline uint8_t normalize_request_range_km_(uint8_t range_km) {
@@ -511,28 +519,28 @@ inline void skip_json_value_if_needed_(const char *before, const char *&cursor, 
     skip_json_value_(cursor, end);
 }
 
-inline bool read_airplanes_live_number_(const char *&cursor, const char *end, float &value) {
+inline bool read_feeder_number_(const char *&cursor, const char *end, float &value) {
   const char *before = cursor;
   const bool parsed = parse_json_number_(cursor, end, value);
   skip_json_value_if_needed_(before, cursor, end);
   return parsed;
 }
 
-inline bool read_airplanes_live_uint_(const char *&cursor, const char *end, uint32_t &value) {
+inline bool read_feeder_uint_(const char *&cursor, const char *end, uint32_t &value) {
   const char *before = cursor;
   const bool parsed = parse_json_uint_(cursor, end, value);
   skip_json_value_if_needed_(before, cursor, end);
   return parsed;
 }
 
-inline bool read_airplanes_live_bool_(const char *&cursor, const char *end, bool &value) {
+inline bool read_feeder_bool_(const char *&cursor, const char *end, bool &value) {
   const char *before = cursor;
   const bool parsed = parse_json_bool_(cursor, end, value);
   skip_json_value_if_needed_(before, cursor, end);
   return parsed;
 }
 
-inline bool read_airplanes_live_ground_state_(const char *&cursor, const char *end, bool &on_ground) {
+inline bool read_feeder_ground_state_(const char *&cursor, const char *end, bool &on_ground) {
   skip_json_space_(cursor, end);
   if (cursor < end && *cursor == '"') {
     char text[16]{};
@@ -547,7 +555,7 @@ inline bool read_airplanes_live_ground_state_(const char *&cursor, const char *e
   return skip_json_value_(cursor, end);
 }
 
-inline bool parse_airplanes_live_aircraft_(const char *&cursor, const char *end, float own_latitude,
+inline bool parse_feeder_aircraft_(const char *&cursor, const char *end, float own_latitude,
                                            float own_longitude, float range_km, bool military_only,
                                            Snapshot &snapshot) {
   skip_json_space_(cursor, end);
@@ -590,25 +598,25 @@ inline bool parse_airplanes_live_aircraft_(const char *&cursor, const char *end,
       parse_json_string_(cursor, end, callsign, sizeof(callsign));
       skip_json_value_if_needed_(before, cursor, end);
     } else if (std::strcmp(key, "lat") == 0) {
-      read_airplanes_live_number_(cursor, end, latitude);
+      read_feeder_number_(cursor, end, latitude);
     } else if (std::strcmp(key, "lon") == 0) {
-      read_airplanes_live_number_(cursor, end, longitude);
+      read_feeder_number_(cursor, end, longitude);
     } else if (std::strcmp(key, "alt_baro") == 0) {
-      read_airplanes_live_ground_state_(cursor, end, on_ground);
+      read_feeder_ground_state_(cursor, end, on_ground);
     } else if (std::strcmp(key, "track") == 0) {
-      read_airplanes_live_number_(cursor, end, track_deg);
+      read_feeder_number_(cursor, end, track_deg);
     } else if (std::strcmp(key, "true_heading") == 0) {
-      read_airplanes_live_number_(cursor, end, true_heading_deg);
+      read_feeder_number_(cursor, end, true_heading_deg);
     } else if (std::strcmp(key, "mag_heading") == 0) {
-      read_airplanes_live_number_(cursor, end, magnetic_heading_deg);
+      read_feeder_number_(cursor, end, magnetic_heading_deg);
     } else if (std::strcmp(key, "dir") == 0) {
-      read_airplanes_live_number_(cursor, end, dir_deg);
+      read_feeder_number_(cursor, end, dir_deg);
     } else if (std::strcmp(key, "dbFlags") == 0) {
-      if (read_airplanes_live_uint_(cursor, end, db_flags))
+      if (read_feeder_uint_(cursor, end, db_flags))
         military = military || (db_flags & 1U) != 0;
     } else if (std::strcmp(key, "mil") == 0) {
       bool mil = false;
-      if (read_airplanes_live_bool_(cursor, end, mil))
+      if (read_feeder_bool_(cursor, end, mil))
         military = military || mil;
     } else {
       skip_json_value_(cursor, end);
@@ -654,7 +662,7 @@ inline bool parse_airplanes_live_aircraft_(const char *&cursor, const char *end,
   return true;
 }
 
-inline bool parse_airplanes_live_response_(const char *json, size_t json_length, float latitude, float longitude,
+inline bool parse_feeder_response_(const char *json, size_t json_length, float latitude, float longitude,
                                            uint8_t range_km, bool military_only, Snapshot &snapshot,
                                            bool allow_partial = false) {
   if (json == nullptr || json_length == 0)
@@ -669,10 +677,17 @@ inline bool parse_airplanes_live_response_(const char *json, size_t json_length,
   snapshot.range_km = normalize_request_range_km_(range_km);
   snapshot.received_ms = esphome::millis();
 
-  const char *aircraft_key = find_pattern_(begin, end, "\"ac\"");
+  // tar1090/readsb/dump1090-fa aircraft.json uses "aircraft"; readsb's re-api
+  // style responses use "ac". Accept both.
+  const char *aircraft_key = find_pattern_(begin, end, "\"aircraft\"");
+  size_t key_length = 10;
+  if (aircraft_key == nullptr) {
+    aircraft_key = find_pattern_(begin, end, "\"ac\"");
+    key_length = 4;
+  }
   if (aircraft_key == nullptr)
     return false;
-  const char *colon = find_char_(aircraft_key + 4, end, ':');
+  const char *colon = find_char_(aircraft_key + key_length, end, ':');
   if (colon == nullptr)
     return false;
 
@@ -690,7 +705,7 @@ inline bool parse_airplanes_live_response_(const char *json, size_t json_length,
     if (cursor < end && *cursor == ']')
       break;
     if (cursor < end && *cursor == '{') {
-      if (!parse_airplanes_live_aircraft_(
+      if (!parse_feeder_aircraft_(
               cursor, end, latitude, longitude, static_cast<float>(snapshot.range_km), military_only, snapshot)) {
         if (allow_partial)
           break;
@@ -715,8 +730,16 @@ inline bool parse_airplanes_live_response_(const char *json, size_t json_length,
   return true;
 }
 
-inline bool fetch_airplanes_live_aircraft_(float latitude, float longitude, uint8_t range_km,
-                                           bool military_only, Snapshot &snapshot) {
+inline bool fetch_feeder_aircraft_(const char *feeder_address, float latitude, float longitude,
+                                   uint8_t range_km, bool military_only, Snapshot &snapshot) {
+  if (feeder_address == nullptr || feeder_address[0] == '\0') {
+    AirDot::connectivity::set_service_status(
+        AirDot::connectivity::Service::FLIGHT_RADAR,
+        AirDot::connectivity::ConnectivityStatus::CONFIG_INVALID,
+        AirDot::connectivity::ConnectivityError::CONFIG_MISSING, esphome::millis());
+    return false;
+  }
+
   if (!coordinates_are_valid_(latitude, longitude)) {
     AirDot::connectivity::set_service_status(
         AirDot::connectivity::Service::FLIGHT_RADAR,
@@ -726,13 +749,10 @@ inline bool fetch_airplanes_live_aircraft_(float latitude, float longitude, uint
   }
 
   const uint8_t normalized_range_km = normalize_request_range_km_(range_km);
-  const float distance_nm = static_cast<float>(normalized_range_km) / KM_PER_NAUTICAL_MILE;
 
   char url[384];
   const int written = std::snprintf(
-      url, sizeof(url),
-      "https://api.airplanes.live/v2/point/%.6f/%.6f/%.1f",
-      latitude, longitude, distance_nm);
+      url, sizeof(url), "http://%s/data/aircraft.json", feeder_address);
   if (written <= 0 || static_cast<size_t>(written) >= sizeof(url)) {
     note_flight_radar_failure_(AirDot::connectivity::ConnectivityError::CONFIG_INVALID);
     return false;
@@ -760,9 +780,6 @@ inline bool fetch_airplanes_live_aircraft_(float latitude, float longitude, uint
   config.buffer_size_tx = 256;
   config.user_agent = "";
   config.addr_type = HTTP_ADDR_TYPE_INET;
-#if CONFIG_MBEDTLS_CERTIFICATE_BUNDLE
-  config.crt_bundle_attach = esp_crt_bundle_attach;
-#endif
 
   esp_http_client_handle_t client = esp_http_client_init(&config);
   if (client == nullptr) {
@@ -780,7 +797,7 @@ inline bool fetch_airplanes_live_aircraft_(float latitude, float longitude, uint
   }
 
   Snapshot parsed{};
-  if (!parse_airplanes_live_response_(response.body, response.length, latitude, longitude,
+  if (!parse_feeder_response_(response.body, response.length, latitude, longitude,
                                       normalized_range_km, military_only, parsed, response.overflow)) {
     note_flight_radar_failure_(AirDot::connectivity::ConnectivityError::INVALID_RESPONSE);
     return false;
@@ -789,6 +806,21 @@ inline bool fetch_airplanes_live_aircraft_(float latitude, float longitude, uint
   snapshot = parsed;
   note_flight_radar_success_();
   return true;
+}
+
+inline std::atomic<int32_t> &cached_ip_latitude_e7_() {
+  static std::atomic<int32_t> latitude{0};
+  return latitude;
+}
+
+inline std::atomic<int32_t> &cached_ip_longitude_e7_() {
+  static std::atomic<int32_t> longitude{0};
+  return longitude;
+}
+
+inline std::atomic<uint8_t> &cached_ip_location_valid_() {
+  static std::atomic<uint8_t> valid{0};
+  return valid;
 }
 
 inline void flight_radar_task_(void *) {
@@ -806,19 +838,30 @@ inline void flight_radar_task_(void *) {
   bool location_available = true;
   const uint8_t location_mode = request_location_mode_().load(std::memory_order_acquire);
   if (acquired && location_mode == FLIGHT_RADAR_LOCATION_IP) {
-    location_available = AirDot::time_weather::fetch_ipwhois_location(latitude, longitude);
-    if (!location_available) {
-      const auto status = AirDot::connectivity::get_service_status(
-          AirDot::connectivity::Service::WEATHER_LOCATION);
-      note_flight_radar_failure_(
-          status.error == AirDot::connectivity::ConnectivityError::NONE
-              ? AirDot::connectivity::ConnectivityError::INVALID_RESPONSE
-              : status.error);
+    // The device does not move; resolve the IP-based location once and reuse it
+    // instead of asking ipwho.is again on every poll.
+    if (cached_ip_location_valid_().load(std::memory_order_acquire) == 1) {
+      latitude = static_cast<float>(cached_ip_latitude_e7_().load(std::memory_order_acquire)) / 10000000.0f;
+      longitude = static_cast<float>(cached_ip_longitude_e7_().load(std::memory_order_acquire)) / 10000000.0f;
+    } else {
+      location_available = AirDot::time_weather::fetch_ipwhois_location(latitude, longitude);
+      if (location_available) {
+        cached_ip_latitude_e7_().store(static_cast<int32_t>(latitude * 10000000.0f), std::memory_order_release);
+        cached_ip_longitude_e7_().store(static_cast<int32_t>(longitude * 10000000.0f), std::memory_order_release);
+        cached_ip_location_valid_().store(1, std::memory_order_release);
+      } else {
+        const auto status = AirDot::connectivity::get_service_status(
+            AirDot::connectivity::Service::WEATHER_LOCATION);
+        note_flight_radar_failure_(
+            status.error == AirDot::connectivity::ConnectivityError::NONE
+                ? AirDot::connectivity::ConnectivityError::INVALID_RESPONSE
+                : status.error);
+      }
     }
   }
 
   if (acquired && location_available &&
-      fetch_airplanes_live_aircraft_(latitude, longitude, range_km, military_only, snapshot)) {
+      fetch_feeder_aircraft_(request_feeder_address_(), latitude, longitude, range_km, military_only, snapshot)) {
     SnapshotLock lock(20);
     if (lock.locked()) {
       current_snapshot_storage_() = snapshot;
@@ -836,8 +879,22 @@ inline void flight_radar_task_(void *) {
   vTaskDelete(nullptr);
 }
 
-inline bool start_airplanes_live_request(float latitude, float longitude, uint8_t range_km = FLIGHT_RADAR_RADIUS_DEFAULT_KM,
-                                         bool military_only = false) {
+inline bool feeder_address_usable_(const char *feeder_address) {
+  if (feeder_address != nullptr && feeder_address[0] != '\0')
+    return true;
+  AirDot::connectivity::set_service_status(
+      AirDot::connectivity::Service::FLIGHT_RADAR,
+      AirDot::connectivity::ConnectivityStatus::CONFIG_INVALID,
+      AirDot::connectivity::ConnectivityError::CONFIG_MISSING, esphome::millis());
+  return false;
+}
+
+inline bool start_flight_radar_request(const char *feeder_address, float latitude, float longitude,
+                                       uint8_t range_km = FLIGHT_RADAR_RADIUS_DEFAULT_KM,
+                                       bool military_only = false) {
+  if (!feeder_address_usable_(feeder_address))
+    return false;
+
   if (!coordinates_are_valid_(latitude, longitude)) {
     AirDot::connectivity::set_service_status(
         AirDot::connectivity::Service::FLIGHT_RADAR,
@@ -854,6 +911,7 @@ inline bool start_airplanes_live_request(float latitude, float longitude, uint8_
           expected, FLIGHT_RADAR_TASK_RUNNING, std::memory_order_acq_rel))
     return false;
 
+  std::snprintf(request_feeder_address_(), FLIGHT_RADAR_FEEDER_ADDRESS_BUFFER, "%s", feeder_address);
   request_latitude_e7_().store(static_cast<int32_t>(latitude * 10000000.0f), std::memory_order_release);
   request_longitude_e7_().store(static_cast<int32_t>(longitude * 10000000.0f), std::memory_order_release);
   request_location_mode_().store(FLIGHT_RADAR_LOCATION_COORDS, std::memory_order_release);
@@ -870,8 +928,12 @@ inline bool start_airplanes_live_request(float latitude, float longitude, uint8_
   return false;
 }
 
-inline bool start_airplanes_live_for_current_location_request(uint8_t range_km = FLIGHT_RADAR_RADIUS_DEFAULT_KM,
-                                                              bool military_only = false) {
+inline bool start_flight_radar_for_current_location_request(const char *feeder_address,
+                                                            uint8_t range_km = FLIGHT_RADAR_RADIUS_DEFAULT_KM,
+                                                            bool military_only = false) {
+  if (!feeder_address_usable_(feeder_address))
+    return false;
+
   if (!flight_radar_start_allowed_())
     return false;
 
@@ -880,6 +942,7 @@ inline bool start_airplanes_live_for_current_location_request(uint8_t range_km =
           expected, FLIGHT_RADAR_TASK_RUNNING, std::memory_order_acq_rel))
     return false;
 
+  std::snprintf(request_feeder_address_(), FLIGHT_RADAR_FEEDER_ADDRESS_BUFFER, "%s", feeder_address);
   request_latitude_e7_().store(0, std::memory_order_release);
   request_longitude_e7_().store(0, std::memory_order_release);
   request_location_mode_().store(FLIGHT_RADAR_LOCATION_IP, std::memory_order_release);
@@ -896,7 +959,7 @@ inline bool start_airplanes_live_for_current_location_request(uint8_t range_km =
   return false;
 }
 
-inline int consume_airplanes_live_result(Snapshot &snapshot) {
+inline int consume_flight_radar_result(Snapshot &snapshot) {
   const int state = flight_radar_task_state_().load(std::memory_order_acquire);
   if (state == FLIGHT_RADAR_TASK_SUCCESS) {
     {
@@ -920,22 +983,25 @@ inline int consume_airplanes_live_result(Snapshot &snapshot) {
 #else
 inline Snapshot current_snapshot() { return {}; }
 inline bool request_running() { return false; }
-inline bool start_airplanes_live_request(float latitude, float longitude,
-                                         uint8_t range_km = FLIGHT_RADAR_RADIUS_DEFAULT_KM,
-                                         bool military_only = false) {
+inline bool start_flight_radar_request(const char *feeder_address, float latitude, float longitude,
+                                       uint8_t range_km = FLIGHT_RADAR_RADIUS_DEFAULT_KM,
+                                       bool military_only = false) {
+  (void) feeder_address;
   (void) latitude;
   (void) longitude;
   (void) range_km;
   (void) military_only;
   return false;
 }
-inline bool start_airplanes_live_for_current_location_request(uint8_t range_km = FLIGHT_RADAR_RADIUS_DEFAULT_KM,
-                                                              bool military_only = false) {
+inline bool start_flight_radar_for_current_location_request(const char *feeder_address,
+                                                            uint8_t range_km = FLIGHT_RADAR_RADIUS_DEFAULT_KM,
+                                                            bool military_only = false) {
+  (void) feeder_address;
   (void) range_km;
   (void) military_only;
   return false;
 }
-inline int consume_airplanes_live_result(Snapshot &snapshot) {
+inline int consume_flight_radar_result(Snapshot &snapshot) {
   (void) snapshot;
   return -1;
 }

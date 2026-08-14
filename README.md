@@ -54,7 +54,7 @@ AirDot can show local time and outdoor weather on a dedicated display page. Weat
 
 **Flight Radar**
 
-AirDot can show nearby aircraft on a minimal radar-style page when Wi-Fi and location are configured. Standard aircraft follow the selected display theme, while military or priority traffic is highlighted in orange.
+AirDot can show nearby aircraft on a minimal radar-style page when Wi-Fi and location are configured. Aircraft data comes from your own local ADS-B feeder (tar1090, readsb, or dump1090-fa) — enter its address (for example `192.168.1.50` or `adsb.local/tar1090`) in setup. Standard aircraft follow the selected display theme, while military or priority traffic is highlighted in orange.
 
 **Audio and display alerts**
 
