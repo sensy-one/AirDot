@@ -156,6 +156,7 @@ class SetupPageRenderer {
         flight_radar_settings.traffic_mode == FLIGHT_RADAR_TRAFFIC_MILITARY_ONLY;
     const uint8_t flight_radar_range_km = normalize_flight_radar_range_km(flight_radar_settings.range_km);
     const std::string flight_radar_range_value = std::to_string(static_cast<unsigned>(flight_radar_range_km));
+    const std::string flight_radar_feeder_address = fixed_string_(flight_radar_settings.feeder_address);
     char mqtt_port_value[6];
     std::snprintf(
         mqtt_port_value, sizeof(mqtt_port_value), "%u", static_cast<unsigned>(mqtt_settings.port));
@@ -1700,6 +1701,20 @@ class SetupPageRenderer {
     html += R"html(">
                 <div class="field">
 )html";
+    html += "                  <label for=\"flight_radar_feeder_address\" data-i18n=\"flight_radar_feeder_label\">";
+    html += text.flight_radar_feeder_label;
+    html += "</label>\n                  <input id=\"flight_radar_feeder_address\" name=\"flight_radar_feeder_address\" type=\"text\" inputmode=\"url\" data-i18n-placeholder=\"flight_radar_feeder_placeholder\" placeholder=\"";
+    html += html_escape_(text.flight_radar_feeder_placeholder);
+    html += R"html(" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false" enterkeyhint="next" maxlength="96" value=")html";
+    html += html_escape_(flight_radar_feeder_address);
+    html += "\"";
+    if (!flight_radar_active)
+      html += " disabled";
+    html += R"html(>
+                </div>
+
+                <div class="field">
+)html";
     html += "                  <label for=\"flight_radar_range_km\" data-i18n=\"flight_radar_range_label\">";
     html += text.flight_radar_range_label;
     html += R"html(</label>
@@ -2219,6 +2234,7 @@ class SetupPageRenderer {
             const flightRadarEnabledInput = document.getElementById("flight_radar_enabled");
             const flightRadarFields = document.getElementById("flight_radar_fields");
             const flightRadarRangeInput = document.getElementById("flight_radar_range_km");
+            const flightRadarFeederInput = document.getElementById("flight_radar_feeder_address");
             const flightRadarTrafficInputs = Array.from(document.querySelectorAll("input[name='flight_radar_traffic']"));
             const integrationsSection = document.getElementById("integrations_section");
             const integrationInterval = document.getElementById("integration_interval");
@@ -2461,6 +2477,7 @@ class SetupPageRenderer {
                 flightRadarFields.classList.toggle("is-disabled", !active);
               }
               if (flightRadarRangeInput) flightRadarRangeInput.disabled = !active;
+              if (flightRadarFeederInput) flightRadarFeederInput.disabled = !active;
               setDisabled(flightRadarTrafficInputs, !active);
               updateFlightRadarRangeLabels();
             }

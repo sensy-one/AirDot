@@ -197,13 +197,18 @@ class SetupHandler : public AsyncWebHandler {
         request->hasArg("flight_radar_traffic")
             ? bounded_arg_(request, "flight_radar_traffic", 16) == "military"
             : stored_flight_radar_settings.traffic_mode == FLIGHT_RADAR_TRAFFIC_MILITARY_ONLY;
+    const std::string flight_radar_feeder_address =
+        request->hasArg("flight_radar_feeder_address")
+            ? bounded_arg_(request, "flight_radar_feeder_address", MAX_FLIGHT_RADAR_FEEDER_ADDRESS_LENGTH)
+            : fixed_string_(stored_flight_radar_settings.feeder_address);
 
     save_ui_language(selected_ui_language);
     save_time_server_enabled(time_server_enabled);
     save_manual_time_enabled(manual_time_valid);
     if (wifi_enabled)
       save_weather_enabled(weather_enabled);
-    save_flight_radar_settings(flight_radar_enabled, flight_radar_range_km, flight_radar_military_only);
+    save_flight_radar_settings(flight_radar_enabled, flight_radar_range_km, flight_radar_military_only,
+                               flight_radar_feeder_address);
     save_home_assistant_discovery_enabled(ha_discovery_enabled);
     save_unit_system(request->hasArg("units") && request->arg("units") == "imperial" ? UNIT_SYSTEM_IMPERIAL
                                                                                        : UNIT_SYSTEM_METRIC);

@@ -1226,6 +1226,8 @@ struct SetupPageText {
   const char *flight_radar_note;
   const char *flight_radar_enabled_title;
   const char *flight_radar_enabled_description;
+  const char *flight_radar_feeder_label;
+  const char *flight_radar_feeder_placeholder;
   const char *flight_radar_range_label;
   const char *flight_radar_traffic_label;
   const char *flight_radar_traffic_all_label;
@@ -1452,9 +1454,11 @@ inline SetupPageText setup_page_text(AirDot::UiLanguage language) {
         "Latitude",
         "Longitude",
         "Flight radar",
-        "Set range and visible traffic.",
+        "Uses your local ADS-B feeder (tar1090, readsb or dump1090-fa). Set range and visible traffic.",
         "Flight radar",
         "Show live aircraft traffic on the radar screen.",
+        "Feeder address",
+        "192.168.1.50 or adsb.local/tar1090",
         "Range",
         "Traffic",
         "All aircraft",
@@ -1579,9 +1583,11 @@ inline SetupPageText setup_page_text(AirDot::UiLanguage language) {
         "Breitengrad",
         "Längengrad",
         "Flugradar",
-        "Lege Reichweite und sichtbaren Verkehr fest.",
+        "Nutzt deinen lokalen ADS-B-Empfänger (tar1090, readsb oder dump1090-fa). Lege Reichweite und sichtbaren Verkehr fest.",
         "Flugradar",
         "Zeige Live-Flugverkehr auf dem Radarschirm.",
+        "Feeder-Adresse",
+        "192.168.1.50 oder adsb.local/tar1090",
         "Reichweite",
         "Verkehr",
         "Alle Flugzeuge",
@@ -1706,9 +1712,11 @@ inline SetupPageText setup_page_text(AirDot::UiLanguage language) {
         "Breedtegraad",
         "Lengtegraad",
         "Vluchtradar",
-        "Stel bereik en zichtbaar verkeer in.",
+        "Gebruikt je lokale ADS-B-ontvanger (tar1090, readsb of dump1090-fa). Stel bereik en zichtbaar verkeer in.",
         "Vluchtradar",
         "Toon live vliegtuigverkeer op het radarscherm.",
+        "Adres van de ontvanger",
+        "192.168.1.50 of adsb.local/tar1090",
         "Bereik",
         "Verkeer",
         "Alle vliegtuigen",
@@ -1833,9 +1841,11 @@ inline SetupPageText setup_page_text(AirDot::UiLanguage language) {
         "Latitude",
         "Longitude",
         "Radar de vol",
-        "Définissez la portée et le trafic visible.",
+        "Utilise votre récepteur ADS-B local (tar1090, readsb ou dump1090-fa). Définissez la portée et le trafic visible.",
         "Radar de vol",
         "Affichez le trafic aérien en direct sur l'écran radar.",
+        "Adresse du récepteur",
+        "192.168.1.50 ou adsb.local/tar1090",
         "Portée",
         "Trafic",
         "Tous les avions",
@@ -1960,9 +1970,11 @@ inline SetupPageText setup_page_text(AirDot::UiLanguage language) {
         "Szélesség (Latitude)",
         "Hosszúság (Longitude)",
         "Repülőgép-radar",
-        "Hatótávolság és a megjelenített forgalom beállítása.",
+        "Helyi ADS-B vevőt használ (tar1090, readsb vagy dump1090-fa). Hatótávolság és a megjelenített forgalom beállítása.",
         "Repülőgép-radar",
         "Élő repülőgép-forgalom megjelenítése a radarképernyőn.",
+        "Vevő címe",
+        "192.168.1.50 vagy adsb.local/tar1090",
         "Hatótávolság",
         "Forgalom",
         "Összes repülőgép",
@@ -2087,9 +2099,11 @@ inline SetupPageText setup_page_text(AirDot::UiLanguage language) {
         "Zeměpisná šířka",
         "Zeměpisná délka",
         "Letecký radar",
-        "Nastavte dosah a zobrazovaný provoz.",
+        "Používá váš místní ADS-B přijímač (tar1090, readsb nebo dump1090-fa). Nastavte dosah a zobrazovaný provoz.",
         "Letecký radar",
         "Zobrazovat živý letecký provoz na obrazovce radaru.",
+        "Adresa přijímače",
+        "192.168.1.50 nebo adsb.local/tar1090",
         "Dosah",
         "Provoz",
         "Všechna letadla",
@@ -2214,9 +2228,11 @@ inline SetupPageText setup_page_text(AirDot::UiLanguage language) {
         "Latitudine",
         "Longitudine",
         "Radar aereo",
-        "Imposta portata e traffico visibile.",
+        "Utilizza il tuo ricevitore ADS-B locale (tar1090, readsb o dump1090-fa). Imposta portata e traffico visibile.",
         "Radar aereo",
         "Mostra il traffico aereo in tempo reale nella schermata radar.",
+        "Indirizzo del ricevitore",
+        "192.168.1.50 o adsb.local/tar1090",
         "Portata",
         "Traffico",
         "Tutti gli aeromobili",
@@ -2341,9 +2357,11 @@ inline SetupPageText setup_page_text(AirDot::UiLanguage language) {
         "Latitudine",
         "Longitudine",
         "Radar de zbor",
-        "Setează raza și traficul vizibil.",
+        "Folosește receptorul tău ADS-B local (tar1090, readsb sau dump1090-fa). Setează raza și traficul vizibil.",
         "Radar de zbor",
         "Afișează traficul aerian live pe ecranul radar.",
+        "Adresa receptorului",
+        "192.168.1.50 sau adsb.local/tar1090",
         "Rază",
         "Trafic",
         "Toate aeronavele",
@@ -2515,6 +2533,8 @@ inline void append_setup_page_translation_json(std::string &html, AirDot::UiLang
   append_json_field_(html, "flight_radar_note", text.flight_radar_note, first);
   append_json_field_(html, "flight_radar_enabled_title", text.flight_radar_enabled_title, first);
   append_json_field_(html, "flight_radar_enabled_description", text.flight_radar_enabled_description, first);
+  append_json_field_(html, "flight_radar_feeder_label", text.flight_radar_feeder_label, first);
+  append_json_field_(html, "flight_radar_feeder_placeholder", text.flight_radar_feeder_placeholder, first);
   append_json_field_(html, "flight_radar_range_label", text.flight_radar_range_label, first);
   append_json_field_(html, "flight_radar_traffic_label", text.flight_radar_traffic_label, first);
   append_json_field_(html, "flight_radar_traffic_all_label", text.flight_radar_traffic_all_label, first);

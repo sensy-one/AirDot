@@ -95,9 +95,11 @@ setup_page:
   location_longitude_label: Zeměpisná délka
 
   flight_radar_title: Letecký radar
-  flight_radar_note: Nastavte dosah a zobrazovaný provoz.
+  flight_radar_note: Používá váš místní ADS-B přijímač (tar1090, readsb nebo dump1090-fa). Nastavte dosah a zobrazovaný provoz.
   flight_radar_enabled_title: Letecký radar
   flight_radar_enabled_description: Zobrazovat živý letecký provoz na obrazovce radaru.
+  flight_radar_feeder_label: Adresa přijímače
+  flight_radar_feeder_placeholder: 192.168.1.50 nebo adsb.local/tar1090
   flight_radar_range_label: Dosah
   flight_radar_traffic_label: Provoz
   flight_radar_traffic_all_label: Všechna letadla

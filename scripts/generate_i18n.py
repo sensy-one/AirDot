@@ -158,6 +158,8 @@ SETUP_PAGE_KEYS = (
     "flight_radar_note",
     "flight_radar_enabled_title",
     "flight_radar_enabled_description",
+    "flight_radar_feeder_label",
+    "flight_radar_feeder_placeholder",
     "flight_radar_range_label",
     "flight_radar_traffic_label",
     "flight_radar_traffic_all_label",

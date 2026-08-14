@@ -95,9 +95,11 @@ setup_page:
   location_longitude_label: Longitude
 
   flight_radar_title: Flight radar
-  flight_radar_note: Set range and visible traffic.
+  flight_radar_note: Uses your local ADS-B feeder (tar1090, readsb or dump1090-fa). Set range and visible traffic.
   flight_radar_enabled_title: Flight radar
   flight_radar_enabled_description: Show live aircraft traffic on the radar screen.
+  flight_radar_feeder_label: Feeder address
+  flight_radar_feeder_placeholder: 192.168.1.50 or adsb.local/tar1090
   flight_radar_range_label: Range
   flight_radar_traffic_label: Traffic
   flight_radar_traffic_all_label: All aircraft

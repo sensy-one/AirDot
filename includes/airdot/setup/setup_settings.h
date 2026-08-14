@@ -94,6 +94,7 @@ static constexpr size_t MAX_MQTT_BROKER_LENGTH = 64;
 static constexpr size_t MAX_MQTT_USERNAME_LENGTH = 64;
 static constexpr size_t MAX_MQTT_PASSWORD_LENGTH = 64;
 static constexpr size_t MAX_MQTT_TOPIC_PREFIX_LENGTH = 64;
+static constexpr size_t MAX_FLIGHT_RADAR_FEEDER_ADDRESS_LENGTH = 96;
 static constexpr size_t MAX_SETUP_NETWORK_OPTIONS = 32;
 
 struct NetworkOption {
@@ -354,6 +355,7 @@ struct FlightRadarSettings {
   uint8_t range_km{FLIGHT_RADAR_RANGE_DEFAULT_KM};
   uint8_t traffic_mode{FLIGHT_RADAR_TRAFFIC_ALL};
   uint8_t reserved[5]{};
+  char feeder_address[MAX_FLIGHT_RADAR_FEEDER_ADDRESS_LENGTH + 1]{};
 };
 
 struct StoredNetworkOption {
@@ -783,6 +785,31 @@ inline uint8_t normalize_flight_radar_range_km(int value) {
   return static_cast<uint8_t>(FLIGHT_RADAR_RANGE_MIN_KM + steps * FLIGHT_RADAR_RANGE_STEP_KM);
 }
 
+// Keeps host[:port][/path]; strips a leading http(s):// scheme and trailing
+// slashes so the client can append /data/aircraft.json directly.
+inline std::string sanitize_flight_radar_feeder_address_(const std::string &value) {
+  std::string address = trim_copy_(value);
+  const auto scheme_pos = address.find("://");
+  if (scheme_pos != std::string::npos)
+    address = address.substr(scheme_pos + 3);
+
+  std::string sanitized;
+  sanitized.reserve(address.size());
+  for (char c : address) {
+    const bool allowed = (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') ||
+                         c == '.' || c == '-' || c == '_' || c == ':' || c == '/' || c == '[' || c == ']';
+    if (allowed)
+      sanitized += c;
+  }
+  while (!sanitized.empty() && (sanitized.back() == '/' || sanitized.back() == '.'))
+    sanitized.pop_back();
+  while (!sanitized.empty() && sanitized.front() == '/')
+    sanitized.erase(sanitized.begin());
+  if (sanitized.size() > MAX_FLIGHT_RADAR_FEEDER_ADDRESS_LENGTH)
+    sanitized.resize(MAX_FLIGHT_RADAR_FEEDER_ADDRESS_LENGTH);
+  return sanitized;
+}
+
 inline FlightRadarSettings default_flight_radar_settings_() {
   FlightRadarSettings settings{};
   settings.enabled = 1;
@@ -798,6 +825,9 @@ inline void normalize_flight_radar_settings_(FlightRadarSettings &settings) {
       settings.traffic_mode == FLIGHT_RADAR_TRAFFIC_MILITARY_ONLY
           ? FLIGHT_RADAR_TRAFFIC_MILITARY_ONLY
           : FLIGHT_RADAR_TRAFFIC_ALL;
+  settings.feeder_address[MAX_FLIGHT_RADAR_FEEDER_ADDRESS_LENGTH] = '\0';
+  copy_limited_c_string_(settings.feeder_address, sizeof(settings.feeder_address),
+                         sanitize_flight_radar_feeder_address_(fixed_string_(settings.feeder_address)));
 }
 
 inline int16_t normalize_sen66_temperature_offset_centi_c_(int value) {
@@ -1211,12 +1241,23 @@ inline bool load_flight_radar_military_only() {
   return load_flight_radar_settings().traffic_mode == FLIGHT_RADAR_TRAFFIC_MILITARY_ONLY;
 }
 
-inline void save_flight_radar_settings(bool enabled, uint8_t range_km, bool military_only) {
+inline std::string load_flight_radar_feeder_address() {
+  return fixed_string_(load_flight_radar_settings().feeder_address);
+}
+
+inline bool flight_radar_feeder_configured() {
+  return !load_flight_radar_feeder_address().empty();
+}
+
+inline void save_flight_radar_settings(bool enabled, uint8_t range_km, bool military_only,
+                                       const std::string &feeder_address) {
   auto &cache = flight_radar_pref_();
   FlightRadarSettings value{};
   value.enabled = enabled ? 1 : 0;
   value.range_km = range_km;
   value.traffic_mode = military_only ? FLIGHT_RADAR_TRAFFIC_MILITARY_ONLY : FLIGHT_RADAR_TRAFFIC_ALL;
+  copy_limited_c_string_(value.feeder_address, sizeof(value.feeder_address),
+                         sanitize_flight_radar_feeder_address_(feeder_address));
   normalize_flight_radar_settings_(value);
 
   cache.value = value;
