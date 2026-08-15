@@ -511,28 +511,28 @@ inline void skip_json_value_if_needed_(const char *before, const char *&cursor, 
     skip_json_value_(cursor, end);
 }
 
-inline bool read_airplanes_live_number_(const char *&cursor, const char *end, float &value) {
+inline bool read_adsb_lol_number_(const char *&cursor, const char *end, float &value) {
   const char *before = cursor;
   const bool parsed = parse_json_number_(cursor, end, value);
   skip_json_value_if_needed_(before, cursor, end);
   return parsed;
 }
 
-inline bool read_airplanes_live_uint_(const char *&cursor, const char *end, uint32_t &value) {
+inline bool read_adsb_lol_uint_(const char *&cursor, const char *end, uint32_t &value) {
   const char *before = cursor;
   const bool parsed = parse_json_uint_(cursor, end, value);
   skip_json_value_if_needed_(before, cursor, end);
   return parsed;
 }
 
-inline bool read_airplanes_live_bool_(const char *&cursor, const char *end, bool &value) {
+inline bool read_adsb_lol_bool_(const char *&cursor, const char *end, bool &value) {
   const char *before = cursor;
   const bool parsed = parse_json_bool_(cursor, end, value);
   skip_json_value_if_needed_(before, cursor, end);
   return parsed;
 }
 
-inline bool read_airplanes_live_ground_state_(const char *&cursor, const char *end, bool &on_ground) {
+inline bool read_adsb_lol_ground_state_(const char *&cursor, const char *end, bool &on_ground) {
   skip_json_space_(cursor, end);
   if (cursor < end && *cursor == '"') {
     char text[16]{};
@@ -547,9 +547,9 @@ inline bool read_airplanes_live_ground_state_(const char *&cursor, const char *e
   return skip_json_value_(cursor, end);
 }
 
-inline bool parse_airplanes_live_aircraft_(const char *&cursor, const char *end, float own_latitude,
-                                           float own_longitude, float range_km, bool military_only,
-                                           Snapshot &snapshot) {
+inline bool parse_adsb_lol_aircraft_(const char *&cursor, const char *end, float own_latitude,
+                                    float own_longitude, float range_km, bool military_only,
+                                    Snapshot &snapshot) {
   skip_json_space_(cursor, end);
   if (cursor >= end || *cursor != '{')
     return false;
@@ -590,25 +590,25 @@ inline bool parse_airplanes_live_aircraft_(const char *&cursor, const char *end,
       parse_json_string_(cursor, end, callsign, sizeof(callsign));
       skip_json_value_if_needed_(before, cursor, end);
     } else if (std::strcmp(key, "lat") == 0) {
-      read_airplanes_live_number_(cursor, end, latitude);
+      read_adsb_lol_number_(cursor, end, latitude);
     } else if (std::strcmp(key, "lon") == 0) {
-      read_airplanes_live_number_(cursor, end, longitude);
+      read_adsb_lol_number_(cursor, end, longitude);
     } else if (std::strcmp(key, "alt_baro") == 0) {
-      read_airplanes_live_ground_state_(cursor, end, on_ground);
+      read_adsb_lol_ground_state_(cursor, end, on_ground);
     } else if (std::strcmp(key, "track") == 0) {
-      read_airplanes_live_number_(cursor, end, track_deg);
+      read_adsb_lol_number_(cursor, end, track_deg);
     } else if (std::strcmp(key, "true_heading") == 0) {
-      read_airplanes_live_number_(cursor, end, true_heading_deg);
+      read_adsb_lol_number_(cursor, end, true_heading_deg);
     } else if (std::strcmp(key, "mag_heading") == 0) {
-      read_airplanes_live_number_(cursor, end, magnetic_heading_deg);
+      read_adsb_lol_number_(cursor, end, magnetic_heading_deg);
     } else if (std::strcmp(key, "dir") == 0) {
-      read_airplanes_live_number_(cursor, end, dir_deg);
+      read_adsb_lol_number_(cursor, end, dir_deg);
     } else if (std::strcmp(key, "dbFlags") == 0) {
-      if (read_airplanes_live_uint_(cursor, end, db_flags))
+      if (read_adsb_lol_uint_(cursor, end, db_flags))
         military = military || (db_flags & 1U) != 0;
     } else if (std::strcmp(key, "mil") == 0) {
       bool mil = false;
-      if (read_airplanes_live_bool_(cursor, end, mil))
+      if (read_adsb_lol_bool_(cursor, end, mil))
         military = military || mil;
     } else {
       skip_json_value_(cursor, end);
@@ -654,9 +654,9 @@ inline bool parse_airplanes_live_aircraft_(const char *&cursor, const char *end,
   return true;
 }
 
-inline bool parse_airplanes_live_response_(const char *json, size_t json_length, float latitude, float longitude,
-                                           uint8_t range_km, bool military_only, Snapshot &snapshot,
-                                           bool allow_partial = false) {
+inline bool parse_adsb_lol_response_(const char *json, size_t json_length, float latitude, float longitude,
+                                    uint8_t range_km, bool military_only, Snapshot &snapshot,
+                                    bool allow_partial = false) {
   if (json == nullptr || json_length == 0)
     return false;
 
@@ -690,7 +690,7 @@ inline bool parse_airplanes_live_response_(const char *json, size_t json_length,
     if (cursor < end && *cursor == ']')
       break;
     if (cursor < end && *cursor == '{') {
-      if (!parse_airplanes_live_aircraft_(
+      if (!parse_adsb_lol_aircraft_(
               cursor, end, latitude, longitude, static_cast<float>(snapshot.range_km), military_only, snapshot)) {
         if (allow_partial)
           break;
@@ -715,8 +715,8 @@ inline bool parse_airplanes_live_response_(const char *json, size_t json_length,
   return true;
 }
 
-inline bool fetch_airplanes_live_aircraft_(float latitude, float longitude, uint8_t range_km,
-                                           bool military_only, Snapshot &snapshot) {
+inline bool fetch_adsb_lol_aircraft_(float latitude, float longitude, uint8_t range_km,
+                                    bool military_only, Snapshot &snapshot) {
   if (!coordinates_are_valid_(latitude, longitude)) {
     AirDot::connectivity::set_service_status(
         AirDot::connectivity::Service::FLIGHT_RADAR,
@@ -731,7 +731,7 @@ inline bool fetch_airplanes_live_aircraft_(float latitude, float longitude, uint
   char url[384];
   const int written = std::snprintf(
       url, sizeof(url),
-      "https://api.airplanes.live/v2/point/%.6f/%.6f/%.1f",
+      "https://api.adsb.lol/v2/point/%.6f/%.6f/%.1f",
       latitude, longitude, distance_nm);
   if (written <= 0 || static_cast<size_t>(written) >= sizeof(url)) {
     note_flight_radar_failure_(AirDot::connectivity::ConnectivityError::CONFIG_INVALID);
@@ -780,8 +780,8 @@ inline bool fetch_airplanes_live_aircraft_(float latitude, float longitude, uint
   }
 
   Snapshot parsed{};
-  if (!parse_airplanes_live_response_(response.body, response.length, latitude, longitude,
-                                      normalized_range_km, military_only, parsed, response.overflow)) {
+  if (!parse_adsb_lol_response_(response.body, response.length, latitude, longitude,
+                                normalized_range_km, military_only, parsed, response.overflow)) {
     note_flight_radar_failure_(AirDot::connectivity::ConnectivityError::INVALID_RESPONSE);
     return false;
   }
@@ -818,7 +818,7 @@ inline void flight_radar_task_(void *) {
   }
 
   if (acquired && location_available &&
-      fetch_airplanes_live_aircraft_(latitude, longitude, range_km, military_only, snapshot)) {
+      fetch_adsb_lol_aircraft_(latitude, longitude, range_km, military_only, snapshot)) {
     SnapshotLock lock(20);
     if (lock.locked()) {
       current_snapshot_storage_() = snapshot;
@@ -836,8 +836,9 @@ inline void flight_radar_task_(void *) {
   vTaskDelete(nullptr);
 }
 
-inline bool start_airplanes_live_request(float latitude, float longitude, uint8_t range_km = FLIGHT_RADAR_RADIUS_DEFAULT_KM,
-                                         bool military_only = false) {
+inline bool start_adsb_lol_request(float latitude, float longitude,
+                                   uint8_t range_km = FLIGHT_RADAR_RADIUS_DEFAULT_KM,
+                                   bool military_only = false) {
   if (!coordinates_are_valid_(latitude, longitude)) {
     AirDot::connectivity::set_service_status(
         AirDot::connectivity::Service::FLIGHT_RADAR,
@@ -870,8 +871,8 @@ inline bool start_airplanes_live_request(float latitude, float longitude, uint8_
   return false;
 }
 
-inline bool start_airplanes_live_for_current_location_request(uint8_t range_km = FLIGHT_RADAR_RADIUS_DEFAULT_KM,
-                                                              bool military_only = false) {
+inline bool start_adsb_lol_for_current_location_request(uint8_t range_km = FLIGHT_RADAR_RADIUS_DEFAULT_KM,
+                                                        bool military_only = false) {
   if (!flight_radar_start_allowed_())
     return false;
 
@@ -896,7 +897,7 @@ inline bool start_airplanes_live_for_current_location_request(uint8_t range_km =
   return false;
 }
 
-inline int consume_airplanes_live_result(Snapshot &snapshot) {
+inline int consume_adsb_lol_result(Snapshot &snapshot) {
   const int state = flight_radar_task_state_().load(std::memory_order_acquire);
   if (state == FLIGHT_RADAR_TASK_SUCCESS) {
     {
@@ -920,22 +921,22 @@ inline int consume_airplanes_live_result(Snapshot &snapshot) {
 #else
 inline Snapshot current_snapshot() { return {}; }
 inline bool request_running() { return false; }
-inline bool start_airplanes_live_request(float latitude, float longitude,
-                                         uint8_t range_km = FLIGHT_RADAR_RADIUS_DEFAULT_KM,
-                                         bool military_only = false) {
+inline bool start_adsb_lol_request(float latitude, float longitude,
+                                   uint8_t range_km = FLIGHT_RADAR_RADIUS_DEFAULT_KM,
+                                   bool military_only = false) {
   (void) latitude;
   (void) longitude;
   (void) range_km;
   (void) military_only;
   return false;
 }
-inline bool start_airplanes_live_for_current_location_request(uint8_t range_km = FLIGHT_RADAR_RADIUS_DEFAULT_KM,
-                                                              bool military_only = false) {
+inline bool start_adsb_lol_for_current_location_request(uint8_t range_km = FLIGHT_RADAR_RADIUS_DEFAULT_KM,
+                                                        bool military_only = false) {
   (void) range_km;
   (void) military_only;
   return false;
 }
-inline int consume_airplanes_live_result(Snapshot &snapshot) {
+inline int consume_adsb_lol_result(Snapshot &snapshot) {
   (void) snapshot;
   return -1;
 }

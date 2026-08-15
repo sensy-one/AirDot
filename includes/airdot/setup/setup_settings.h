@@ -65,6 +65,11 @@ static constexpr uint32_t DISPLAY_POWER_PREF_KEY = 2918394852UL;
 static constexpr uint32_t DISPLAY_POWER_HA_CONTROL_RECOVERY_PREF_KEY = 2918394853UL;
 static constexpr uint32_t AUTO_PAGE_SWITCH_MODE_PREF_KEY = 2918394854UL;
 static constexpr uint32_t AUTO_PAGE_SWITCH_SCREENS_PREF_KEY = 2918394855UL;
+static constexpr uint32_t CUSTOM_AIR_QUALITY_THRESHOLDS_PREF_KEY = 2918394856UL;
+static constexpr uint8_t CUSTOM_AIR_QUALITY_THRESHOLDS_VERSION = 1;
+static constexpr uint8_t CUSTOM_AIR_QUALITY_METRIC_COUNT = 7;
+static constexpr uint8_t CUSTOM_AIR_QUALITY_THRESHOLD_COUNT = 4;
+static constexpr uint32_t CUSTOM_AIR_QUALITY_THRESHOLD_SCALE = 10UL;
 static constexpr int32_t LATITUDE_MIN_E7 = -900000000;
 static constexpr int32_t LATITUDE_MAX_E7 = 900000000;
 static constexpr int32_t LONGITUDE_MIN_E7 = -1800000000;
@@ -356,6 +361,13 @@ struct FlightRadarSettings {
   uint8_t reserved[5]{};
 };
 
+struct CustomAirQualityThresholdSettings {
+  uint8_t version{CUSTOM_AIR_QUALITY_THRESHOLDS_VERSION};
+  uint8_t enabled{0};
+  uint8_t reserved[2]{};
+  uint32_t upper_limits[CUSTOM_AIR_QUALITY_METRIC_COUNT][CUSTOM_AIR_QUALITY_THRESHOLD_COUNT]{};
+};
+
 struct StoredNetworkOption {
   char ssid[MAX_WIFI_SSID_LENGTH + 1]{};
   int8_t rssi{-127};
@@ -375,6 +387,7 @@ struct MqttBrokerInput {
 inline const MqttSettings &load_mqtt_settings();
 inline const LocationSettings &load_location_settings();
 inline const FlightRadarSettings &load_flight_radar_settings();
+inline const CustomAirQualityThresholdSettings &load_custom_air_quality_threshold_settings();
 
 struct CachedTimeZoneOffsetSchedulePreference {
   TimeZoneOffsetSchedule value{};
@@ -399,6 +412,13 @@ struct CachedLocationPreference {
 
 struct CachedFlightRadarPreference {
   FlightRadarSettings value{1, FLIGHT_RADAR_RANGE_DEFAULT_KM, FLIGHT_RADAR_TRAFFIC_ALL, {}};
+  bool loaded{false};
+  bool preference_ready{false};
+  esphome::ESPPreferenceObject preference{};
+};
+
+struct CachedCustomAirQualityThresholdPreference {
+  CustomAirQualityThresholdSettings value{};
   bool loaded{false};
   bool preference_ready{false};
   esphome::ESPPreferenceObject preference{};
@@ -800,6 +820,119 @@ inline void normalize_flight_radar_settings_(FlightRadarSettings &settings) {
           : FLIGHT_RADAR_TRAFFIC_ALL;
 }
 
+inline uint8_t custom_air_quality_metric_index_(AirDot::AirQualityMetric metric) {
+  const uint8_t index = static_cast<uint8_t>(metric);
+  return index < CUSTOM_AIR_QUALITY_METRIC_COUNT ? index : 0;
+}
+
+inline float custom_air_quality_threshold_minimum(AirDot::AirQualityMetric metric) {
+  switch (metric) {
+    case AirDot::AirQualityMetric::PM1:
+    case AirDot::AirQualityMetric::PM25:
+    case AirDot::AirQualityMetric::PM4:
+    case AirDot::AirQualityMetric::PM10:
+      return 0.0f;
+    case AirDot::AirQualityMetric::VOC:
+    case AirDot::AirQualityMetric::NOX:
+      return 1.0f;
+    case AirDot::AirQualityMetric::CO2:
+      return 250.0f;
+  }
+  return 0.0f;
+}
+
+inline float custom_air_quality_threshold_maximum(AirDot::AirQualityMetric metric) {
+  switch (metric) {
+    case AirDot::AirQualityMetric::PM1:
+    case AirDot::AirQualityMetric::PM25:
+    case AirDot::AirQualityMetric::PM4:
+    case AirDot::AirQualityMetric::PM10:
+      return 5000.0f;
+    case AirDot::AirQualityMetric::VOC:
+    case AirDot::AirQualityMetric::NOX:
+      return 500.0f;
+    case AirDot::AirQualityMetric::CO2:
+      return 10000.0f;
+  }
+  return 5000.0f;
+}
+
+inline uint32_t custom_air_quality_threshold_to_stored_(float value) {
+  return static_cast<uint32_t>(std::round(value * static_cast<float>(CUSTOM_AIR_QUALITY_THRESHOLD_SCALE)));
+}
+
+inline float custom_air_quality_threshold_from_stored_(uint32_t value) {
+  return static_cast<float>(value) / static_cast<float>(CUSTOM_AIR_QUALITY_THRESHOLD_SCALE);
+}
+
+inline bool custom_air_quality_status_thresholds_valid(
+    AirDot::AirQualityMetric metric, const AirDot::AirQualityStatusThresholds &thresholds) {
+  const float minimum = custom_air_quality_threshold_minimum(metric);
+  const float maximum = custom_air_quality_threshold_maximum(metric);
+  return std::isfinite(thresholds.balanced) && std::isfinite(thresholds.moderate) &&
+         std::isfinite(thresholds.poor) && std::isfinite(thresholds.unhealthy) &&
+         thresholds.balanced >= minimum && thresholds.unhealthy <= maximum &&
+         thresholds.balanced < thresholds.moderate && thresholds.moderate < thresholds.poor &&
+         thresholds.poor < thresholds.unhealthy;
+}
+
+inline void set_custom_air_quality_status_thresholds(
+    CustomAirQualityThresholdSettings &settings, AirDot::AirQualityMetric metric,
+    const AirDot::AirQualityStatusThresholds &thresholds) {
+  if (!custom_air_quality_status_thresholds_valid(metric, thresholds))
+    return;
+
+  const uint8_t index = custom_air_quality_metric_index_(metric);
+  settings.upper_limits[index][0] = custom_air_quality_threshold_to_stored_(thresholds.balanced);
+  settings.upper_limits[index][1] = custom_air_quality_threshold_to_stored_(thresholds.moderate);
+  settings.upper_limits[index][2] = custom_air_quality_threshold_to_stored_(thresholds.poor);
+  settings.upper_limits[index][3] = custom_air_quality_threshold_to_stored_(thresholds.unhealthy);
+}
+
+inline AirDot::AirQualityStatusThresholds custom_air_quality_status_thresholds(
+    const CustomAirQualityThresholdSettings &settings, AirDot::AirQualityMetric metric) {
+  const uint8_t index = custom_air_quality_metric_index_(metric);
+  return {
+      custom_air_quality_threshold_from_stored_(settings.upper_limits[index][0]),
+      custom_air_quality_threshold_from_stored_(settings.upper_limits[index][1]),
+      custom_air_quality_threshold_from_stored_(settings.upper_limits[index][2]),
+      custom_air_quality_threshold_from_stored_(settings.upper_limits[index][3]),
+  };
+}
+
+inline CustomAirQualityThresholdSettings default_custom_air_quality_threshold_settings_() {
+  CustomAirQualityThresholdSettings settings{};
+  settings.version = CUSTOM_AIR_QUALITY_THRESHOLDS_VERSION;
+  settings.enabled = 0;
+  for (uint8_t index = 0; index < CUSTOM_AIR_QUALITY_METRIC_COUNT; index++) {
+    const auto metric = static_cast<AirDot::AirQualityMetric>(index);
+    set_custom_air_quality_status_thresholds(
+        settings, metric,
+        AirDot::metric_status_thresholds(AirDot::AirQualityProfile::GLOBAL_WHO_EEA_STRICT, metric));
+  }
+  return settings;
+}
+
+inline void normalize_custom_air_quality_threshold_settings_(CustomAirQualityThresholdSettings &settings) {
+  const auto defaults = default_custom_air_quality_threshold_settings_();
+  if (settings.version != CUSTOM_AIR_QUALITY_THRESHOLDS_VERSION) {
+    settings = defaults;
+    return;
+  }
+
+  settings.enabled = settings.enabled == 1 ? 1 : 0;
+  settings.reserved[0] = 0;
+  settings.reserved[1] = 0;
+  for (uint8_t index = 0; index < CUSTOM_AIR_QUALITY_METRIC_COUNT; index++) {
+    const auto metric = static_cast<AirDot::AirQualityMetric>(index);
+    const auto thresholds = custom_air_quality_status_thresholds(settings, metric);
+    if (!custom_air_quality_status_thresholds_valid(metric, thresholds)) {
+      for (uint8_t threshold = 0; threshold < CUSTOM_AIR_QUALITY_THRESHOLD_COUNT; threshold++)
+        settings.upper_limits[index][threshold] = defaults.upper_limits[index][threshold];
+    }
+  }
+}
+
 inline int16_t normalize_sen66_temperature_offset_centi_c_(int value) {
   return static_cast<int16_t>(
       std::max<int>(SEN66_TEMPERATURE_OFFSET_MIN_CENTI_C,
@@ -1005,6 +1138,12 @@ inline CachedFlightRadarPreference &flight_radar_pref_() {
   return cache;
 }
 
+inline CachedCustomAirQualityThresholdPreference &custom_air_quality_thresholds_pref_() {
+  static CachedCustomAirQualityThresholdPreference cache{
+      default_custom_air_quality_threshold_settings_(), false, false, {}};
+  return cache;
+}
+
 inline void prepare_time_zone_offset_schedule_preference_(CachedTimeZoneOffsetSchedulePreference &cache) {
   if (cache.preference_ready || esphome::global_preferences == nullptr)
     return;
@@ -1064,6 +1203,15 @@ inline void prepare_flight_radar_preference_(CachedFlightRadarPreference &cache)
 
   cache.preference = esphome::global_preferences->make_preference<FlightRadarSettings>(
       FLIGHT_RADAR_SETTINGS_PREF_KEY, true);
+  cache.preference_ready = true;
+}
+
+inline void prepare_custom_air_quality_thresholds_preference_(CachedCustomAirQualityThresholdPreference &cache) {
+  if (cache.preference_ready || esphome::global_preferences == nullptr)
+    return;
+
+  cache.preference = esphome::global_preferences->make_preference<CustomAirQualityThresholdSettings>(
+      CUSTOM_AIR_QUALITY_THRESHOLDS_PREF_KEY, true);
   cache.preference_ready = true;
 }
 
@@ -1225,6 +1373,37 @@ inline void save_flight_radar_settings(bool enabled, uint8_t range_km, bool mili
     return;
 
   prepare_flight_radar_preference_(cache);
+  cache.preference.save(&cache.value);
+  esphome::global_preferences->sync();
+}
+
+inline const CustomAirQualityThresholdSettings &load_custom_air_quality_threshold_settings() {
+  auto &cache = custom_air_quality_thresholds_pref_();
+  if (cache.loaded)
+    return cache.value;
+  if (esphome::global_preferences == nullptr)
+    return cache.value;
+
+  prepare_custom_air_quality_thresholds_preference_(cache);
+  CustomAirQualityThresholdSettings value = default_custom_air_quality_threshold_settings_();
+  if (cache.preference.load(&value))
+    cache.value = value;
+  else
+    cache.value = default_custom_air_quality_threshold_settings_();
+  normalize_custom_air_quality_threshold_settings_(cache.value);
+  cache.loaded = true;
+  return cache.value;
+}
+
+inline void save_custom_air_quality_threshold_settings(CustomAirQualityThresholdSettings settings) {
+  normalize_custom_air_quality_threshold_settings_(settings);
+  auto &cache = custom_air_quality_thresholds_pref_();
+  cache.value = settings;
+  cache.loaded = true;
+  if (esphome::global_preferences == nullptr)
+    return;
+
+  prepare_custom_air_quality_thresholds_preference_(cache);
   cache.preference.save(&cache.value);
   esphome::global_preferences->sync();
 }
@@ -1817,6 +1996,36 @@ inline AirDot::AirQualityProfile load_air_quality_profile() {
 inline void save_air_quality_profile(AirDot::AirQualityProfile profile) {
   const uint8_t value = static_cast<uint8_t>(AirDot::normalize_air_quality_profile(static_cast<uint8_t>(profile)));
   save_cached_uint8_preference_(air_quality_profile_pref_(), value);
+}
+
+inline bool load_custom_air_quality_thresholds_enabled() {
+  return load_custom_air_quality_threshold_settings().enabled == 1;
+}
+
+inline AirDot::AirQualityStatusThresholds load_air_quality_status_thresholds(AirDot::AirQualityMetric metric) {
+  const auto &custom_settings = load_custom_air_quality_threshold_settings();
+  if (custom_settings.enabled == 1)
+    return custom_air_quality_status_thresholds(custom_settings, metric);
+  return AirDot::metric_status_thresholds(load_air_quality_profile(), metric);
+}
+
+inline int load_sanitized_air_quality_level(float pm1, float pm25, float pm4, float pm10, float voc, float nox,
+                                            float co2) {
+  int level = -1;
+  const auto add_metric = [&](AirDot::AirQualityMetric metric, float value) {
+    level = std::max(
+        level,
+        AirDot::threshold_level(
+            AirDot::sanitized_air_quality_metric_value(metric, value), load_air_quality_status_thresholds(metric)));
+  };
+  add_metric(AirDot::AirQualityMetric::PM1, pm1);
+  add_metric(AirDot::AirQualityMetric::PM25, pm25);
+  add_metric(AirDot::AirQualityMetric::PM4, pm4);
+  add_metric(AirDot::AirQualityMetric::PM10, pm10);
+  add_metric(AirDot::AirQualityMetric::VOC, voc);
+  add_metric(AirDot::AirQualityMetric::NOX, nox);
+  add_metric(AirDot::AirQualityMetric::CO2, co2);
+  return level;
 }
 
 }  // namespace AirDot::onboarding

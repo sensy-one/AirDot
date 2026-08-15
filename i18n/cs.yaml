@@ -37,6 +37,14 @@ setup_page:
   air_quality_title: Kvalita vzduchu
   air_quality_note: Vyberte doporučení, podle kterého bude AirDot hodnotit kvalitu vzduchu.
   air_quality_profile_label: Doporučení
+  custom_thresholds_title: Vlastní prahové hodnoty
+  custom_thresholds_description: Použijte vlastní limity místo vybraného doporučení.
+  custom_thresholds_note: Nastavte horní hranici pro každý stav. Hodnoty nad Nezdravou úrovní jsou Kritické. Prahy musí zleva doprava růst.
+  custom_thresholds_order_error: Čtyři prahové hodnoty musí zleva doprava růst.
+  custom_threshold_balanced_label: Dobrá
+  custom_threshold_moderate_label: Mírná
+  custom_threshold_poor_label: Špatná
+  custom_threshold_unhealthy_label: Nezdravá
 
   sensor_calibration_title: Kalibrace senzorů
   sensor_calibration_note: Upravte údaj vestavěného teplotního senzoru.
@@ -49,10 +57,10 @@ setup_page:
   alerts_note: Nastavte, kdy vás má AirDot upozornit.
 
   display_alert_wake_screen_title: Probuzení displeje
-  display_alert_wake_screen_description: Zapnout displej, když Home Assistant odešle upozornění.
+  display_alert_wake_screen_description: Zapne displej při upozornění z Home Assistantu a kritické kvalitě vzduchu.
 
   audio_alerts_title: Zvuková upozornění
-  audio_alerts_description: Přehrát výstražný tón, když některá hodnota dosáhne nebezpečné úrovně.
+  audio_alerts_description: Přehraje výstražný tón, když některá hodnota dosáhne kritické úrovně.
 
   hazard_focus_title: Zaměření na kritické hodnoty
   hazard_focus_description: Automaticky zobrazit graf senzoru s nejvyšší úrovní rizika.

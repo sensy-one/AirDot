@@ -42,11 +42,11 @@ AirDot classifies the current room condition into clear status levels and gives 
 
 **Critical value focus**
 
-When a measurement reaches a dangerous level, AirDot can automatically switch to the history page for the sensor with the highest risk. This helps you see what changed and decide what to do next.
+When a measurement reaches a critical level, AirDot can automatically switch to the history page for the sensor with the highest risk. This helps you see what changed and decide what to do next.
 
-**Air-quality profiles**
+**Air-quality profiles and custom thresholds**
 
-The selected guideline can be changed in setup. Available profiles include Global WHO/EEA Strict, Europe EEA, North America US EPA 2024, UK DAQI 5, India NAQI 5, China CN AQI 5, and Australia NSW 1H.
+The selected guideline can be changed in setup. Available profiles include Global WHO/EEA Strict, Europe EEA, North America US EPA 2024, UK DAQI 5, India NAQI 5, China CN AQI 5, and Australia NSW 1H. Custom thresholds can also be enabled to define separate Good, Moderate, Poor, and Unhealthy upper limits for every air-quality measurement.
 
 **Time and weather**
 
@@ -54,7 +54,7 @@ AirDot can show local time and outdoor weather on a dedicated display page. Weat
 
 **Flight Radar**
 
-AirDot can show nearby aircraft on a minimal radar-style page when Wi-Fi and location are configured. Standard aircraft follow the selected display theme, while military or priority traffic is highlighted in orange.
+AirDot can show nearby aircraft on a minimal radar-style page when Wi-Fi and location are configured. Live aircraft data is provided by [ADSB.lol](https://www.adsb.lol/) under the ODbL 1.0 license. Standard aircraft follow the selected display theme, while military or priority traffic is highlighted in orange.
 
 **Audio and display alerts**
 
@@ -317,7 +317,7 @@ When weather is enabled, AirDot requests forecast data every 15 minutes after a 
 
 ## Flight Radar
 
-AirDot can show nearby aircraft on a dedicated radar page.
+AirDot can show nearby aircraft on a dedicated radar page using live data from [ADSB.lol](https://www.adsb.lol/). The radar requests an updated local snapshot every 5 seconds while its page is visible.
 
 Flight Radar options:
 
@@ -328,6 +328,20 @@ Flight Radar options:
 The radar uses the configured exact location when available. If exact location is not enabled, AirDot can use automatic location when Wi-Fi and internet access are available.
 
 The radar display is intentionally minimal: compass ticks, a north indicator, rotating aircraft markers, full callsigns, and connector lines. Standard aircraft use the display theme color, and military or priority aircraft are shown in orange.
+
+## Air-Quality Guidelines and Custom Thresholds
+
+AirDot normally assesses air quality using the guideline selected in setup. You can instead enable **Custom thresholds** and set your own limits for:
+
+- PM1
+- PM2.5
+- PM4
+- PM10
+- CO2
+- VOC
+- NOx
+
+Each measurement has an upper limit for Good, Moderate, Poor, and Unhealthy. A value above the Unhealthy upper limit is classified as Critical. The limits must increase from left to right.
 
 ## Air-Quality Warm-Up
 
@@ -386,9 +400,9 @@ AirDot can warn you when measurements become critical.
 
 Available alert settings:
 
-- Sound alerts: play a warning tone when a measurement reaches a dangerous level.
+- Sound alerts: play a warning tone when a measurement reaches a critical level.
 - Critical value focus: automatically switch to the chart for the highest-risk sensor.
-- Wake screen for Home Assistant alerts: turn on the display when Home Assistant sends a display alert.
+- Wake screen for alerts: turn on the display for Home Assistant alerts and critical air-quality readings.
 
 When a critical air-quality tone or focus page is active, a short button press snoozes the alert sound and critical focus for 15 minutes and returns control to the normal page flow.
 

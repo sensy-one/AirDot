@@ -37,6 +37,14 @@ setup_page:
   air_quality_title: Calitatea aerului
   air_quality_note: Alege ghidul pe care AirDot îl folosește pentru a evalua calitatea aerului.
   air_quality_profile_label: Ghid
+  custom_thresholds_title: Praguri personalizate
+  custom_thresholds_description: Folosește propriile limite în locul ghidului selectat.
+  custom_thresholds_note: Setează limita superioară pentru fiecare stare. Valorile peste Nefavorabilă sunt Critice. Pragurile trebuie să crească de la stânga la dreapta.
+  custom_thresholds_order_error: Cele patru praguri trebuie să crească de la stânga la dreapta.
+  custom_threshold_balanced_label: Bună
+  custom_threshold_moderate_label: Moderată
+  custom_threshold_poor_label: Slabă
+  custom_threshold_unhealthy_label: Nefavorabilă
 
   sensor_calibration_title: Calibrare senzor
   sensor_calibration_note: Ajustează citirea temperaturii interne.
@@ -49,10 +57,10 @@ setup_page:
   alerts_note: Setează când AirDot trebuie să te alerteze.
 
   display_alert_wake_screen_title: Trezire ecran
-  display_alert_wake_screen_description: Pornește afișajul când Home Assistant trimite o alertă.
+  display_alert_wake_screen_description: Pornește afișajul pentru alertele Home Assistant și valorile critice ale aerului.
 
   audio_alerts_title: Alerte sonore
-  audio_alerts_description: Redă un ton de avertizare când o măsurătoare atinge un nivel periculos.
+  audio_alerts_description: Redă un ton de avertizare când o măsurătoare atinge un nivel critic.
 
   hazard_focus_title: Focus pe valori critice
   hazard_focus_description: Afișează automat graficul senzorului cu cel mai mare nivel de risc.

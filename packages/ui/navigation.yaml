@@ -16,10 +16,10 @@ script:
           constexpr uint32_t SOUND_SNOOZE_MS = HAZARD_SNOOZE_MS;
           const uint32_t focus_snooze_until_ms = now_ms + FOCUS_SNOOZE_MS;
           const uint32_t sound_snooze_until_ms = now_ms + SOUND_SNOOZE_MS;
-          const auto air_quality_profile = AirDot::onboarding::load_air_quality_profile();
-          const int air_quality_level = AirDot::sanitized_air_quality_level(
-            air_quality_profile, id(pm25).state, id(pm10).state, id(voc).state, id(nox).state, id(co2).state);
-          if (air_quality_level >= 4) {
+          const int air_quality_level = AirDot::onboarding::load_sanitized_air_quality_level(
+            id(pm1).state, id(pm25).state, id(pm4).state, id(pm10).state,
+            id(voc).state, id(nox).state, id(co2).state);
+          if (AirDot::air_quality_alert_active(air_quality_level)) {
             id(air_quality_hazard_sound_snooze_until_ms) = sound_snooze_until_ms;
             id(air_quality_hazard_last_chirp_ms) = 0;
             id(hazard_alert_chirp).stop();
@@ -56,10 +56,10 @@ script:
           constexpr uint32_t FOCUS_SNOOZE_MS = HAZARD_SNOOZE_MS;
           constexpr uint32_t SOUND_SNOOZE_MS = HAZARD_SNOOZE_MS;
           auto snooze_hazard_sound = [&]() {
-            const auto air_quality_profile = AirDot::onboarding::load_air_quality_profile();
-            const int air_quality_level = AirDot::sanitized_air_quality_level(
-              air_quality_profile, id(pm25).state, id(pm10).state, id(voc).state, id(nox).state, id(co2).state);
-            if (air_quality_level < 4)
+            const int air_quality_level = AirDot::onboarding::load_sanitized_air_quality_level(
+              id(pm1).state, id(pm25).state, id(pm4).state, id(pm10).state,
+              id(voc).state, id(nox).state, id(co2).state);
+            if (!AirDot::air_quality_alert_active(air_quality_level))
               return;
             id(air_quality_hazard_sound_snooze_until_ms) = now_ms + SOUND_SNOOZE_MS;
             id(air_quality_hazard_last_chirp_ms) = 0;

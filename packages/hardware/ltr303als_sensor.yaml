@@ -16,13 +16,13 @@ sensor:
               AirDot::light_metric_color());
 
             const auto now = id(sntp_time).utcnow();
-            const auto air_quality_profile = AirDot::onboarding::load_air_quality_profile();
             const uint32_t now_ms = millis();
             const bool warmup_active =
               id(air_quality_warmup_until_ms) != 0 &&
               static_cast<int32_t>(now_ms - id(air_quality_warmup_until_ms)) < 0;
-            const int air_quality_level = warmup_active ? -1 : AirDot::sanitized_air_quality_level(
-              air_quality_profile, id(pm25).state, id(pm10).state, id(voc).state, id(nox).state, id(co2).state);
+            const int air_quality_level = warmup_active ? -1 : AirDot::onboarding::load_sanitized_air_quality_level(
+              id(pm1).state, id(pm25).state, id(pm4).state, id(pm10).state,
+              id(voc).state, id(nox).state, id(co2).state);
             const bool setup_or_onboarding_active =
               AirDot::onboarding::setup_or_onboarding_active(
                 id(setup_ap_active), id(setup_portal_active), id(onboarding_ui_active));
@@ -48,14 +48,17 @@ sensor:
               id(air_quality_hazard_focus_metric) != -1 ||
               id(air_quality_hazard_focus_clear_since_ms) != 0 ||
               id(air_quality_hazard_focus_status_since_ms) != 0;
+            const bool alert_wake_screen_enabled =
+              AirDot::onboarding::load_display_alert_wake_screen_enabled();
             const bool wake_for_hazard_focus =
-              (air_quality_level >= 4 || hazard_focus_pending_or_active) &&
+              (AirDot::air_quality_alert_active(air_quality_level) || hazard_focus_pending_or_active) &&
               AirDot::onboarding::load_hazard_focus_mode_enabled() &&
+              alert_wake_screen_enabled &&
               !setup_or_onboarding_active &&
               !hazard_focus_snoozed;
             const bool wake_for_display_alert =
-              id(ui_alert_active) != 0 &&
-              AirDot::onboarding::load_display_alert_wake_screen_enabled() &&
+              (id(ui_alert_active) != 0 || AirDot::air_quality_alert_active(air_quality_level)) &&
+              alert_wake_screen_enabled &&
               !setup_or_onboarding_active;
             if (!setup_or_onboarding_active &&
                 now.is_valid() &&
