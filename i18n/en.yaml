@@ -37,6 +37,14 @@ setup_page:
   air_quality_title: Air quality
   air_quality_note: Choose the guideline AirDot uses to assess air quality.
   air_quality_profile_label: Guideline
+  custom_thresholds_title: Custom thresholds
+  custom_thresholds_description: Use your own limits instead of the selected guideline.
+  custom_thresholds_note: Set the upper limit for each status. Values above Unhealthy are Critical. Limits must increase from left to right.
+  custom_thresholds_order_error: The four limits must increase from left to right.
+  custom_threshold_balanced_label: Good
+  custom_threshold_moderate_label: Moderate
+  custom_threshold_poor_label: Poor
+  custom_threshold_unhealthy_label: Unhealthy
 
   sensor_calibration_title: Sensor calibration
   sensor_calibration_note: Adjust the built-in temperature reading.
@@ -49,10 +57,10 @@ setup_page:
   alerts_note: Set when AirDot should alert you.
 
   display_alert_wake_screen_title: Wake screen
-  display_alert_wake_screen_description: Turn on the display when Home Assistant sends an alert.
+  display_alert_wake_screen_description: Turn on the display for Home Assistant alerts and critical air-quality readings.
 
   audio_alerts_title: Sound alerts
-  audio_alerts_description: Play a warning tone when a measurement reaches a dangerous level.
+  audio_alerts_description: Play a warning tone when a measurement reaches a critical level.
 
   hazard_focus_title: Focus on critical values
   hazard_focus_description: Automatically show the chart for the sensor with the highest risk level.

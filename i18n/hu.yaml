@@ -37,6 +37,14 @@ setup_page:
   air_quality_title: Levegőminőség
   air_quality_note: Válaszd ki, melyik irányelvet használja az AirDot a levegőminőség értékeléséhez.
   air_quality_profile_label: Irányelv
+  custom_thresholds_title: Egyéni küszöbértékek
+  custom_thresholds_description: Használd a saját határértékeidet a kiválasztott irányelv helyett.
+  custom_thresholds_note: Állítsd be minden állapot felső határát. Az Egészségtelen feletti értékek Kritikusak. A határoknak balról jobbra növekedniük kell.
+  custom_thresholds_order_error: A négy határértéknek balról jobbra növekednie kell.
+  custom_threshold_balanced_label: Jó
+  custom_threshold_moderate_label: Mérsékelt
+  custom_threshold_poor_label: Rossz
+  custom_threshold_unhealthy_label: Egészségtelen
 
   sensor_calibration_title: Érzékelő kalibrálása
   sensor_calibration_note: A beépített hőmérő mérésének korrekciója.
@@ -49,10 +57,10 @@ setup_page:
   alerts_note: Állítsd be, mikor riasszon az AirDot.
 
   display_alert_wake_screen_title: Képernyő ébresztése
-  display_alert_wake_screen_description: Kapcsolja be a kijelzőt, ha a Home Assistant riasztást küld.
+  display_alert_wake_screen_description: Kapcsolja be a kijelzőt Home Assistant-riasztás vagy kritikus levegőminőség esetén.
 
   audio_alerts_title: Hangjelzések
-  audio_alerts_description: Figyelmeztető hangjelzés lejátszása, ha egy mért érték veszélyes szintet ér el.
+  audio_alerts_description: Figyelmeztető hangjelzés lejátszása, ha egy mért érték kritikus szintet ér el.
 
   hazard_focus_title: Fókusz a kritikus értékekre
   hazard_focus_description: Automatikusan jelenítse meg a legmagasabb kockázati szintű érzékelő diagramját.

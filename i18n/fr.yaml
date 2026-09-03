@@ -37,6 +37,14 @@ setup_page:
   air_quality_title: Qualité de l’air
   air_quality_note: Choisissez la référence utilisée par AirDot pour évaluer la qualité de l’air.
   air_quality_profile_label: Référence
+  custom_thresholds_title: Seuils personnalisés
+  custom_thresholds_description: Utilisez vos propres limites à la place de la référence sélectionnée.
+  custom_thresholds_note: Définissez la limite supérieure de chaque état. Les valeurs au-dessus de Malsain sont Critiques. Les seuils doivent augmenter de gauche à droite.
+  custom_thresholds_order_error: Les quatre seuils doivent augmenter de gauche à droite.
+  custom_threshold_balanced_label: Bon
+  custom_threshold_moderate_label: Modéré
+  custom_threshold_poor_label: Mauvais
+  custom_threshold_unhealthy_label: Malsain
 
   sensor_calibration_title: Étalonnage du capteur
   sensor_calibration_note: Ajustez la mesure de température interne.
@@ -49,10 +57,10 @@ setup_page:
   alerts_note: Définissez quand recevoir une alerte.
 
   display_alert_wake_screen_title: Réveiller l’écran
-  display_alert_wake_screen_description: Allume l’écran lorsque Home Assistant envoie une alerte.
+  display_alert_wake_screen_description: Allume l’écran pour les alertes Home Assistant et une qualité de l’air critique.
 
   audio_alerts_title: Alertes sonores
-  audio_alerts_description: Émettez un signal d’alerte lorsqu’une mesure atteint un niveau dangereux.
+  audio_alerts_description: Émettez un signal d’alerte lorsqu’une mesure atteint un niveau critique.
 
   hazard_focus_title: Focus sur les valeurs critiques
   hazard_focus_description: Affichez automatiquement le graphique du capteur présentant le niveau de risque le plus élevé.

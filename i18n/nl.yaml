@@ -37,6 +37,14 @@ setup_page:
   air_quality_title: Luchtkwaliteit
   air_quality_note: Kies welke richtlijn AirDot gebruikt om de luchtkwaliteit te beoordelen.
   air_quality_profile_label: Richtlijn
+  custom_thresholds_title: Handmatige grenswaarden
+  custom_thresholds_description: Gebruik je eigen limieten in plaats van de geselecteerde richtlijn.
+  custom_thresholds_note: Stel per status de bovengrens in. Waarden boven Ongezond zijn Kritiek. De grenzen moeten van links naar rechts oplopen.
+  custom_thresholds_order_error: De vier grenzen moeten van links naar rechts oplopen.
+  custom_threshold_balanced_label: Goed
+  custom_threshold_moderate_label: Matig
+  custom_threshold_poor_label: Slecht
+  custom_threshold_unhealthy_label: Ongezond
 
   sensor_calibration_title: Sensorkalibratie
   sensor_calibration_note: Pas de interne temperatuurmeting aan.
@@ -49,10 +57,10 @@ setup_page:
   alerts_note: Stel in wanneer je een waarschuwing ontvangt.
 
   display_alert_wake_screen_title: Scherm wakker maken
-  display_alert_wake_screen_description: Zet het scherm aan wanneer Home Assistant een melding stuurt.
+  display_alert_wake_screen_description: Zet het scherm aan bij meldingen van Home Assistant en kritieke luchtkwaliteit.
 
   audio_alerts_title: Geluidswaarschuwingen
-  audio_alerts_description: Speel een waarschuwingstoon af wanneer een meting een gevaarlijk niveau bereikt.
+  audio_alerts_description: Speel een waarschuwingstoon af wanneer een meting een kritiek niveau bereikt.
 
   hazard_focus_title: Focus bij kritieke waarden
   hazard_focus_description: Toon automatisch de grafiek van de sensor met het hoogste risiconiveau.

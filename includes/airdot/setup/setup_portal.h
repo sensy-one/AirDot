@@ -266,8 +266,35 @@ class SetupHandler : public AsyncWebHandler {
     save_display_alert_wake_screen_enabled(request->hasArg("display_alert_wake_screen"));
     save_audio_alerts_enabled(request->hasArg("audio_alerts"));
     save_hazard_focus_mode_enabled(request->hasArg("hazard_focus_mode"));
-    save_air_quality_profile(
-        AirDot::air_quality_profile_from_value(bounded_arg_(request, "air_quality_profile", 32)));
+    const auto stored_air_quality_profile = load_air_quality_profile();
+    const auto selected_air_quality_profile =
+        AirDot::air_quality_profile_from_value(bounded_arg_(request, "air_quality_profile", 32));
+    save_air_quality_profile(selected_air_quality_profile);
+    auto custom_air_quality_thresholds = load_custom_air_quality_threshold_settings();
+    custom_air_quality_thresholds.enabled = request->hasArg("custom_air_quality_thresholds_enabled") ? 1 : 0;
+    if (custom_air_quality_thresholds.enabled != 1 && selected_air_quality_profile != stored_air_quality_profile) {
+      for (uint8_t index = 0; index < CUSTOM_AIR_QUALITY_METRIC_COUNT; index++) {
+        const auto metric = static_cast<AirDot::AirQualityMetric>(index);
+        set_custom_air_quality_status_thresholds(
+            custom_air_quality_thresholds, metric,
+            AirDot::metric_status_thresholds(selected_air_quality_profile, metric));
+      }
+    }
+    parse_custom_air_quality_metric_thresholds_(
+        request, "pm1", AirDot::AirQualityMetric::PM1, custom_air_quality_thresholds);
+    parse_custom_air_quality_metric_thresholds_(
+        request, "pm25", AirDot::AirQualityMetric::PM25, custom_air_quality_thresholds);
+    parse_custom_air_quality_metric_thresholds_(
+        request, "pm4", AirDot::AirQualityMetric::PM4, custom_air_quality_thresholds);
+    parse_custom_air_quality_metric_thresholds_(
+        request, "pm10", AirDot::AirQualityMetric::PM10, custom_air_quality_thresholds);
+    parse_custom_air_quality_metric_thresholds_(
+        request, "voc", AirDot::AirQualityMetric::VOC, custom_air_quality_thresholds);
+    parse_custom_air_quality_metric_thresholds_(
+        request, "nox", AirDot::AirQualityMetric::NOX, custom_air_quality_thresholds);
+    parse_custom_air_quality_metric_thresholds_(
+        request, "co2", AirDot::AirQualityMetric::CO2, custom_air_quality_thresholds);
+    save_custom_air_quality_threshold_settings(custom_air_quality_thresholds);
     save_sen66_temperature_offset_display_c(parse_sen66_temperature_offset_display_c_(
         bounded_arg_(request, "sen66_temperature_offset_c", 8), sen66_temperature_offset_display_c()));
     if (this->pending_sen66_co2_calibration_ != nullptr && this->pending_sen66_co2_reference_ppm_ != nullptr) {
@@ -492,6 +519,58 @@ class SetupHandler : public AsyncWebHandler {
       return fallback;
 
     return std::fabs(parsed);
+  }
+
+  static bool parse_custom_air_quality_threshold_value_(const std::string &value,
+                                                        AirDot::AirQualityMetric metric, float &parsed_value) {
+    std::string normalized = trim_copy_(value);
+    if (normalized.empty())
+      return false;
+
+    for (char &character : normalized) {
+      if (character == ',')
+        character = '.';
+    }
+
+    char *end = nullptr;
+    const float parsed = std::strtof(normalized.c_str(), &end);
+    if (end == normalized.c_str() || end == nullptr || *end != '\0' || !std::isfinite(parsed) ||
+        parsed < custom_air_quality_threshold_minimum(metric) ||
+        parsed > custom_air_quality_threshold_maximum(metric)) {
+      return false;
+    }
+
+    parsed_value = parsed;
+    return true;
+  }
+
+  static void parse_custom_air_quality_metric_thresholds_(
+      AsyncWebServerRequest *request, const char *metric_name, AirDot::AirQualityMetric metric,
+      CustomAirQualityThresholdSettings &settings) {
+    if (request == nullptr || metric_name == nullptr)
+      return;
+
+    const auto stored = custom_air_quality_status_thresholds(settings, metric);
+    float values[CUSTOM_AIR_QUALITY_THRESHOLD_COUNT] = {
+        stored.balanced, stored.moderate, stored.poor, stored.unhealthy};
+    static constexpr const char *SUFFIXES[CUSTOM_AIR_QUALITY_THRESHOLD_COUNT] = {
+        "balanced", "moderate", "poor", "unhealthy"};
+    for (uint8_t index = 0; index < CUSTOM_AIR_QUALITY_THRESHOLD_COUNT; index++) {
+      const std::string argument_name =
+          std::string("custom_threshold_") + metric_name + "_" + SUFFIXES[index];
+      if (!request->hasArg(argument_name.c_str()))
+        continue;
+      float parsed = values[index];
+      if (parse_custom_air_quality_threshold_value_(
+              bounded_arg_(request, argument_name.c_str(), 12), metric, parsed)) {
+        values[index] = parsed;
+      }
+    }
+
+    const AirDot::AirQualityStatusThresholds thresholds{
+        values[0], values[1], values[2], values[3]};
+    if (custom_air_quality_status_thresholds_valid(metric, thresholds))
+      set_custom_air_quality_status_thresholds(settings, metric, thresholds);
   }
 
   static bool parse_location_coordinate_e7_(const std::string &value, int32_t minimum_e7, int32_t maximum_e7,

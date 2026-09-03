@@ -12,12 +12,11 @@ sensor:
         then:
           - lambda: |-
                 static AirDot::SensorHistoryGraph history;
-                const auto air_quality_profile = AirDot::onboarding::load_air_quality_profile();
                 AirDot::update_high_bad_history(
                   history, id(pm1_current_value_label), id(pm1_history_line),
                   id(pm1_history_min_label), id(pm1_history_max_label), id(pm1_history_empty_label), x, "%.1f",
                   ${ui_pm1_graph_min_ugm3}, ${ui_pm1_graph_max_ugm3},
-                  AirDot::metric_status_thresholds(air_quality_profile, AirDot::AirQualityMetric::PM1));
+                  AirDot::onboarding::load_air_quality_status_thresholds(AirDot::AirQualityMetric::PM1));
     pm_2_5:
       id: pm25
       name: PM2.5
@@ -27,12 +26,11 @@ sensor:
         then:
           - lambda: |-
                 static AirDot::SensorHistoryGraph history;
-                const auto air_quality_profile = AirDot::onboarding::load_air_quality_profile();
                 AirDot::update_high_bad_history(
                   history, id(pm25_current_value_label), id(pm25_history_line),
                   id(pm25_history_min_label), id(pm25_history_max_label), id(pm25_history_empty_label), x, "%.1f",
                   ${ui_pm25_graph_min_ugm3}, ${ui_pm25_graph_max_ugm3},
-                  AirDot::metric_status_thresholds(air_quality_profile, AirDot::AirQualityMetric::PM25));
+                  AirDot::onboarding::load_air_quality_status_thresholds(AirDot::AirQualityMetric::PM25));
           - script.execute: ui_refresh_air_quality_summary
     pm_4_0:
       id: pm4
@@ -43,12 +41,11 @@ sensor:
         then:
           - lambda: |-
                 static AirDot::SensorHistoryGraph history;
-                const auto air_quality_profile = AirDot::onboarding::load_air_quality_profile();
                 AirDot::update_high_bad_history(
                   history, id(pm4_current_value_label), id(pm4_history_line),
                   id(pm4_history_min_label), id(pm4_history_max_label), id(pm4_history_empty_label), x, "%.1f",
                   ${ui_pm4_graph_min_ugm3}, ${ui_pm4_graph_max_ugm3},
-                  AirDot::metric_status_thresholds(air_quality_profile, AirDot::AirQualityMetric::PM4));
+                  AirDot::onboarding::load_air_quality_status_thresholds(AirDot::AirQualityMetric::PM4));
     pm_10_0:
       id: pm10
       name: PM10
@@ -58,12 +55,11 @@ sensor:
         then:
           - lambda: |-
                 static AirDot::SensorHistoryGraph history;
-                const auto air_quality_profile = AirDot::onboarding::load_air_quality_profile();
                 AirDot::update_high_bad_history(
                   history, id(pm10_current_value_label), id(pm10_history_line),
                   id(pm10_history_min_label), id(pm10_history_max_label), id(pm10_history_empty_label), x, "%.1f",
                   ${ui_pm10_graph_min_ugm3}, ${ui_pm10_graph_max_ugm3},
-                  AirDot::metric_status_thresholds(air_quality_profile, AirDot::AirQualityMetric::PM10));
+                  AirDot::onboarding::load_air_quality_status_thresholds(AirDot::AirQualityMetric::PM10));
           - script.execute: ui_refresh_air_quality_summary
     temperature:
       id: air_temperature
@@ -118,12 +114,11 @@ sensor:
         then:
           - lambda: |-
                 static AirDot::SensorHistoryGraph history;
-                const auto air_quality_profile = AirDot::onboarding::load_air_quality_profile();
                 AirDot::update_high_bad_history(
                   history, id(voc_current_value_label), id(voc_history_line),
                   id(voc_history_min_label), id(voc_history_max_label), id(voc_history_empty_label), x, "%.0f",
                   ${ui_voc_graph_min_index}, ${ui_voc_graph_max_index},
-                  AirDot::metric_status_thresholds(air_quality_profile, AirDot::AirQualityMetric::VOC));
+                  AirDot::onboarding::load_air_quality_status_thresholds(AirDot::AirQualityMetric::VOC));
           - script.execute: ui_refresh_air_quality_summary
     nox:
       id: nox
@@ -137,12 +132,11 @@ sensor:
         then:
           - lambda: |-
                 static AirDot::SensorHistoryGraph history;
-                const auto air_quality_profile = AirDot::onboarding::load_air_quality_profile();
                 AirDot::update_high_bad_history(
                   history, id(nox_current_value_label), id(nox_history_line),
                   id(nox_history_min_label), id(nox_history_max_label), id(nox_history_empty_label), x, "%.0f",
                   ${ui_nox_graph_min_index}, ${ui_nox_graph_max_index},
-                  AirDot::metric_status_thresholds(air_quality_profile, AirDot::AirQualityMetric::NOX));
+                  AirDot::onboarding::load_air_quality_status_thresholds(AirDot::AirQualityMetric::NOX));
           - script.execute: ui_refresh_air_quality_summary
     co2:
       id: co2
@@ -153,10 +147,9 @@ sensor:
         then:
           - lambda: |-
                 static AirDot::SensorHistoryGraph history;
-                const auto air_quality_profile = AirDot::onboarding::load_air_quality_profile();
                 AirDot::update_high_bad_history(
                   history, id(co2_current_value_label), id(co2_history_line),
                   id(co2_history_min_label), id(co2_history_max_label), id(co2_history_empty_label), x, "%.0f",
                   ${ui_co2_graph_min_ppm}, ${ui_co2_graph_max_ppm},
-                  AirDot::metric_status_thresholds(air_quality_profile, AirDot::AirQualityMetric::CO2));
+                  AirDot::onboarding::load_air_quality_status_thresholds(AirDot::AirQualityMetric::CO2));
           - script.execute: ui_refresh_air_quality_summary

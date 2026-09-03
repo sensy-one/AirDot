@@ -124,6 +124,10 @@ inline int threshold_level(float value, const AirQualityStatusThresholds &thresh
   return 4;
 }
 
+inline bool air_quality_alert_active(int level) {
+  return level >= 4;
+}
+
 inline float normalize_nox_index(float value) {
   if (!std::isfinite(value))
     return NAN;

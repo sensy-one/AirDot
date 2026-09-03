@@ -32,16 +32,17 @@ script:
     mode: restart
     then:
       - lambda: |-
-          const auto air_quality_profile = AirDot::onboarding::load_air_quality_profile();
           const bool setup_or_onboarding_active =
             AirDot::onboarding::setup_or_onboarding_active(
               id(setup_ap_active), id(setup_portal_active), id(onboarding_ui_active));
           constexpr int FOCUS_NONE = -1;
-          constexpr int FOCUS_PM25 = 0;
-          constexpr int FOCUS_PM10 = 1;
-          constexpr int FOCUS_CO2 = 2;
-          constexpr int FOCUS_VOC = 3;
-          constexpr int FOCUS_NOX = 4;
+          constexpr int FOCUS_PM1 = 0;
+          constexpr int FOCUS_PM25 = 1;
+          constexpr int FOCUS_PM4 = 2;
+          constexpr int FOCUS_PM10 = 3;
+          constexpr int FOCUS_CO2 = 4;
+          constexpr int FOCUS_VOC = 5;
+          constexpr int FOCUS_NOX = 6;
           constexpr int FOCUS_RETURN_UNKNOWN = -1;
           constexpr uint32_t HAZARD_FOCUS_ENTER_DELAY_MS = 4000UL;
           constexpr uint32_t HAZARD_FOCUS_CLEAR_DELAY_MS = 4000UL;
@@ -54,18 +55,20 @@ script:
             static_cast<int32_t>(focus_now - id(air_quality_warmup_until_ms)) < 0;
 
           int alert_count = 0;
-          int active_metrics[5];
+          int active_metrics[7];
           int active_count = 0;
           auto add_metric_level = [&](int metric, AirDot::AirQualityMetric air_quality_metric, float value) {
             value = AirDot::sanitized_air_quality_metric_value(air_quality_metric, value);
             const int metric_level = AirDot::threshold_level(
-              value, AirDot::metric_status_thresholds(air_quality_profile, air_quality_metric));
-            if (metric_level >= 4)
+              value, AirDot::onboarding::load_air_quality_status_thresholds(air_quality_metric));
+            if (AirDot::air_quality_alert_active(metric_level)) {
               alert_count++;
-            if (metric_level >= 3)
               active_metrics[active_count++] = metric;
+            }
           };
+          add_metric_level(FOCUS_PM1, AirDot::AirQualityMetric::PM1, id(pm1).state);
           add_metric_level(FOCUS_PM25, AirDot::AirQualityMetric::PM25, id(pm25).state);
+          add_metric_level(FOCUS_PM4, AirDot::AirQualityMetric::PM4, id(pm4).state);
           add_metric_level(FOCUS_PM10, AirDot::AirQualityMetric::PM10, id(pm10).state);
           add_metric_level(FOCUS_CO2, AirDot::AirQualityMetric::CO2, id(co2).state);
           add_metric_level(FOCUS_VOC, AirDot::AirQualityMetric::VOC, id(voc).state);
@@ -80,6 +83,8 @@ script:
               id(air_quality_summary_page)->index, LV_SCREEN_LOAD_ANIM_NONE, 0);
           };
           auto wake_display = [&]() {
+            if (!AirDot::onboarding::load_display_alert_wake_screen_enabled())
+              return;
             AirDot::onboarding::wake_display_with_brightness(
               id(display_panel), id(display_backlight), id(ambient_light_sensor).state,
               ${display_auto_dim_min_lux}, ${display_auto_dim_max_lux},
@@ -238,8 +243,14 @@ script:
           const int target_metric = active_metrics[target_slot];
           bool target_page_showing = false;
           switch (target_metric) {
+            case FOCUS_PM1:
+              target_page_showing = id(pm1_history_page)->is_showing();
+              break;
             case FOCUS_PM25:
               target_page_showing = id(pm25_history_page)->is_showing();
+              break;
+            case FOCUS_PM4:
+              target_page_showing = id(pm4_history_page)->is_showing();
               break;
             case FOCUS_PM10:
               target_page_showing = id(pm10_history_page)->is_showing();
@@ -261,8 +272,14 @@ script:
 
           id(air_quality_hazard_focus_metric) = target_metric;
           switch (target_metric) {
+            case FOCUS_PM1:
+              id(pm1_history_page)->get_parent()->show_page(id(pm1_history_page)->index, LV_SCREEN_LOAD_ANIM_NONE, 0);
+              break;
             case FOCUS_PM25:
               id(pm25_history_page)->get_parent()->show_page(id(pm25_history_page)->index, LV_SCREEN_LOAD_ANIM_NONE, 0);
+              break;
+            case FOCUS_PM4:
+              id(pm4_history_page)->get_parent()->show_page(id(pm4_history_page)->index, LV_SCREEN_LOAD_ANIM_NONE, 0);
               break;
             case FOCUS_PM10:
               id(pm10_history_page)->get_parent()->show_page(id(pm10_history_page)->index, LV_SCREEN_LOAD_ANIM_NONE, 0);

@@ -129,6 +129,8 @@ class SetupPageRenderer {
     const auto ui_language = load_ui_language();
     const auto text = setup_page_text(ui_language);
     const auto air_quality_profile = load_air_quality_profile();
+    const auto &custom_air_quality_thresholds = load_custom_air_quality_threshold_settings();
+    const bool custom_air_quality_thresholds_enabled = custom_air_quality_thresholds.enabled == 1;
     const std::string sen66_temperature_offset_value =
         temperature_offset_input_value_(sen66_temperature_offset_display_c());
     const auto &mqtt_settings = load_mqtt_settings();
@@ -193,6 +195,39 @@ class SetupPageRenderer {
       html += "\">";
       html += html_escape_(label);
       html += "</span>\n                  </label>\n";
+    };
+    auto append_custom_threshold_metric = [&](const char *metric_name, const char *metric_label, const char *unit,
+                                              AirDot::AirQualityMetric metric) {
+      const auto thresholds = custom_air_quality_status_thresholds(custom_air_quality_thresholds, metric);
+      const float minimum = custom_air_quality_threshold_minimum(metric);
+      const float maximum = custom_air_quality_threshold_maximum(metric);
+      html += "                  <div class=\"threshold-metric\">\n                    <div class=\"threshold-metric-label\">\n                      <span class=\"threshold-metric-name\">";
+      html += html_escape_(metric_label);
+      html += "</span>\n                      <span class=\"threshold-unit\">";
+      html += html_escape_(unit);
+      html += "</span>\n                    </div>\n";
+      auto append_limit = [&](const char *suffix, const char *label, float value) {
+        html += "                    <label class=\"threshold-limit\">\n                      <span class=\"visually-hidden\">";
+        html += html_escape_(metric_label);
+        html += " ";
+        html += html_escape_(label);
+        html += "</span>\n                      <input type=\"number\" inputmode=\"decimal\" step=\"0.1\" min=\"";
+        html += threshold_input_value_(minimum);
+        html += "\" max=\"";
+        html += threshold_input_value_(maximum);
+        html += "\" name=\"custom_threshold_";
+        html += metric_name;
+        html += "_";
+        html += suffix;
+        html += "\" value=\"";
+        html += threshold_input_value_(value);
+        html += "\" required>\n                    </label>\n";
+      };
+      append_limit("balanced", text.custom_threshold_balanced_label, thresholds.balanced);
+      append_limit("moderate", text.custom_threshold_moderate_label, thresholds.moderate);
+      append_limit("poor", text.custom_threshold_poor_label, thresholds.poor);
+      append_limit("unhealthy", text.custom_threshold_unhealthy_label, thresholds.unhealthy);
+      html += "                  </div>\n";
     };
     html += R"html(<!doctype html>
 <html lang=")html";
@@ -578,6 +613,92 @@ class SetupPageRenderer {
       font-size: 13px;
       line-height: 1.45;
     }
+    .custom-thresholds-panel {
+      display: grid;
+      gap: 14px;
+      margin-top: 10px;
+    }
+    .custom-thresholds-panel[hidden] { display: none; }
+    .custom-thresholds-note {
+      margin: 0;
+      color: var(--muted-2);
+      font-size: 13px;
+      line-height: 1.45;
+    }
+    .threshold-table {
+      display: grid;
+      gap: 9px;
+    }
+    .threshold-table-header,
+    .threshold-metric {
+      display: grid;
+      grid-template-columns: minmax(54px, 0.72fr) repeat(4, minmax(0, 1fr));
+      align-items: end;
+      gap: 7px;
+    }
+    .threshold-table-header {
+      align-items: center;
+      padding: 0 1px;
+    }
+    .threshold-column-label {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      min-width: 0;
+      color: var(--muted);
+      font-size: 10px;
+      line-height: 1.1;
+      text-align: center;
+      white-space: nowrap;
+    }
+    .threshold-metric-label {
+      display: grid;
+      align-self: center;
+      gap: 2px;
+      min-width: 0;
+    }
+    .threshold-metric-name {
+      color: rgba(245, 247, 251, 0.96);
+      font-size: 13px;
+    }
+    .threshold-unit {
+      color: var(--muted-2);
+      font-size: 9px;
+      white-space: nowrap;
+    }
+    .threshold-limit {
+      min-width: 0;
+    }
+    .visually-hidden {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+    .threshold-dot {
+      flex: 0 0 auto;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      box-shadow: 0 0 10px currentColor;
+    }
+    .threshold-dot.balanced { color: #20e840; background: currentColor; }
+    .threshold-dot.moderate { color: #ffd400; background: currentColor; }
+    .threshold-dot.poor { color: #ff8c00; background: currentColor; }
+    .threshold-dot.unhealthy { color: #ff2b2b; background: currentColor; }
+    .threshold-limit input {
+      min-height: 48px;
+      padding: 0 8px;
+      border-radius: 14px;
+      font-size: 13px;
+      text-align: center;
+    }
     .section.is-disabled .section-header,
     .toggle-row.is-disabled,
     .field.is-disabled {
@@ -910,6 +1031,20 @@ class SetupPageRenderer {
       .field-row.even {
         grid-template-columns: 1fr;
       }
+      .threshold-table-header,
+      .threshold-metric {
+        grid-template-columns: minmax(48px, 0.68fr) repeat(4, minmax(0, 1fr));
+        gap: 5px;
+      }
+      .threshold-column-label {
+        gap: 3px;
+        font-size: 8px;
+      }
+      .threshold-limit input {
+        min-height: 46px;
+        padding: 0 4px;
+        font-size: 12px;
+      }
     }
   </style>
 </head>
@@ -1193,17 +1328,82 @@ class SetupPageRenderer {
 )html";
     html += "                <label for=\"air_quality_profile\" data-i18n=\"air_quality_profile_label\">";
     html += text.air_quality_profile_label;
-    html += R"html(</label>
+    html += "</label>\n                <input id=\"air_quality_profile_value\" type=\"hidden\" name=\"air_quality_profile\" value=\"";
+    html += AirDot::air_quality_profile_value(air_quality_profile);
+    html += R"html(">
                 <div class="control-wrap">
-                  <select id="air_quality_profile" name="air_quality_profile">
+                  <select id="air_quality_profile">
 )html";
-    html += air_quality_profile_options_(air_quality_profile);
+    html += air_quality_profile_options_(air_quality_profile, custom_air_quality_thresholds_enabled);
     html += R"html(
                   </select>
                   <svg class="chevron" viewBox="0 0 20 20" fill="none" aria-hidden="true">
                     <path d="m5 7.5 5 5 5-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
                   </svg>
                 </div>
+              </div>
+
+              <div class="toggle-row">
+                <div class="toggle-copy">
+)html";
+    html += "                  <p class=\"toggle-title\" data-i18n=\"custom_thresholds_title\">";
+    html += text.custom_thresholds_title;
+    html += "</p>\n                  <p class=\"toggle-description\" data-i18n=\"custom_thresholds_description\">";
+    html += text.custom_thresholds_description;
+    html += R"html(</p>
+                </div>
+
+)html";
+    html += "                <label class=\"switch\" data-i18n-aria-label=\"custom_thresholds_title\" aria-label=\"";
+    html += text.custom_thresholds_title;
+    html += R"html(">
+)html";
+    html += "                  <input id=\"custom_air_quality_thresholds_enabled\" type=\"checkbox\" name=\"custom_air_quality_thresholds_enabled\" value=\"1\"";
+    if (custom_air_quality_thresholds_enabled)
+      html += " checked";
+    html += R"html(>
+                  <span class="slider" aria-hidden="true"></span>
+                </label>
+              </div>
+
+)html";
+    html += "              <div id=\"custom_thresholds_panel\" class=\"custom-thresholds-panel\" data-order-error=\"";
+    html += html_escape_(text.custom_thresholds_order_error);
+    html += "\"";
+    if (!custom_air_quality_thresholds_enabled)
+      html += " hidden";
+    html += ">\n                <p class=\"custom-thresholds-note\" data-i18n=\"custom_thresholds_note\">";
+    html += text.custom_thresholds_note;
+    html += R"html(</p>
+                <div class="threshold-table">
+                  <div class="threshold-table-header">
+                    <span aria-hidden="true"></span>
+)html";
+    auto append_threshold_column_header = [&](const char *i18n_key, const char *label, const char *status_class) {
+      html += "                    <span class=\"threshold-column-label\"><span class=\"threshold-dot ";
+      html += status_class;
+      html += "\" aria-hidden=\"true\"></span><span data-i18n=\"";
+      html += i18n_key;
+      html += "\">";
+      html += html_escape_(label);
+      html += "</span></span>\n";
+    };
+    append_threshold_column_header(
+        "custom_threshold_balanced_label", text.custom_threshold_balanced_label, "balanced");
+    append_threshold_column_header(
+        "custom_threshold_moderate_label", text.custom_threshold_moderate_label, "moderate");
+    append_threshold_column_header("custom_threshold_poor_label", text.custom_threshold_poor_label, "poor");
+    append_threshold_column_header(
+        "custom_threshold_unhealthy_label", text.custom_threshold_unhealthy_label, "unhealthy");
+    html += "                  </div>\n";
+    append_custom_threshold_metric("pm1", "PM1", "µg/m³", AirDot::AirQualityMetric::PM1);
+    append_custom_threshold_metric("pm25", "PM2.5", "µg/m³", AirDot::AirQualityMetric::PM25);
+    append_custom_threshold_metric("pm4", "PM4", "µg/m³", AirDot::AirQualityMetric::PM4);
+    append_custom_threshold_metric("pm10", "PM10", "µg/m³", AirDot::AirQualityMetric::PM10);
+    append_custom_threshold_metric("co2", "CO₂", "ppm", AirDot::AirQualityMetric::CO2);
+    append_custom_threshold_metric("voc", "VOC", "index", AirDot::AirQualityMetric::VOC);
+    append_custom_threshold_metric("nox", "NOx", "index", AirDot::AirQualityMetric::NOX);
+    html += R"html(                </div>
               </div>
 
             </section>
@@ -2186,6 +2386,8 @@ class SetupPageRenderer {
     html += R"html(</p>
           <script>
             const languageSelect = document.getElementById("ui_language");
+            const airQualityProfileSelect = document.getElementById("air_quality_profile");
+            const airQualityProfileValue = document.getElementById("air_quality_profile_value");
             const wifiSelect = document.getElementById("wifi_ssid_select");
             const wifiHidden = document.getElementById("wifi_ssid");
             const wifiPassword = document.getElementById("wifi_password");
@@ -2220,6 +2422,12 @@ class SetupPageRenderer {
             const flightRadarFields = document.getElementById("flight_radar_fields");
             const flightRadarRangeInput = document.getElementById("flight_radar_range_km");
             const flightRadarTrafficInputs = Array.from(document.querySelectorAll("input[name='flight_radar_traffic']"));
+            const customThresholdsToggle = document.getElementById("custom_air_quality_thresholds_enabled");
+            const customThresholdsPanel = document.getElementById("custom_thresholds_panel");
+            const customThresholdMetricGroups = customThresholdsPanel ?
+              Array.from(customThresholdsPanel.querySelectorAll(".threshold-metric")) : [];
+            const customThresholdInputs = customThresholdsPanel ?
+              Array.from(customThresholdsPanel.querySelectorAll("input[type='number']")) : [];
             const integrationsSection = document.getElementById("integrations_section");
             const integrationInterval = document.getElementById("integration_interval");
             const autoPageSwitchInterval = document.getElementById("auto_page_switch_interval");
@@ -2463,6 +2671,50 @@ class SetupPageRenderer {
               if (flightRadarRangeInput) flightRadarRangeInput.disabled = !active;
               setDisabled(flightRadarTrafficInputs, !active);
               updateFlightRadarRangeLabels();
+            }
+            function validateCustomThresholds() {
+              let valid = true;
+              customThresholdMetricGroups.forEach((group) => {
+                const inputs = Array.from(group.querySelectorAll("input[type='number']"));
+                inputs.forEach((input) => input.setCustomValidity(""));
+                if (!customThresholdsToggle || !customThresholdsToggle.checked) return;
+                const values = inputs.map((input) => Number(input.value));
+                const increasing = values.length === 4 && values.every(Number.isFinite) &&
+                  values[0] < values[1] && values[1] < values[2] && values[2] < values[3];
+                if (!increasing && inputs.length > 0) {
+                  inputs[0].setCustomValidity(
+                    customThresholdsPanel ? customThresholdsPanel.dataset.orderError || "" : "");
+                  valid = false;
+                }
+              });
+              return valid;
+            }
+            function loadGuidelineThresholds(option) {
+              if (!option || !option.dataset.thresholds) return;
+              const metricValues = option.dataset.thresholds.split(";");
+              if (metricValues.length !== customThresholdMetricGroups.length) return;
+              customThresholdMetricGroups.forEach((group, metricIndex) => {
+                const inputs = Array.from(group.querySelectorAll("input[type='number']"));
+                const values = metricValues[metricIndex].split(",");
+                if (inputs.length !== 4 || values.length !== 4) return;
+                inputs.forEach((input, thresholdIndex) => {
+                  input.value = values[thresholdIndex];
+                });
+              });
+              validateCustomThresholds();
+            }
+            function updateCustomThresholdControls() {
+              const enabled = Boolean(customThresholdsToggle && customThresholdsToggle.checked);
+              if (airQualityProfileSelect) {
+                if (enabled) {
+                  airQualityProfileSelect.value = "CUSTOM";
+                } else if (airQualityProfileSelect.value === "CUSTOM" && airQualityProfileValue) {
+                  airQualityProfileSelect.value = airQualityProfileValue.value;
+                }
+              }
+              if (customThresholdsPanel) customThresholdsPanel.hidden = !enabled;
+              setDisabled(customThresholdInputs, !enabled);
+              validateCustomThresholds();
             }
             const desktopTextQuery = window.matchMedia ?
               window.matchMedia("(hover: hover) and (pointer: fine)") : null;
@@ -2814,6 +3066,10 @@ class SetupPageRenderer {
                 const value = text[element.dataset.i18nAriaLabel];
                 if (value !== undefined) element.setAttribute("aria-label", value);
               });
+              if (customThresholdsPanel && text.custom_thresholds_order_error !== undefined) {
+                customThresholdsPanel.dataset.orderError = text.custom_thresholds_order_error;
+                validateCustomThresholds();
+              }
               document.querySelectorAll("[data-i18n-select-label]").forEach((element) => {
                 const selectLabel = text[element.dataset.i18nSelectLabel];
                 const uploadLabel = text[element.dataset.i18nUploadLabel];
@@ -3022,6 +3278,27 @@ class SetupPageRenderer {
             if (flightRadarRangeInput) {
               flightRadarRangeInput.addEventListener("change", updateFlightRadarRangeLabels);
             }
+            if (airQualityProfileSelect) {
+              airQualityProfileSelect.addEventListener("change", () => {
+                const selectedOption = airQualityProfileSelect.options[airQualityProfileSelect.selectedIndex];
+                const customSelected = airQualityProfileSelect.value === "CUSTOM";
+                if (customThresholdsToggle) customThresholdsToggle.checked = customSelected;
+                if (!customSelected) {
+                  if (airQualityProfileValue) airQualityProfileValue.value = airQualityProfileSelect.value;
+                  loadGuidelineThresholds(selectedOption);
+                }
+                updateCustomThresholdControls();
+              });
+            }
+            if (customThresholdsToggle) {
+              customThresholdsToggle.addEventListener("change", updateCustomThresholdControls);
+            }
+            customThresholdMetricGroups.forEach((group) => {
+              group.querySelectorAll("input[type='number']").forEach((input) => {
+                input.addEventListener("input", validateCustomThresholds);
+                input.addEventListener("change", validateCustomThresholds);
+              });
+            });
             unitInputs.forEach((input) => {
               input.addEventListener("change", updateFlightRadarRangeLabels);
             });
@@ -3099,6 +3376,7 @@ class SetupPageRenderer {
             updateFirmwareUploadButtonLabel();
             syncWifiFields(false);
             applyInputEntryMode();
+            updateCustomThresholdControls();
             updateDependentControls();
             syncManualTimeEpoch();
             refreshTimeDisplays();
@@ -3193,6 +3471,15 @@ class SetupPageRenderer {
     return std::string(text);
   }
 
+  static std::string threshold_input_value_(float value) {
+    char text[16];
+    std::snprintf(text, sizeof(text), "%.1f", static_cast<double>(value));
+    std::string formatted(text);
+    if (formatted.size() >= 2 && formatted.compare(formatted.size() - 2, 2, ".0") == 0)
+      formatted.resize(formatted.size() - 2);
+    return formatted;
+  }
+
   static std::string flight_radar_range_display_value_(uint8_t range_km, bool imperial_units) {
     char text[16];
     if (imperial_units) {
@@ -3222,12 +3509,41 @@ class SetupPageRenderer {
     return value;
   }
 
+  static std::string air_quality_profile_threshold_data_(AirDot::AirQualityProfile profile) {
+    std::string data;
+    data.reserve(180);
+    const AirDot::AirQualityMetric metrics[] = {
+        AirDot::AirQualityMetric::PM1,
+        AirDot::AirQualityMetric::PM25,
+        AirDot::AirQualityMetric::PM4,
+        AirDot::AirQualityMetric::PM10,
+        AirDot::AirQualityMetric::CO2,
+        AirDot::AirQualityMetric::VOC,
+        AirDot::AirQualityMetric::NOX,
+    };
+    for (size_t index = 0; index < sizeof(metrics) / sizeof(metrics[0]); index++) {
+      if (index != 0)
+        data += ";";
+      const auto thresholds = AirDot::metric_status_thresholds(profile, metrics[index]);
+      data += threshold_input_value_(thresholds.balanced);
+      data += ",";
+      data += threshold_input_value_(thresholds.moderate);
+      data += ",";
+      data += threshold_input_value_(thresholds.poor);
+      data += ",";
+      data += threshold_input_value_(thresholds.unhealthy);
+    }
+    return data;
+  }
+
   static void append_air_quality_profile_option_(std::string &options, AirDot::AirQualityProfile option,
-                                                 AirDot::AirQualityProfile selected) {
+                                                 bool selected) {
     options += "<option value='";
     options += AirDot::air_quality_profile_value(option);
+    options += "' data-thresholds='";
+    options += air_quality_profile_threshold_data_(option);
     options += "'";
-    if (option == selected)
+    if (selected)
       options += " selected";
     options += ">";
     options += AirDot::air_quality_profile_label(option);
@@ -3305,16 +3621,34 @@ class SetupPageRenderer {
     return options;
   }
 
-  static std::string air_quality_profile_options_(AirDot::AirQualityProfile selected) {
+  static std::string air_quality_profile_options_(AirDot::AirQualityProfile selected, bool custom_selected) {
     std::string options;
-    options.reserve(520);
-    append_air_quality_profile_option_(options, AirDot::AirQualityProfile::GLOBAL_WHO_EEA_STRICT, selected);
-    append_air_quality_profile_option_(options, AirDot::AirQualityProfile::EUROPE_EEA, selected);
-    append_air_quality_profile_option_(options, AirDot::AirQualityProfile::NORTH_AMERICA_US_EPA_2024, selected);
-    append_air_quality_profile_option_(options, AirDot::AirQualityProfile::UK_DAQI_5, selected);
-    append_air_quality_profile_option_(options, AirDot::AirQualityProfile::INDIA_NAQI_5, selected);
-    append_air_quality_profile_option_(options, AirDot::AirQualityProfile::CHINA_CN_AQI_5, selected);
-    append_air_quality_profile_option_(options, AirDot::AirQualityProfile::AUSTRALIA_NSW_1H, selected);
+    options.reserve(1800);
+    append_air_quality_profile_option_(
+        options, AirDot::AirQualityProfile::GLOBAL_WHO_EEA_STRICT,
+        !custom_selected && selected == AirDot::AirQualityProfile::GLOBAL_WHO_EEA_STRICT);
+    append_air_quality_profile_option_(
+        options, AirDot::AirQualityProfile::EUROPE_EEA,
+        !custom_selected && selected == AirDot::AirQualityProfile::EUROPE_EEA);
+    append_air_quality_profile_option_(
+        options, AirDot::AirQualityProfile::NORTH_AMERICA_US_EPA_2024,
+        !custom_selected && selected == AirDot::AirQualityProfile::NORTH_AMERICA_US_EPA_2024);
+    append_air_quality_profile_option_(
+        options, AirDot::AirQualityProfile::UK_DAQI_5,
+        !custom_selected && selected == AirDot::AirQualityProfile::UK_DAQI_5);
+    append_air_quality_profile_option_(
+        options, AirDot::AirQualityProfile::INDIA_NAQI_5,
+        !custom_selected && selected == AirDot::AirQualityProfile::INDIA_NAQI_5);
+    append_air_quality_profile_option_(
+        options, AirDot::AirQualityProfile::CHINA_CN_AQI_5,
+        !custom_selected && selected == AirDot::AirQualityProfile::CHINA_CN_AQI_5);
+    append_air_quality_profile_option_(
+        options, AirDot::AirQualityProfile::AUSTRALIA_NSW_1H,
+        !custom_selected && selected == AirDot::AirQualityProfile::AUSTRALIA_NSW_1H);
+    options += "<option value='CUSTOM'";
+    if (custom_selected)
+      options += " selected";
+    options += ">Custom</option>";
     return options;
   }
 

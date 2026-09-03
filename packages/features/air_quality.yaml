@@ -13,7 +13,6 @@ script:
     then:
       - lambda: |-
           const auto unit_system = AirDot::onboarding::load_unit_system();
-          const auto air_quality_profile = AirDot::onboarding::load_air_quality_profile();
           const auto ui_language = AirDot::onboarding::load_ui_language();
           const auto history_text = AirDot::history_text(ui_language);
           lv_label_set_text(id(pm1_history_title_label), history_text.pm1_title);
@@ -116,8 +115,9 @@ script:
             id(air_quality_warmup_reported) = 1;
           }
 
-          const int level = warmup_active ? -1 : AirDot::sanitized_air_quality_level(
-            air_quality_profile, id(pm25).state, id(pm10).state, id(voc).state, id(nox).state, id(co2).state);
+          const int level = warmup_active ? -1 : AirDot::onboarding::load_sanitized_air_quality_level(
+            id(pm1).state, id(pm25).state, id(pm4).state, id(pm10).state,
+            id(voc).state, id(nox).state, id(co2).state);
           lv_obj_set_style_text_font(
             id(air_quality_summary_status_label), id(ui_font_status),
             LV_PART_MAIN);
@@ -152,7 +152,8 @@ script:
           if (id(air_quality_hazard_sound_snooze_until_ms) != 0 && !hazard_sound_snoozed) {
             id(air_quality_hazard_sound_snooze_until_ms) = 0;
           }
-          if (level >= 4 && !warmup_active && AirDot::onboarding::load_audio_alerts_enabled() &&
+          if (AirDot::air_quality_alert_active(level) && !warmup_active &&
+              AirDot::onboarding::load_audio_alerts_enabled() &&
               !setup_or_onboarding_active && !hazard_sound_snoozed) {
             if (id(ui_play_display_alert_sound).is_running() ||
                 id(air_quality_hazard_last_chirp_ms) == 0 ||
@@ -166,19 +167,29 @@ script:
 
           AirDot::set_text_color(
             id(air_quality_summary_pm25_indicator_label),
-            AirDot::metric_color(air_quality_profile, AirDot::AirQualityMetric::PM25, id(pm25).state));
+            AirDot::color_for_thresholds(
+              id(pm25).state,
+              AirDot::onboarding::load_air_quality_status_thresholds(AirDot::AirQualityMetric::PM25)));
           AirDot::set_text_color(
             id(air_quality_summary_co2_indicator_label),
-            AirDot::metric_color(air_quality_profile, AirDot::AirQualityMetric::CO2, id(co2).state));
+            AirDot::color_for_thresholds(
+              id(co2).state,
+              AirDot::onboarding::load_air_quality_status_thresholds(AirDot::AirQualityMetric::CO2)));
           AirDot::set_text_color(
             id(air_quality_summary_voc_indicator_label),
-            AirDot::metric_color(air_quality_profile, AirDot::AirQualityMetric::VOC, id(voc).state));
+            AirDot::color_for_thresholds(
+              id(voc).state,
+              AirDot::onboarding::load_air_quality_status_thresholds(AirDot::AirQualityMetric::VOC)));
           AirDot::set_text_color(
             id(air_quality_summary_pm10_indicator_label),
-            AirDot::metric_color(air_quality_profile, AirDot::AirQualityMetric::PM10, id(pm10).state));
+            AirDot::color_for_thresholds(
+              id(pm10).state,
+              AirDot::onboarding::load_air_quality_status_thresholds(AirDot::AirQualityMetric::PM10)));
           AirDot::set_text_color(
             id(air_quality_summary_nox_indicator_label),
-            AirDot::metric_color(air_quality_profile, AirDot::AirQualityMetric::NOX, id(nox).state));
+            AirDot::color_for_thresholds(
+              id(nox).state,
+              AirDot::onboarding::load_air_quality_status_thresholds(AirDot::AirQualityMetric::NOX)));
 
       - script.execute: ui_update_hazard_focus
 

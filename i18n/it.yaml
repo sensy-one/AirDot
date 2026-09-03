@@ -37,6 +37,14 @@ setup_page:
   air_quality_title: Qualità dell'aria
   air_quality_note: Scegli la linea guida usata da AirDot per valutare la qualità dell'aria.
   air_quality_profile_label: Linea guida
+  custom_thresholds_title: Soglie personalizzate
+  custom_thresholds_description: Usa i tuoi limiti al posto della linea guida selezionata.
+  custom_thresholds_note: Imposta il limite superiore per ogni stato. I valori oltre Malsana sono Critici. Le soglie devono aumentare da sinistra a destra.
+  custom_thresholds_order_error: Le quattro soglie devono aumentare da sinistra a destra.
+  custom_threshold_balanced_label: Buona
+  custom_threshold_moderate_label: Moderata
+  custom_threshold_poor_label: Scarsa
+  custom_threshold_unhealthy_label: Malsana
 
   sensor_calibration_title: Calibrazione del sensore
   sensor_calibration_note: Regola la lettura della temperatura integrata.
@@ -49,10 +57,10 @@ setup_page:
   alerts_note: Imposta quando AirDot deve avvisarti.
 
   display_alert_wake_screen_title: Riattiva schermo
-  display_alert_wake_screen_description: Accendi il display quando Home Assistant invia un avviso.
+  display_alert_wake_screen_description: Accendi il display per gli avvisi di Home Assistant e una qualità dell’aria critica.
 
   audio_alerts_title: Avvisi sonori
-  audio_alerts_description: Riproduci un segnale acustico quando una misurazione raggiunge un livello pericoloso.
+  audio_alerts_description: Riproduci un segnale acustico quando una misurazione raggiunge un livello critico.
 
   hazard_focus_title: Focus sui valori critici
   hazard_focus_description: Mostra automaticamente il grafico del sensore con il livello di rischio più alto.
