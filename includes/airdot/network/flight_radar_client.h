@@ -13,6 +13,7 @@
 #include "esphome/components/network/util.h"
 #include "esphome/components/watchdog/watchdog.h"
 #include "esphome/core/hal.h"
+#include "esphome/core/helpers.h"
 
 #include "connectivity.h"
 #include "weather_client.h"
@@ -750,6 +751,8 @@ inline bool fetch_adsb_lol_aircraft_(float latitude, float longitude, uint8_t ra
   response.max_length = response_buffer.size();
   response.overflow = false;
   response.body[0] = '\0';
+  char mac_address[esphome::MAC_ADDRESS_BUFFER_SIZE]{};
+  esphome::get_mac_address_into_buffer(mac_address);
   esp_http_client_config_t config{};
   config.url = url;
   config.method = HTTP_METHOD_GET;
@@ -758,7 +761,7 @@ inline bool fetch_adsb_lol_aircraft_(float latitude, float longitude, uint8_t ra
   config.user_data = &response;
   config.buffer_size = 512;
   config.buffer_size_tx = 256;
-  config.user_agent = "";
+  config.user_agent = mac_address + 6;
   config.addr_type = HTTP_ADDR_TYPE_INET;
 #if CONFIG_MBEDTLS_CERTIFICATE_BUNDLE
   config.crt_bundle_attach = esp_crt_bundle_attach;

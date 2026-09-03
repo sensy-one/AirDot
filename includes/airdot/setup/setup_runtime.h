@@ -638,9 +638,15 @@ inline void set_display_backlight_brightness_(DisplayBacklight *display_backligh
   if (display_backlight == nullptr)
     return;
 
+  const float normalized = normalized_backlight_brightness_(brightness);
+  if (normalized <= 0.0f) {
+    turn_display_backlight_off(display_backlight);
+    return;
+  }
+
   auto call = display_backlight->turn_on();
   call.set_transition_length(0);
-  call.set_brightness(normalized_backlight_brightness_(brightness));
+  call.set_brightness(normalized);
   call.perform();
 }
 
@@ -691,7 +697,7 @@ template<typename DisplayBacklight> inline void apply_night_screen_brightness(Di
     return;
   }
 
-  set_display_backlight_brightness_(display_backlight, display_brightness_value_for_percent_(0));
+  set_display_backlight_brightness_(display_backlight, display_brightness_value_for_percent_(1));
 }
 
 inline uint8_t effective_display_brightness_percent(float ambient_lux, float min_lux, float max_lux,

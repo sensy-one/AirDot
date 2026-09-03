@@ -284,8 +284,6 @@ The local brightness presets map to these user-facing brightness percentages:
 
 Home Assistant can set brightness from 0 to 100%. A value of 0 turns the backlight off. A value of 1 is the minimum manual brightness, and higher values follow the display brightness curve up to full brightness.
 
-If night mode is enabled, AirDot needs a valid time source or manual time to know when the schedule is active. In night mode, the display can either turn off completely or use the same backlight level as Home Assistant brightness 0.
-
 ## Location
 
 AirDot can use a shared location for features that need an outdoor position.
