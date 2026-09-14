@@ -62,7 +62,7 @@ The built-in buzzer can play warning tones when air quality becomes critical. Ho
 
 **Home Assistant integration**
 
-AirDot can expose its measurements through ESPHome's native Home Assistant API and can be automatically discovered when Home Assistant discovery is enabled in setup. Home Assistant can also control display power, display brightness, and the buzzer, and can send display alerts to the device.
+AirDot can expose its measurements through ESPHome's native Home Assistant API and can be automatically discovered when Home Assistant discovery is enabled in setup. Home Assistant can also control display power, display brightness, and the buzzer, send display alerts to the device, and snooze the alarm for a configurable duration.
 
 **MQTT integration**
 

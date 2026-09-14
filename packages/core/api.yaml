@@ -85,5 +85,18 @@ api:
       then:
         - script.execute: ui_hide_display_alert
 
+    - action: snooze_alarm
+      variables:
+        duration_minutes: int
+      then:
+        - lambda: |-
+            const uint32_t snooze_ms =
+              static_cast<uint32_t>(duration_minutes > 0 ? duration_minutes : 0) * 60UL * 1000UL;
+            id(air_quality_hazard_sound_snooze_until_ms) = millis() + snooze_ms;
+            id(air_quality_hazard_last_chirp_ms) = 0;
+            id(hazard_alert_chirp).stop();
+            if (id(ha_buzzer_active) != 1)
+              id(alert_buzzer_pwm).turn_off();
+
 mdns:
   id: home_assistant_mdns
