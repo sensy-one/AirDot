@@ -155,10 +155,14 @@ AirDot publishes these entities to Home Assistant:
 - Display Brightness, as a number from 0 to 100%
 - Display Power, as an on/off switch
 - Buzzer, as an on/off switch
+- Screen Ring, as an RGB light
+- Screen Ring Thickness, as a number from 1 to 40 px
 
 The default publication interval is 10 seconds. In setup, this can be changed to 5, 10, or 30 seconds.
 
 Display Brightness uses a number field. When automatic brightness is enabled, AirDot keeps the display brightness controlled by the ambient light sensor and publishes the current effective value back to Home Assistant. When automatic brightness is disabled, the Home Assistant number acts as the manual display brightness setting.
+
+Screen Ring draws a thin colored ring around the edge of the display, on top of every page. The light color sets the ring color, the light brightness sets its opacity, and turning the light off hides the ring. Screen Ring Thickness sets the ring width in pixels. The ring is off by default and its state is restored after a reboot, which makes it useful as a subtle status indicator driven by Home Assistant automations.
 
 AirDot also exposes ESPHome API actions for display notifications:
 

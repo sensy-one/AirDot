@@ -117,3 +117,19 @@ widgets:
                         text_font: ui_font_small
                         text_color: 0xFFFFFF
                         bg_opa: TRANSP
+
+  - obj:
+      id: screen_ring
+      hidden: true
+      align: CENTER
+      width: 480
+      height: 480
+      bg_opa: TRANSP
+      border_width: 8
+      border_color: 0x40A6FF
+      border_opa: 60%
+      radius: 240
+      pad_all: 0
+      clickable: false
+      scrollbar_mode: "OFF"
+      scrollable: false

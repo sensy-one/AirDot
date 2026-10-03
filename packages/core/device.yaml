@@ -99,6 +99,7 @@ esphome:
               - wifi.enable:
         - delay: 500ms
         - script.execute: ui_apply_display_theme
+        - script.execute: ui_apply_screen_ring
         - script.execute: ui_refresh_flight_radar_page
         - component.update: barometric_pressure_sensor
         - component.update: sen66_air_quality_sensor

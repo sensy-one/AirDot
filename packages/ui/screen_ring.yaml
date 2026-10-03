@@ -1,0 +1,93 @@
+# Colored ring around the edge of the round display, controlled from Home Assistant.
+# Light color sets the ring color, light brightness sets its opacity.
+
+output:
+  - platform: template
+    id: screen_ring_red_output
+    type: float
+    write_action:
+      - lambda: "(void) state;"
+  - platform: template
+    id: screen_ring_green_output
+    type: float
+    write_action:
+      - lambda: "(void) state;"
+  - platform: template
+    id: screen_ring_blue_output
+    type: float
+    write_action:
+      - lambda: "(void) state;"
+
+light:
+  - platform: rgb
+    id: screen_ring_light
+    name: Screen Ring
+    icon: mdi:circle-outline
+    red: screen_ring_red_output
+    green: screen_ring_green_output
+    blue: screen_ring_blue_output
+    gamma_correct: 1.0
+    default_transition_length: 0s
+    flash_transition_length: 0s
+    restore_mode: RESTORE_DEFAULT_OFF
+    initial_state:
+      state: false
+      color_mode: RGB
+      brightness: 60%
+      red: 25%
+      green: 65%
+      blue: 100%
+    on_state:
+      - script.execute: ui_apply_screen_ring
+
+number:
+  - platform: template
+    id: screen_ring_thickness
+    name: Screen Ring Thickness
+    entity_category: config
+    icon: mdi:circle-outline
+    unit_of_measurement: px
+    min_value: 1
+    max_value: 40
+    step: 1
+    initial_value: 8
+    restore_value: true
+    optimistic: true
+    mode: slider
+    on_value:
+      - script.execute: ui_apply_screen_ring
+
+script:
+  - id: ui_apply_screen_ring
+    mode: restart
+    then:
+      - lambda: |-
+          lv_obj_t *ring = id(screen_ring);
+          if (ring == nullptr)
+            return;
+
+          const auto &values = id(screen_ring_light).remote_values;
+          const float brightness = values.is_on() ? values.get_brightness() : 0.0f;
+          if (brightness <= 0.0f) {
+            lv_obj_add_flag(ring, LV_OBJ_FLAG_HIDDEN);
+            return;
+          }
+
+          auto channel = [](float value) {
+            return static_cast<uint8_t>(std::round(std::clamp(value, 0.0f, 1.0f) * 255.0f));
+          };
+          const lv_color_t color =
+            lv_color_make(channel(values.get_red()), channel(values.get_green()), channel(values.get_blue()));
+          const lv_opa_t opa = std::max<uint8_t>(channel(brightness), 1);
+
+          float thickness = id(screen_ring_thickness).state;
+          if (std::isnan(thickness))
+            thickness = 8.0f;
+          const int32_t width = static_cast<int32_t>(std::clamp(std::round(thickness), 1.0f, 40.0f));
+
+          lv_obj_set_style_border_color(ring, color, LV_PART_MAIN);
+          lv_obj_set_style_border_opa(ring, opa, LV_PART_MAIN);
+          lv_obj_set_style_border_width(ring, width, LV_PART_MAIN);
+          lv_obj_clear_flag(ring, LV_OBJ_FLAG_HIDDEN);
+          lv_obj_move_foreground(ring);
+          lv_obj_invalidate(ring);
