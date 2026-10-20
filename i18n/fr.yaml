@@ -20,10 +20,10 @@ setup_page:
   no_networks: Aucun réseau Wi-Fi trouvé
 
   integrations_title: Intégrations
-  integrations_note: Connectez AirDot à Home Assistant ou à un serveur MQTT.
+  integrations_note: Connectez AirDot à Home Assistant, à Homey Pro ou à un serveur MQTT.
 
-  ha_discovery_title: Home Assistant
-  ha_discovery_description: Rendez AirDot automatiquement détectable dans Home Assistant.
+  ha_discovery_title: Home Assistant & Homey Pro
+  ha_discovery_description: Rendez AirDot automatiquement détectable dans Home Assistant et Homey Pro.
 
   mqtt_title: MQTT
   mqtt_description: Envoyez les données de mesure à un serveur MQTT.

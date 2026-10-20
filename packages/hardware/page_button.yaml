@@ -203,12 +203,12 @@ script:
           const bool sleep_window_active =
             now.is_valid() &&
             AirDot::onboarding::screen_off_window_active_at_utc(static_cast<uint32_t>(now.timestamp));
-          if (!sleep_window_active && id(display_panel).is_screen_powered()) {
-            id(display_sleep_wake_until_ms) = 0;
+          if (AirDot::onboarding::load_display_power_enabled() &&
+              !sleep_window_active && id(display_panel).is_screen_powered() &&
+              id(display_sleep_wake_until_ms) == 0) {
             return;
           }
 
-          AirDot::onboarding::save_display_power_enabled(true);
           id(display_sleep_wake_until_ms) = millis() + 10000UL;
           AirDot::onboarding::wake_display_with_brightness(
             id(display_panel), id(display_backlight), id(ambient_light_sensor).state,
@@ -271,11 +271,15 @@ binary_sensor:
             const bool sleep_wake_active =
               id(display_sleep_wake_until_ms) != 0 &&
               static_cast<int32_t>(millis() - id(display_sleep_wake_until_ms)) < 0;
+            const bool display_alert_visible =
+              id(ui_alert_active) != 0 &&
+              AirDot::onboarding::load_display_alert_wake_screen_enabled() &&
+              id(display_panel).is_screen_powered();
             id(page_button_wake_only_release) =
-              !AirDot::onboarding::load_display_power_enabled() ||
-              (sleep_window_active &&
-               !sleep_wake_active &&
-               (AirDot::onboarding::load_night_screen_dim_enabled() || !id(display_panel).is_screen_powered()));
+              !display_alert_visible && !sleep_wake_active &&
+              ((!AirDot::onboarding::load_display_power_enabled() && !id(display_panel).is_screen_powered()) ||
+               (sleep_window_active &&
+                (AirDot::onboarding::load_night_screen_dim_enabled() || !id(display_panel).is_screen_powered())));
         - if:
             condition:
               lambda: |-

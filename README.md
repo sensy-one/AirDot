@@ -1,10 +1,10 @@
-## Sensy-One AirDot
+## SENSY-ONE AirDot
 
-The smart indoor air-quality display that works standalone, offline, or connected to Home Assistant.
+The smart indoor air-quality display that works standalone, offline, or connected to Homey Pro, Home Assistant or MQTT.
 
 ![AirDot banner](banner.webp)
 
-AirDot combines real-time air-quality sensing, a sharp 480 x 480 color display, local setup, standalone operation, optional Home Assistant integration, optional MQTT integration, time, weather, Flight Radar, alerts, and on-device history pages in one compact ESPHome-powered device.
+AirDot combines real-time air-quality sensing, a sharp 480 x 480 color display, local setup, standalone operation, optional Homey Pro, Home Assistant and MQTT integration, time, weather, Flight Radar, alerts, and on-device history pages in one compact ESPHome-powered device.
 
 It is designed for users who want more than raw sensor values. AirDot shows the current room status, highlights the measurements that need attention, and gives clear actions such as monitoring, ventilating, limiting exposure, or acting immediately when air quality becomes critical.
 
@@ -58,11 +58,15 @@ AirDot can show nearby aircraft on a minimal radar-style page when Wi-Fi and loc
 
 **Audio and display alerts**
 
-The built-in buzzer can play warning tones when air quality becomes critical. Home Assistant can also send custom display alerts to AirDot, with optional sound, configurable duration, text color, and supported alert icons.
+The built-in buzzer can play warning tones when air quality becomes critical. Homey Pro and Home Assistant can also send custom display alerts and camera snapshots to AirDot, with optional sound and configurable duration. Text alerts support a configurable text color.
+
+**Homey Pro integration**
+
+Use the SENSY-ONE app to view measurements, automate your home with Flows, and show messages or camera snapshots on AirDot. [Setup instructions](#homey-pro-integration).
 
 **Home Assistant integration**
 
-AirDot can expose its measurements through ESPHome's native Home Assistant API and can be automatically discovered when Home Assistant discovery is enabled in setup. Home Assistant can also control display power, display brightness, and the buzzer, and can send display alerts to the device.
+AirDot can expose its measurements through ESPHome's native Home Assistant API and can be automatically discovered when **Homey Pro & Home Assistant** is enabled in setup. Home Assistant can also control display power, display brightness, and the buzzer, and can send display alerts to the device.
 
 **MQTT integration**
 
@@ -126,6 +130,7 @@ AirDot can run without Wi-Fi for local display use. Indoor sensor readings and d
 
 Without Wi-Fi, these features are unavailable:
 
+- Homey Pro integration
 - Home Assistant integration
 - MQTT integration
 - Automatic time sync
@@ -134,9 +139,21 @@ Without Wi-Fi, these features are unavailable:
 
 You can reopen setup later and add Wi-Fi when needed.
 
+## Homey Pro Integration
+
+Install the [SENSY-ONE app](https://homey.app/en-nl/app/com.sensy-one.airbee/SENSY-ONE/test/) on Homey Pro (version **1.1.0 or newer**).
+
+1. Connect AirDot and Homey Pro to the same local network.
+2. Enable **Homey Pro & Home Assistant** in AirDot setup. No Home Assistant server is needed.
+3. Add **SENSY-ONE → AirDot** in Homey and select your device.
+
+View sensor measurements in Homey and Insights, and use them in Flows. Display actions let you show a message, show an image or close an alert, with configurable duration and optional sound.
+
+For camera snapshots, pass your camera app's image tag to **AirDot → Show an image**. No manual saving or URL is needed.
+
 ## Home Assistant Integration
 
-When Home Assistant discovery is enabled, AirDot is discoverable through ESPHome after it joins your Wi-Fi network.
+When **Homey Pro & Home Assistant** is enabled, AirDot is discoverable through ESPHome after it joins your Wi-Fi network.
 
 AirDot publishes these entities to Home Assistant:
 
@@ -255,7 +272,7 @@ The physical action button controls the local UI.
 - Press during night mode or when display power is off: wake the display temporarily.
 - Hold for about 10 seconds: factory reset AirDot. Keep holding through the countdown to complete the reset.
 
-If AirDot is showing a Home Assistant display alert, pressing the button dismisses the alert.
+If AirDot is showing a display alert from Homey Pro or Home Assistant, pressing the button dismisses the alert.
 
 The Action Button is also available in Home Assistant and MQTT.
 
@@ -345,7 +362,7 @@ Each measurement has an upper limit for Good, Moderate, Poor, and Unhealthy. A v
 
 After boot, AirDot allows the air-quality sensor to warm up before publishing validated air-quality measurements. The default warm-up period is 120 seconds.
 
-During warm-up, the display may show placeholders for some status values and Home Assistant may not receive all air-quality entities yet. This is normal.
+During warm-up, the display may show placeholders for some status values and Homey Pro or Home Assistant may not receive all air-quality measurements yet. This is normal.
 
 ## Best Placement Practices
 
@@ -400,7 +417,7 @@ Available alert settings:
 
 - Sound alerts: play a warning tone when a measurement reaches a critical level.
 - Critical value focus: automatically switch to the chart for the highest-risk sensor.
-- Wake screen for alerts: turn on the display for Home Assistant alerts and critical air-quality readings.
+- Wake screen for alerts: turn on the display for Homey Pro or Home Assistant alerts and critical air-quality readings.
 
 When a critical air-quality tone or focus page is active, a short button press snoozes the alert sound and critical focus for 15 minutes and returns control to the normal page flow.
 
@@ -454,9 +471,13 @@ After reset, AirDot starts the setup access point again.
 
 ## Troubleshooting
 
+**AirDot does not appear in Homey Pro**
+
+Check app version 1.1.0 or newer, enable **Homey Pro & Home Assistant**, and make sure both devices share a local network that allows mDNS discovery.
+
 **AirDot does not appear in Home Assistant**
 
-- Make sure Home Assistant discovery is enabled in AirDot setup.
+- Make sure **Homey Pro & Home Assistant** is enabled in AirDot setup.
 - Confirm AirDot is connected to the same network as Home Assistant.
 - Check that the network allows mDNS/ESPHome discovery.
 - Add the device manually in Home Assistant if discovery is blocked.
@@ -493,7 +514,7 @@ After reset, AirDot starts the setup access point again.
 **Measurements are missing in Home Assistant**
 
 - Wait until the 120-second sensor warm-up is complete.
-- Check that Home Assistant discovery is enabled.
+- Check that **Homey Pro & Home Assistant** is enabled.
 - Check the publication interval in setup.
 - Reboot AirDot if Home Assistant still does not update.
 
@@ -516,6 +537,7 @@ AirDot works locally for indoor sensing and display use.
 
 Depending on your settings, AirDot may connect to:
 
+- Homey Pro over your local network.
 - Home Assistant over your local network.
 - Your MQTT broker over your local network.
 - Online time, weather, and aircraft data services when those features are enabled.

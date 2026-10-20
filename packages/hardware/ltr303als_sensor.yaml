@@ -31,11 +31,6 @@ sensor:
               id(display_panel).set_screen_powered(false);
               return;
             }
-            if (!AirDot::onboarding::load_display_power_enabled() && !setup_or_onboarding_active) {
-              AirDot::onboarding::turn_display_backlight_off(id(display_backlight));
-              id(display_panel).set_screen_powered(false);
-              return;
-            }
             const bool display_sleep_button_wake_active =
               id(page_button_pressed_at_ms) != 0 ||
               (id(display_sleep_wake_until_ms) != 0 &&
@@ -60,12 +55,19 @@ sensor:
               (id(ui_alert_active) != 0 || AirDot::air_quality_alert_active(air_quality_level)) &&
               alert_wake_screen_enabled &&
               !setup_or_onboarding_active;
+            const bool temporary_wake_active =
+              wake_for_hazard_focus || wake_for_display_alert || display_sleep_button_wake_active;
+            // Temporary wakes override both power-off policies without changing the saved preference.
+            if (!AirDot::onboarding::load_display_power_enabled() &&
+                !setup_or_onboarding_active && !temporary_wake_active) {
+              AirDot::onboarding::turn_display_backlight_off(id(display_backlight));
+              id(display_panel).set_screen_powered(false);
+              return;
+            }
             if (!setup_or_onboarding_active &&
                 now.is_valid() &&
                 AirDot::onboarding::screen_off_window_active_at_utc(static_cast<uint32_t>(now.timestamp)) &&
-                !wake_for_hazard_focus &&
-                !wake_for_display_alert &&
-                !display_sleep_button_wake_active) {
+                !temporary_wake_active) {
               AirDot::onboarding::apply_night_screen_state(id(display_panel), id(display_backlight));
               return;
             }

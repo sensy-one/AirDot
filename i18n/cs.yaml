@@ -20,10 +20,10 @@ setup_page:
   no_networks: Nebyly nalezeny žádné Wi-Fi sítě
 
   integrations_title: Integrace
-  integrations_note: Připojte AirDot k Home Assistantu nebo MQTT serveru.
+  integrations_note: Připojte AirDot k Home Assistantu, Homey Pro nebo MQTT serveru.
 
-  ha_discovery_title: Home Assistant
-  ha_discovery_description: Umožnit automatické nalezení AirDotu v Home Assistantu.
+  ha_discovery_title: Home Assistant & Homey Pro
+  ha_discovery_description: Umožnit automatické nalezení AirDotu v Home Assistantu a Homey Pro.
 
   mqtt_title: MQTT
   mqtt_description: Odesílat naměřená data na MQTT server.

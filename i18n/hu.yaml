@@ -20,10 +20,10 @@ setup_page:
   no_networks: Nem található Wi-Fi hálózat
 
   integrations_title: Integrációk
-  integrations_note: Csatlakoztasd az AirDot-ot a Home Assistant-hoz vagy egy MQTT szerverhez.
+  integrations_note: Csatlakoztasd az AirDot-ot a Home Assistant-hoz, a Homey Pro-hoz vagy egy MQTT szerverhez.
 
-  ha_discovery_title: Home Assistant
-  ha_discovery_description: Az AirDot automatikus felismerésének engedélyezése a Home Assistant-ban.
+  ha_discovery_title: Home Assistant & Homey Pro
+  ha_discovery_description: Az AirDot automatikus felismerésének engedélyezése a Home Assistant-ban és a Homey Pro-ban.
 
   mqtt_title: MQTT
   mqtt_description: Mérési adatok küldése egy MQTT szerverre.

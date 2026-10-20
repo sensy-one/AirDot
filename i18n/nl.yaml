@@ -20,10 +20,10 @@ setup_page:
   no_networks: Geen wifi-netwerken gevonden
 
   integrations_title: Koppelingen
-  integrations_note: Koppel AirDot aan Home Assistant of een MQTT-server.
+  integrations_note: Koppel AirDot aan Home Assistant, Homey Pro of een MQTT-server.
 
-  ha_discovery_title: Home Assistant
-  ha_discovery_description: Maak AirDot automatisch vindbaar in Home Assistant.
+  ha_discovery_title: Home Assistant & Homey Pro
+  ha_discovery_description: Maak AirDot automatisch vindbaar in Home Assistant en Homey Pro.
 
   mqtt_title: MQTT
   mqtt_description: Verstuur meetgegevens naar een MQTT-server.

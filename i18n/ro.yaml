@@ -20,10 +20,10 @@ setup_page:
   no_networks: Nu s-au găsit rețele Wi-Fi
 
   integrations_title: Integrări
-  integrations_note: Conectează AirDot la Home Assistant sau la un server MQTT.
+  integrations_note: Conectează AirDot la Home Assistant, la Homey Pro sau la un server MQTT.
 
-  ha_discovery_title: Home Assistant
-  ha_discovery_description: Fă AirDot detectabil automat în Home Assistant.
+  ha_discovery_title: Home Assistant & Homey Pro
+  ha_discovery_description: Fă AirDot detectabil automat în Home Assistant și Homey Pro.
 
   mqtt_title: MQTT
   mqtt_description: Trimite datele măsurate către un server MQTT.
