@@ -47,7 +47,8 @@ esphome:
               id(ha_air_humidity),
               id(ha_voc),
               id(ha_nox_index),
-              id(ha_co2));
+              id(ha_co2),
+              id(ha_air_quality_status));
     - priority: -100
       then:
         - lambda: |-
@@ -79,7 +80,8 @@ esphome:
               id(ha_air_humidity),
               id(ha_voc),
               id(ha_nox_index),
-              id(ha_co2));
+              id(ha_co2),
+              id(ha_air_quality_status));
             if (!AirDot::onboarding::load_time_server_enabled() ||
                 AirDot::onboarding::load_manual_time_enabled()) {
               AirDot::time_weather::stop_sntp_sync();

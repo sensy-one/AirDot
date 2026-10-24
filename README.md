@@ -168,6 +168,7 @@ AirDot publishes these entities to Home Assistant:
 - VOC Index
 - NOx Index
 - CO2, in ppm
+- Air Quality, the overall status shown on the home screen in the selected AirDot language
 - Action Button
 - Display Brightness, as a number from 0 to 100%
 - Display Power, as an on/off switch

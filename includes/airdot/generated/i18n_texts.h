@@ -159,6 +159,48 @@ inline AirQualityText air_quality_text(int level) {
   return air_quality_text(level, UiLanguage::EN);
 }
 
+inline const char *air_quality_status_text(int level, UiLanguage language) {
+  if (level < 0)
+    return "--";
+  const int index = level < 4 ? level : 4;
+  switch (language) {
+    case UiLanguage::EN: {
+      static constexpr const char *statuses[] = {"Good", "Moderate", "Poor", "Unhealthy", "Critical"};
+      return statuses[index];
+    }
+    case UiLanguage::DE: {
+      static constexpr const char *statuses[] = {"Gut", "Mässig", "Schlecht", "Ungesund", "Kritisch"};
+      return statuses[index];
+    }
+    case UiLanguage::NL: {
+      static constexpr const char *statuses[] = {"Goed", "Matig", "Slecht", "Ongezond", "Kritiek"};
+      return statuses[index];
+    }
+    case UiLanguage::FR: {
+      static constexpr const char *statuses[] = {"Bon", "Moyen", "Mauvais", "Nocif", "Critique"};
+      return statuses[index];
+    }
+    case UiLanguage::HU: {
+      static constexpr const char *statuses[] = {"Jó", "Mérsékelt", "Rossz", "Egészségtelen", "Kritikus"};
+      return statuses[index];
+    }
+    case UiLanguage::CS: {
+      static constexpr const char *statuses[] = {"Dobrá", "Zhoršená", "Špatná", "Nezdravá", "Kritická"};
+      return statuses[index];
+    }
+    case UiLanguage::IT: {
+      static constexpr const char *statuses[] = {"Buona", "Moderata", "Scarsa", "Insalubre", "Critica"};
+      return statuses[index];
+    }
+    case UiLanguage::RO: {
+      static constexpr const char *statuses[] = {"Bună", "Moderată", "Slabă", "Nocivă", "Critică"};
+      return statuses[index];
+    }
+    default:
+      return air_quality_status_text(level, UiLanguage::EN);
+  }
+}
+
 inline TitleBodyText factory_reset_countdown_text(UiLanguage language) {
   switch (language) {
     case UiLanguage::EN:

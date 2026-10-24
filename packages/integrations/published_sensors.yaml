@@ -213,3 +213,24 @@ sensor:
         return {};
       }
       return id(co2).state;
+
+text_sensor:
+  - platform: template
+    id: ha_air_quality_status
+    name: Air Quality
+    internal: false
+    update_interval: ${ha_sensor_update_interval}
+    icon: mdi:air-filter
+    lambda: |-
+      const uint32_t now = millis();
+      if (id(air_quality_warmup_until_ms) != 0 &&
+          static_cast<int32_t>(now - id(air_quality_warmup_until_ms)) < 0) {
+        return {"--"};
+      }
+      const int level = AirDot::onboarding::load_sanitized_air_quality_level(
+        id(pm1).state, id(pm25).state, id(pm4).state, id(pm10).state,
+        id(voc).state, id(nox).state, id(co2).state);
+      if (level < 0) {
+        return {"--"};
+      }
+      return {AirDot::air_quality_status_text(level, AirDot::onboarding::load_ui_language())};

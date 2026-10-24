@@ -568,6 +568,37 @@ def generate(languages: list[dict]) -> str:
             "",
         ]
     )
+    lines.extend(
+        [
+            "inline const char *air_quality_status_text(int level, UiLanguage language) {",
+            "  if (level < 0)",
+            '    return "--";',
+            "  const int index = level < 4 ? level : 4;",
+            "  switch (language) {",
+        ]
+    )
+    for entry in languages:
+        statuses = ", ".join(
+            c_string(get(entry["data"], f"air_quality.{key}.status").capitalize())
+            for key in AIR_QUALITY_KEYS
+        )
+        lines.extend(
+            [
+                f"    case UiLanguage::{enum_name(entry['code'])}: {{",
+                f"      static constexpr const char *statuses[] = {{{statuses}}};",
+                "      return statuses[index];",
+                "    }",
+            ]
+        )
+    lines.extend(
+        [
+            "    default:",
+            f"      return air_quality_status_text(level, UiLanguage::{default_enum});",
+            "  }",
+            "}",
+            "",
+        ]
+    )
     for key in FACTORY_RESET_KEYS:
         function_name = f"{key}_text"
         lines.extend(
