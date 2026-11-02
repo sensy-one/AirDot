@@ -357,7 +357,11 @@ script:
                                                  lv_obj_has_flag(AirDot::lv_obj(id(modal_overlay_layer)), LV_OBJ_FLAG_HIDDEN)
                                              ? AirDot::screen_ring::SEGMENT_WIDTH
                                              : AirDot::screen_ring::HAIRLINE_WIDTH;
-              if (ring_width != AirDot::screen_ring::current_width()) {
+              lv_obj_t *screen_ring_obj = AirDot::lv_obj(id(screen_ring));
+              const bool ring_out_of_date =
+                screen_ring_obj != nullptr && !lv_obj_has_flag(screen_ring_obj, LV_OBJ_FLAG_HIDDEN) &&
+                lv_obj_get_style_arc_width(screen_ring_obj, LV_PART_INDICATOR) != ring_width;
+              if (ring_width != AirDot::screen_ring::current_width() || ring_out_of_date) {
                 AirDot::screen_ring::current_width() = ring_width;
                 id(ui_apply_screen_ring).execute();
               }
