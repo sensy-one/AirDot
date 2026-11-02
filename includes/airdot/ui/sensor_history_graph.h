@@ -498,11 +498,20 @@ class SensorHistoryGraph {
         data_max = std::max(data_max, smooth[i]);
       }
       if (this->color_mode_ == ColorMode::HIGH_BAD) {
-        // Keep the Moderate limit in view so a good day reads low and green.
-        lo = this->fixed_range_ ? std::min(this->fixed_min_, data_min) : data_min;
-        hi = std::max(data_max, this->moderate_value_) * 1.12f;
-        if (hi - lo < 0.001f)
-          hi = lo + 1.0f;
+        // Fit the data so the line has visible shape, but never zoom in tighter than 15% of the Good limit,
+        // so sensor noise on a steady day doesn't look like big swings. The fill colors still follow the
+        // configured thresholds, so the bands keep their meaning at any scale.
+        const float range = data_max - data_min;
+        const float min_span = std::max(0.5f, std::fabs(this->balanced_value_) * 0.15f);
+        const float span = std::max(range, min_span);
+        const float extra = (span - range) * 0.5f + span * 0.2f;
+        lo = data_min - extra;
+        hi = data_max + extra;
+        const float floor_value = this->fixed_range_ ? this->fixed_min_ : 0.0f;
+        if (lo < floor_value) {
+          hi += floor_value - lo;
+          lo = floor_value;
+        }
       } else {
         const float range = data_max - data_min;
         const float padding = range < 0.001f ? 0.5f : range * 0.15f;

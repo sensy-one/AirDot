@@ -49,6 +49,7 @@ font:
     id: ui_font_ring_label
     size: 20
     glyphs: " .CMNOPVx₀₁₂₅"
+    bpp: 4
   - file:
       type: gfonts
       family: Roboto
@@ -56,6 +57,7 @@ font:
     id: ui_font_calm_time
     size: 112
     glyphs: "-0123456789:"
+    bpp: 4
   - file:
       type: gfonts
       family: Roboto
@@ -63,3 +65,4 @@ font:
     id: ui_font_history_value
     size: 84
     glyphs: "-.0123456789"
+    bpp: 4
