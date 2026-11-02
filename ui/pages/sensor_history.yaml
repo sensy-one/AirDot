@@ -57,7 +57,7 @@ widgets:
 
   - obj:
       align: BOTTOM_MID
-      y: -34
+      y: -56
       width: SIZE_CONTENT
       height: SIZE_CONTENT
       bg_opa: TRANSP

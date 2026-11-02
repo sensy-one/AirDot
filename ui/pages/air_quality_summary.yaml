@@ -362,7 +362,7 @@ widgets:
               - label:
                   id: air_quality_summary_alert_action_label
                   align: CENTER
-                  y: -88
+                  y: -122
                   text: ""
                   text_font: ui_font_modal_title
                   text_color: 0xFFFFFF

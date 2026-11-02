@@ -239,7 +239,9 @@ script:
                 arcs[i], metric_level < 0 ? off_color : AirDot::air_quality_status_color(metric_level),
                 dimmed ? 100 : LV_OPA_COVER);
               hs::set_arc_width(arcs[i], i == culprit_arc ? 20 : 12);
-              hs::set_text_style(ring_labels[i], text_color, dimmed ? 80 : (i == culprit_arc ? 230 : hs::SECONDARY_TEXT_OPA));
+              hs::set_text_style(ring_labels[i], text_color, i == culprit_arc ? 230 : hs::SECONDARY_TEXT_OPA);
+              // In the alert view only the culprit keeps its label, leaving room for the instruction.
+              hs::set_hidden(ring_labels[i], dimmed);
             }
 
             // One sample per minute of every metric, for the alert trend.
