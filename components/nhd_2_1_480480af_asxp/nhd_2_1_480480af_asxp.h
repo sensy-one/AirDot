@@ -4,6 +4,9 @@
 #include "esphome/components/display/display.h"
 #include "esphome/core/gpio.h"
 #include "esp_lcd_panel_ops.h"
+#include "esp_lcd_panel_rgb.h"
+#include <freertos/FreeRTOS.h>
+#include <freertos/semphr.h>
 
 namespace esphome {
 namespace nhd_2_1_480480af_asxp {
@@ -63,6 +66,12 @@ class Nhd21480480AfAsxp : public display::Display {
   void apply_pclk_frequency_(uint32_t pclk_frequency);
   void write_to_display_(int x_start, int y_start, int w, int h, const uint8_t *ptr, int x_offset, int y_offset,
                          int x_pad);
+  void write_direct_(int x_start, int y_start, int w, int h, const uint8_t *ptr, int x_offset, int y_offset,
+                     int x_pad);
+  bool ensure_back_buffer_();
+  bool defer_present_() const;
+  void present_();
+  static bool on_vsync_(esp_lcd_panel_handle_t panel, const esp_lcd_rgb_panel_event_data_t *edata, void *user_ctx);
 
   static constexpr size_t DATA_PIN_COUNT = 16;
 
@@ -93,6 +102,13 @@ class Nhd21480480AfAsxp : public display::Display {
   bool screen_powered_{false};
   bool low_bandwidth_mode_{false};
   esp_lcd_panel_handle_t handle_{};
+  // Frames are assembled here first and copied to the panel's framebuffer in one go, starting at vsync, so a
+  // redraw rendered in several LVGL strips appears at once instead of wiping down the screen.
+  uint16_t *back_buffer_{nullptr};
+  bool back_buffer_failed_{false};
+  int dirty_y_low_{-1};
+  int dirty_y_high_{-1};
+  SemaphoreHandle_t vsync_semaphore_{nullptr};
 };
 
 }

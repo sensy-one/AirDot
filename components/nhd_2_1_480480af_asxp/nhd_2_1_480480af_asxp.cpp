@@ -4,6 +4,12 @@
 #include <algorithm>
 #include <driver/gpio.h>
 #include <esp_lcd_panel_rgb.h>
+#include <esp_heap_caps.h>
+#include <cstring>
+#include "esphome/core/defines.h"
+#ifdef USE_LVGL
+#include <lvgl.h>
+#endif
 
 namespace esphome {
 namespace nhd_2_1_480480af_asxp {
@@ -278,7 +284,66 @@ void Nhd21480480AfAsxp::common_setup_() {
     return;
   }
 
+  if (this->vsync_semaphore_ == nullptr)
+    this->vsync_semaphore_ = xSemaphoreCreateBinary();
+  esp_lcd_rgb_panel_event_callbacks_t callbacks{};
+  callbacks.on_vsync = Nhd21480480AfAsxp::on_vsync_;
+  esp_lcd_rgb_panel_register_event_callbacks(this->handle_, &callbacks, this);
+
   this->clear_panel_framebuffer_();
+}
+
+bool IRAM_ATTR Nhd21480480AfAsxp::on_vsync_(esp_lcd_panel_handle_t panel, const esp_lcd_rgb_panel_event_data_t *edata,
+                                            void *user_ctx) {
+  auto *self = static_cast<Nhd21480480AfAsxp *>(user_ctx);
+  BaseType_t woken = pdFALSE;
+  if (self->vsync_semaphore_ != nullptr)
+    xSemaphoreGiveFromISR(self->vsync_semaphore_, &woken);
+  return woken == pdTRUE;
+}
+
+bool Nhd21480480AfAsxp::ensure_back_buffer_() {
+  if (this->back_buffer_ != nullptr)
+    return true;
+  if (this->back_buffer_failed_)
+    return false;
+  this->back_buffer_ = static_cast<uint16_t *>(
+      heap_caps_calloc(this->width_ * this->height_, sizeof(uint16_t), MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT));
+  if (this->back_buffer_ == nullptr)
+    this->back_buffer_failed_ = true;
+  return this->back_buffer_ != nullptr;
+}
+
+// While LVGL flushes the strips of one refresh, only the last strip presents the frame.
+bool Nhd21480480AfAsxp::defer_present_() const {
+#ifdef USE_LVGL
+  lv_display_t *display = lv_display_get_default();
+  if (display != nullptr && !lv_display_flush_is_last(display))
+    return true;
+#endif
+  return false;
+}
+
+void Nhd21480480AfAsxp::present_() {
+  if (this->dirty_y_low_ < 0 || this->handle_ == nullptr || this->back_buffer_ == nullptr)
+    return;
+  const int y0 = this->dirty_y_low_;
+  const int y1 = this->dirty_y_high_;
+  this->dirty_y_low_ = -1;
+  this->dirty_y_high_ = -1;
+
+  // For large updates (page changes), start copying right after vsync: the copy runs ahead of the panel's
+  // scan, so the frame doesn't tear. Small updates are copied right away to keep the main loop responsive.
+  if (this->vsync_semaphore_ != nullptr && y1 - y0 >= 120) {
+    xSemaphoreTake(this->vsync_semaphore_, 0);
+    xSemaphoreTake(this->vsync_semaphore_, pdMS_TO_TICKS(50));
+  }
+  const esp_err_t err = esp_lcd_panel_draw_bitmap(this->handle_, 0, y0, this->width_, y1 + 1,
+                                                  this->back_buffer_ + static_cast<size_t>(y0) * this->width_);
+  if (err == ESP_OK)
+    this->status_clear_warning();
+  else
+    this->status_set_warning();
 }
 
 void Nhd21480480AfAsxp::clear_panel_framebuffer_() {
@@ -342,6 +407,40 @@ void Nhd21480480AfAsxp::draw_pixels_at(int x_start, int y_start, int w, int h, c
 
 void Nhd21480480AfAsxp::write_to_display_(int x_start, int y_start, int w, int h, const uint8_t *ptr, int x_offset,
                                           int y_offset, int x_pad) {
+  if (this->handle_ == nullptr || ptr == nullptr) {
+    this->status_set_warning();
+    return;
+  }
+  if (!this->ensure_back_buffer_()) {
+    this->write_direct_(x_start, y_start, w, h, ptr, x_offset, y_offset, x_pad);
+    return;
+  }
+
+  const int x0 = std::max(0, x_start);
+  const int y0 = std::max(0, y_start);
+  const int x1 = std::min<int>(this->width_, x_start + w);
+  const int y1 = std::min<int>(this->height_, y_start + h);
+  if (x0 >= x1 || y0 >= y1)
+    return;
+  const size_t stride_bytes = static_cast<size_t>(x_offset + w + x_pad) * 2;
+  const uint8_t *src = ptr + static_cast<size_t>(y_offset + (y0 - y_start)) * stride_bytes +
+                       static_cast<size_t>(x_offset + (x0 - x_start)) * 2;
+  for (int y = y0; y < y1; y++) {
+    std::memcpy(this->back_buffer_ + static_cast<size_t>(y) * this->width_ + x0, src,
+                static_cast<size_t>(x1 - x0) * 2);
+    src += stride_bytes;
+  }
+  if (this->dirty_y_low_ < 0 || y0 < this->dirty_y_low_)
+    this->dirty_y_low_ = y0;
+  if (y1 - 1 > this->dirty_y_high_)
+    this->dirty_y_high_ = y1 - 1;
+
+  if (!this->defer_present_())
+    this->present_();
+}
+
+void Nhd21480480AfAsxp::write_direct_(int x_start, int y_start, int w, int h, const uint8_t *ptr, int x_offset,
+                                      int y_offset, int x_pad) {
   if (this->handle_ == nullptr || ptr == nullptr) {
     this->status_set_warning();
     return;
