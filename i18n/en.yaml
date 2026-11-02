@@ -192,6 +192,7 @@ factory_reset:
 connection:
   indoor: Indoor
   outdoor: Outdoor
+  offline: Offline
 
 weather:
   clear: Clear

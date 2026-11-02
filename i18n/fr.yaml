@@ -192,6 +192,7 @@ factory_reset:
 connection:
   indoor: Intérieur
   outdoor: Extérieur
+  offline: Hors ligne
 
 weather:
   clear: Dégagé

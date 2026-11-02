@@ -192,6 +192,7 @@ factory_reset:
 connection:
   indoor: Binnen
   outdoor: Buiten
+  offline: Offline
 
 weather:
   clear: Helder

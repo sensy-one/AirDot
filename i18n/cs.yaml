@@ -193,6 +193,7 @@ factory_reset:
 connection:
   indoor: Uvnitř
   outdoor: Venku
+  offline: Offline
 
 weather:
   clear: Jasno

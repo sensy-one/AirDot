@@ -192,6 +192,7 @@ factory_reset:
 connection:
   indoor: Interior
   outdoor: Exterior
+  offline: Deconectat
 
 weather:
   clear: Senin

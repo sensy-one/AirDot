@@ -644,6 +644,29 @@ inline const char *connection_location_text(bool outdoor, UiLanguage language) {
     }
 }
 
+inline const char *connection_offline_text(UiLanguage language) {
+  switch (language) {
+    case UiLanguage::EN:
+      return "Offline";
+    case UiLanguage::DE:
+      return "Offline";
+    case UiLanguage::NL:
+      return "Offline";
+    case UiLanguage::FR:
+      return "Hors ligne";
+    case UiLanguage::HU:
+      return "Offline";
+    case UiLanguage::CS:
+      return "Offline";
+    case UiLanguage::IT:
+      return "Offline";
+    case UiLanguage::RO:
+      return "Deconectat";
+    default:
+      return "Offline";
+  }
+}
+
 inline const char *date_format_text(UiLanguage language) {
   switch (language) {
     case UiLanguage::EN:

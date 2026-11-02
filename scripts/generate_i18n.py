@@ -23,7 +23,7 @@ SCREEN_IDS = {
 }
 
 LANGUAGE_KEYS = ("id", "code", "label")
-CONNECTION_KEYS = ("indoor", "outdoor")
+CONNECTION_KEYS = ("indoor", "outdoor", "offline")
 WEATHER_CODE_KEYS = (
     "clear",
     "cloudy",
@@ -718,6 +718,8 @@ def generate(languages: list[dict]) -> str:
     lines.extend(["  " + line for line in emit_language_switch(languages, "language", "connection.outdoor")])
     lines.extend(["  }", ""])
     lines.extend(["  " + line for line in emit_language_switch(languages, "language", "connection.indoor")])
+    lines.extend(["}", "", "inline const char *connection_offline_text(UiLanguage language) {"])
+    lines.extend(emit_language_switch(languages, "language", "connection.offline"))
     lines.extend(
         [
             "}",
