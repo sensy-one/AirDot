@@ -30,6 +30,7 @@ esphome:
     - includes/airdot/setup/setup_page_renderer.h
     - includes/airdot/setup/setup_portal.h
     - includes/airdot/ui/flight_radar_display.h
+    - includes/airdot/ui/screen_ring.h
   on_boot:
     - priority: 205
       then:
@@ -105,6 +106,7 @@ esphome:
               - wifi.enable:
         - delay: 500ms
         - script.execute: ui_apply_display_theme
+        - script.execute: ui_apply_screen_ring
         - script.execute: ui_refresh_flight_radar_page
         - component.update: barometric_pressure_sensor
         - component.update: sen66_air_quality_sensor

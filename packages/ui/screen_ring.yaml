@@ -1,0 +1,127 @@
+# Colored ring around the edge of the round display, controlled from Home Assistant.
+# Light color sets the ring color, light brightness sets its opacity. The Air Quality light effect colors
+# the ring by the current air-quality status.
+
+globals:
+  # Air-quality level shown by the Air Quality effect: -2 while warming up, -1 without readings.
+  - id: screen_ring_air_quality_level
+    type: int
+    restore_value: false
+    initial_value: "-2"
+
+output:
+  - platform: template
+    id: screen_ring_red_output
+    type: float
+    write_action:
+      - lambda: "(void) state;"
+  - platform: template
+    id: screen_ring_green_output
+    type: float
+    write_action:
+      - lambda: "(void) state;"
+  - platform: template
+    id: screen_ring_blue_output
+    type: float
+    write_action:
+      - lambda: "(void) state;"
+
+light:
+  - platform: rgb
+    id: screen_ring_light
+    name: Screen Ring
+    icon: mdi:circle-outline
+    red: screen_ring_red_output
+    green: screen_ring_green_output
+    blue: screen_ring_blue_output
+    gamma_correct: 1.0
+    default_transition_length: 0s
+    flash_transition_length: 0s
+    restore_mode: RESTORE_DEFAULT_OFF
+    initial_state:
+      state: false
+      color_mode: RGB
+      brightness: 60%
+      red: 25%
+      green: 65%
+      blue: 100%
+    effects:
+      - lambda:
+          name: Air Quality
+          update_interval: 1s
+          lambda: |-
+            const uint32_t now = millis();
+            const bool warmup_active =
+              id(air_quality_warmup_until_ms) != 0 &&
+              static_cast<int32_t>(now - id(air_quality_warmup_until_ms)) < 0;
+            const int level = warmup_active ? -2 : AirDot::onboarding::load_sanitized_air_quality_level(
+              id(pm1).state, id(pm25).state, id(pm4).state, id(pm10).state,
+              id(voc).state, id(nox).state, id(co2).state);
+            if (initial_run || level != id(screen_ring_air_quality_level)) {
+              id(screen_ring_air_quality_level) = level;
+              id(ui_apply_screen_ring).execute();
+            }
+    on_state:
+      - script.execute: ui_apply_screen_ring
+
+number:
+  - platform: template
+    id: screen_ring_thickness
+    name: Screen Ring Thickness
+    entity_category: config
+    icon: mdi:circle-outline
+    unit_of_measurement: px
+    min_value: 1
+    max_value: 40
+    step: 1
+    initial_value: 8
+    restore_value: true
+    optimistic: true
+    mode: slider
+    on_value:
+      - script.execute: ui_apply_screen_ring
+
+  # Draws only part of the ring, clockwise from 12 o'clock. Useful as a progress or countdown indicator.
+  - platform: template
+    id: screen_ring_progress
+    name: Screen Ring Progress
+    icon: mdi:progress-helper
+    unit_of_measurement: "%"
+    min_value: 0
+    max_value: 100
+    step: 1
+    initial_value: 100
+    restore_value: true
+    optimistic: true
+    mode: slider
+    on_value:
+      - script.execute: ui_apply_screen_ring
+
+script:
+  - id: ui_apply_screen_ring
+    mode: restart
+    then:
+      - lambda: |-
+          lv_obj_t *ring = AirDot::lv_obj(id(screen_ring));
+          if (ring == nullptr)
+            return;
+
+          auto *light = id(screen_ring_light);
+          const auto &values = light->remote_values;
+          auto style = AirDot::screen_ring::light_style(
+            values.is_on(), values.get_brightness(), values.get_red(), values.get_green(), values.get_blue(),
+            id(screen_ring_thickness).state);
+
+          if (std::strcmp(light->get_effect_name().c_str(), "Air Quality") == 0) {
+            const int level = id(screen_ring_air_quality_level);
+            if (level < 0)
+              style.visible = false;
+            else
+              style.color = AirDot::air_quality_status_color(level);
+          }
+
+          const float progress = id(screen_ring_progress).state;
+          if (!std::isnan(progress))
+            style.sweep = 360.0f * std::clamp(progress, 0.0f, 100.0f) / 100.0f;
+
+          AirDot::screen_ring::apply(ring, style);

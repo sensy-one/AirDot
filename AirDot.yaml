@@ -30,6 +30,7 @@ packages:
   ui_hazard_focus: !include packages/ui/hazard_focus.yaml
   ui_time_weather_page: !include packages/ui/time_weather_page.yaml
   ui_flight_radar_page: !include packages/ui/flight_radar_page.yaml
+  ui_screen_ring: !include packages/ui/screen_ring.yaml
 
   feature_setup_portal: !include packages/features/setup_portal.yaml
   feature_time_sync: !include packages/features/time_sync.yaml

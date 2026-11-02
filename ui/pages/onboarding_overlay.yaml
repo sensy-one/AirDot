@@ -117,3 +117,34 @@ widgets:
                         text_font: ui_font_small
                         text_color: 0xFFFFFF
                         bg_opa: TRANSP
+
+  - arc:
+      id: screen_ring
+      hidden: true
+      align: CENTER
+      width: 480
+      height: 480
+      adjustable: false
+      clickable: false
+      rotation: 270
+      start_angle: 0
+      end_angle: 360
+      min_value: 0
+      max_value: 360
+      value: 360
+      pad_all: 0
+      arc_opa: TRANSP
+      arc_width: 0
+      bg_opa: TRANSP
+      border_width: 0
+      indicator:
+        arc_color: 0x40A6FF
+        arc_opa: 60%
+        arc_width: 8
+        arc_rounded: false
+        pad_all: 0
+      knob:
+        bg_opa: TRANSP
+        border_width: 0
+        shadow_width: 0
+        pad_all: 0
