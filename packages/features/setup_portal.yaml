@@ -346,7 +346,9 @@ script:
                   id(ha_voc),
                   id(ha_nox_index),
                   id(ha_co2),
-                  id(ha_air_quality_status));
+                  id(ha_air_quality_level),
+                  id(ha_air_quality_status),
+                  id(ha_air_quality_worst_pollutant));
             - if:
                 condition:
                   lambda: "return id(setup_pending_sen66_co2_calibration) == 1;"

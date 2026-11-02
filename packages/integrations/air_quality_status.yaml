@@ -1,0 +1,94 @@
+# Publishes the on-device air-quality assessment (the same one shown on the summary page) as a numeric level,
+# the worst pollutant and a ventilation flag, so Home Assistant automations can react to it without
+# re-implementing the thresholds. The localized status text is published as Air Quality in
+# published_sensors.yaml.
+
+globals:
+  # -2 while the sensor warms up, -1 without valid readings, otherwise 0 (Good) to 4 (Critical).
+  - id: air_quality_status_level
+    type: int
+    restore_value: false
+    initial_value: "-2"
+  # Index into the metric names below, or -1 when every metric is Good.
+  - id: air_quality_status_worst_metric
+    type: int
+    restore_value: false
+    initial_value: "-1"
+
+interval:
+  - interval: 1s
+    then:
+      - lambda: |-
+          const uint32_t now = millis();
+          const bool warmup_active =
+            id(air_quality_warmup_until_ms) != 0 &&
+            static_cast<int32_t>(now - id(air_quality_warmup_until_ms)) < 0;
+          if (warmup_active) {
+            id(air_quality_status_level) = -2;
+            id(air_quality_status_worst_metric) = -1;
+            return;
+          }
+
+          const std::pair<AirDot::AirQualityMetric, float> metrics[] = {
+            {AirDot::AirQualityMetric::PM25, id(pm25).state},
+            {AirDot::AirQualityMetric::PM10, id(pm10).state},
+            {AirDot::AirQualityMetric::CO2, id(co2).state},
+            {AirDot::AirQualityMetric::VOC, id(voc).state},
+            {AirDot::AirQualityMetric::NOX, id(nox).state},
+            {AirDot::AirQualityMetric::PM1, id(pm1).state},
+            {AirDot::AirQualityMetric::PM4, id(pm4).state},
+          };
+          int level = -1;
+          int worst = -1;
+          for (int i = 0; i < static_cast<int>(sizeof(metrics) / sizeof(metrics[0])); i++) {
+            const auto metric = metrics[i].first;
+            const int metric_level = AirDot::threshold_level(
+              AirDot::sanitized_air_quality_metric_value(metric, metrics[i].second),
+              AirDot::onboarding::load_air_quality_status_thresholds(metric));
+            if (metric_level > level) {
+              level = metric_level;
+              worst = metric_level > 0 ? i : -1;
+            }
+          }
+          id(air_quality_status_level) = level;
+          id(air_quality_status_worst_metric) = worst;
+
+sensor:
+  - platform: template
+    id: ha_air_quality_level
+    name: Air Quality Level
+    internal: false
+    icon: mdi:gauge
+    update_interval: ${ha_sensor_update_interval}
+    accuracy_decimals: 0
+    state_class: measurement
+    lambda: |-
+      if (id(air_quality_status_level) < 0)
+        return {};
+      return static_cast<float>(id(air_quality_status_level));
+
+text_sensor:
+  - platform: template
+    id: ha_air_quality_worst_pollutant
+    name: Worst Pollutant
+    internal: false
+    icon: mdi:molecule
+    update_interval: ${ha_sensor_update_interval}
+    lambda: |-
+      static const char *const METRICS[] = {"PM2.5", "PM10", "CO2", "VOC", "NOx", "PM1", "PM4"};
+      if (id(air_quality_status_level) < 0)
+        return {};
+      const int worst = id(air_quality_status_worst_metric);
+      if (worst < 0 || worst >= static_cast<int>(sizeof(METRICS) / sizeof(METRICS[0])))
+        return std::string("None");
+      return std::string(METRICS[worst]);
+
+binary_sensor:
+  - platform: template
+    id: ha_ventilation_recommended
+    name: Ventilation Recommended
+    internal: false
+    icon: mdi:window-open-variant
+    # Matches the on-device guidance, which asks to ventilate from Poor upwards.
+    lambda: |-
+      return id(air_quality_status_level) >= 2;

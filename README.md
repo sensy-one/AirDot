@@ -169,6 +169,9 @@ AirDot publishes these entities to Home Assistant:
 - NOx Index
 - CO2, in ppm
 - Air Quality, the overall status shown on the home screen in the selected AirDot language
+- Air Quality Level, as a number from 0 (Good) to 4 (Critical)
+- Worst Pollutant: the measurement that sets the current status, or None when everything is Good
+- Ventilation Recommended, as an on/off sensor
 - Action Button
 - Display Brightness, as a number from 0 to 100%
 - Display Power, as an on/off switch
@@ -177,6 +180,8 @@ AirDot publishes these entities to Home Assistant:
 The default publication interval is 10 seconds. In setup, this can be changed to 5, 10, or 30 seconds.
 
 Display Brightness uses a number field. When automatic brightness is enabled, AirDot keeps the display brightness controlled by the ambient light sensor and publishes the current effective value back to Home Assistant. When automatic brightness is disabled, the Home Assistant number acts as the manual display brightness setting.
+
+Air Quality, Air Quality Level, Worst Pollutant, and Ventilation Recommended use the same assessment as the display, including the selected guideline profile and custom thresholds. Ventilation Recommended turns on when the status is Poor or worse, matching the on-device "Ventilate the room" guidance.
 
 AirDot also exposes ESPHome API actions for display notifications:
 
