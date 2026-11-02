@@ -284,3 +284,7 @@ onboarding:
       Du kannst deine Luftqualität
       jetzt verfolgen.
     countdown: Übersicht öffnet in {seconds}…
+
+trend:
+  last_hour: "{delta} in der letzten Stunde"
+  last_minutes: "{delta} in den letzten {minutes} Min."

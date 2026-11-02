@@ -284,3 +284,7 @@ onboarding:
       Acum poți urmări
       calitatea aerului.
     countdown: Rezumatul se deschide în {seconds}…
+
+trend:
+  last_hour: "{delta} în ultima oră"
+  last_minutes: "{delta} în ultimele {minutes} min"

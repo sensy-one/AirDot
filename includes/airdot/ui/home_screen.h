@@ -4,6 +4,7 @@
 #include <cmath>
 #include <cstdio>
 #include <cstring>
+#include <string>
 #include <lvgl.h>
 #include <esp_heap_caps.h>
 
@@ -188,6 +189,13 @@ inline int arc_for_worst_metric(int index) {
     default:
       return -1;
   }
+}
+
+inline void replace_token(std::string &text, const char *token, const char *value) {
+  const size_t length = std::strlen(token);
+  for (size_t position = text.find(token); position != std::string::npos;
+       position = text.find(token, position + std::strlen(value)))
+    text.replace(position, length, value);
 }
 
 inline void format_metric_value(char *out, size_t size, float value) {

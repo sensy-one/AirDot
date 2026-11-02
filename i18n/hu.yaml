@@ -285,3 +285,7 @@ onboarding:
       Mostantól nyomon követheted
       a levegőminőséget.
     countdown: Áttekintés megnyitása {seconds} másodperc múlva…
+
+trend:
+  last_hour: "{delta} az elmúlt órában"
+  last_minutes: "{delta} az elmúlt {minutes} percben"

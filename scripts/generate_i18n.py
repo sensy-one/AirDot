@@ -24,6 +24,7 @@ SCREEN_IDS = {
 
 LANGUAGE_KEYS = ("id", "code", "label")
 CONNECTION_KEYS = ("indoor", "outdoor", "offline")
+TREND_KEYS = ("last_hour", "last_minutes")
 WEATHER_CODE_KEYS = (
     "clear",
     "cloudy",
@@ -346,6 +347,7 @@ def validate_language(data: dict, path: Path) -> None:
     require_section_keys(data, "air_quality", AIR_QUALITY_KEYS, path)
     require_section_keys(data, "factory_reset", FACTORY_RESET_KEYS, path)
     require_section_keys(data, "connection", CONNECTION_KEYS, path)
+    require_section_keys(data, "trend", TREND_KEYS, path)
     require_section_keys(data, "weather", WEATHER_KEYS, path)
     require_section_keys(data, "notification", NOTIFICATION_KEYS, path)
     require_section_keys(data, "date", DATE_KEYS + ("weekdays", "months"), path)
@@ -720,6 +722,11 @@ def generate(languages: list[dict]) -> str:
     lines.extend(["  " + line for line in emit_language_switch(languages, "language", "connection.indoor")])
     lines.extend(["}", "", "inline const char *connection_offline_text(UiLanguage language) {"])
     lines.extend(emit_language_switch(languages, "language", "connection.offline"))
+    lines.extend(["}", "", "// Alert trend line patterns: {delta} is the signed change, {minutes} the time span."])
+    lines.append("inline const char *trend_last_hour_pattern(UiLanguage language) {")
+    lines.extend(emit_language_switch(languages, "language", "trend.last_hour"))
+    lines.extend(["}", "", "inline const char *trend_last_minutes_pattern(UiLanguage language) {"])
+    lines.extend(emit_language_switch(languages, "language", "trend.last_minutes"))
     lines.extend(
         [
             "}",

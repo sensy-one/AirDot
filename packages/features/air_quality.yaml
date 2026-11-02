@@ -333,14 +333,15 @@ script:
               if (trend.change(worst_metric, current, delta, minutes)) {
                 char delta_text[16];
                 hs::format_metric_value(delta_text, sizeof(delta_text), std::fabs(delta));
-                char trend_text[48];
-                const char *sign = delta >= 0.0f ? "+" : "-";
-                if (minutes >= 60) {
-                  std::snprintf(trend_text, sizeof(trend_text), "%s%s in the last hour", sign, delta_text);
-                } else {
-                  std::snprintf(trend_text, sizeof(trend_text), "%s%s in the last %d min", sign, delta_text, minutes);
-                }
-                hs::set_text(alert_trend, trend_text);
+                char signed_delta[20];
+                std::snprintf(signed_delta, sizeof(signed_delta), "%s%s", delta >= 0.0f ? "+" : "-", delta_text);
+                char minutes_text[8];
+                std::snprintf(minutes_text, sizeof(minutes_text), "%d", minutes);
+                std::string trend_text = minutes >= 60 ? AirDot::trend_last_hour_pattern(ui_language)
+                                                       : AirDot::trend_last_minutes_pattern(ui_language);
+                hs::replace_token(trend_text, "{delta}", signed_delta);
+                hs::replace_token(trend_text, "{minutes}", minutes_text);
+                hs::set_text(alert_trend, trend_text.c_str());
                 hs::set_hidden(alert_trend, false);
               } else {
                 hs::set_hidden(alert_trend, true);

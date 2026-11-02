@@ -284,3 +284,7 @@ onboarding:
       Je kunt je luchtkwaliteit
       nu volgen.
     countdown: Overzicht opent over {seconds}…
+
+trend:
+  last_hour: "{delta} in het afgelopen uur"
+  last_minutes: "{delta} in de afgelopen {minutes} min"

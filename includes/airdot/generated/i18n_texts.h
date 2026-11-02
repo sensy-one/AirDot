@@ -667,6 +667,53 @@ inline const char *connection_offline_text(UiLanguage language) {
   }
 }
 
+// Alert trend line patterns: {delta} is the signed change, {minutes} the time span.
+inline const char *trend_last_hour_pattern(UiLanguage language) {
+  switch (language) {
+    case UiLanguage::EN:
+      return "{delta} in the last hour";
+    case UiLanguage::DE:
+      return "{delta} in der letzten Stunde";
+    case UiLanguage::NL:
+      return "{delta} in het afgelopen uur";
+    case UiLanguage::FR:
+      return "{delta} sur la dernière heure";
+    case UiLanguage::HU:
+      return "{delta} az elmúlt órában";
+    case UiLanguage::CS:
+      return "{delta} za poslední hodinu";
+    case UiLanguage::IT:
+      return "{delta} nell'ultima ora";
+    case UiLanguage::RO:
+      return "{delta} în ultima oră";
+    default:
+      return "{delta} in the last hour";
+  }
+}
+
+inline const char *trend_last_minutes_pattern(UiLanguage language) {
+  switch (language) {
+    case UiLanguage::EN:
+      return "{delta} in the last {minutes} min";
+    case UiLanguage::DE:
+      return "{delta} in den letzten {minutes} Min.";
+    case UiLanguage::NL:
+      return "{delta} in de afgelopen {minutes} min";
+    case UiLanguage::FR:
+      return "{delta} sur les {minutes} dernières min";
+    case UiLanguage::HU:
+      return "{delta} az elmúlt {minutes} percben";
+    case UiLanguage::CS:
+      return "{delta} za posledních {minutes} min";
+    case UiLanguage::IT:
+      return "{delta} negli ultimi {minutes} min";
+    case UiLanguage::RO:
+      return "{delta} în ultimele {minutes} min";
+    default:
+      return "{delta} in the last {minutes} min";
+  }
+}
+
 inline const char *date_format_text(UiLanguage language) {
   switch (language) {
     case UiLanguage::EN:

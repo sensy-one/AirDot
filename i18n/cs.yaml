@@ -285,3 +285,7 @@ onboarding:
       Nyní můžete sledovat
       kvalitu vzduchu.
     countdown: Přehled se otevře za {seconds}…
+
+trend:
+  last_hour: "{delta} za poslední hodinu"
+  last_minutes: "{delta} za posledních {minutes} min"

@@ -284,3 +284,7 @@ onboarding:
       Ora puoi monitorare
       la qualità dell'aria.
     countdown: Panoramica tra {seconds}…
+
+trend:
+  last_hour: "{delta} nell'ultima ora"
+  last_minutes: "{delta} negli ultimi {minutes} min"
