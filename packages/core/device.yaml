@@ -31,6 +31,7 @@ esphome:
     - includes/airdot/setup/setup_portal.h
     - includes/airdot/ui/flight_radar_display.h
     - includes/airdot/ui/screen_ring.h
+    - includes/airdot/ui/home_screen.h
   on_boot:
     - priority: 205
       then:

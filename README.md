@@ -173,8 +173,10 @@ AirDot publishes these entities to Home Assistant:
 - Worst Pollutant: the measurement that sets the current status, or None when everything is Good
 - Ventilation Recommended, as an on/off sensor
 - Screen Ring, as an RGB light
-- Screen Ring Thickness, as a number from 1 to 40 px
 - Screen Ring Progress, as a number from 0 to 100%
+- Calm View, as an on/off switch
+- Calm View Delay, as a number from 1 to 60 minutes
+- Calm View at Night, as an on/off switch
 - Action Button
 - Display Brightness, as a number from 0 to 100%
 - Display Power, as an on/off switch
@@ -186,7 +188,7 @@ Display Brightness uses a number field. When automatic brightness is enabled, Ai
 
 Air Quality, Air Quality Level, Worst Pollutant, and Ventilation Recommended use the same assessment as the display, including the selected guideline profile and custom thresholds. Ventilation Recommended turns on when the status is Poor or worse, matching the on-device "Ventilate the room" guidance.
 
-Screen Ring draws a thin colored ring around the edge of the display, on top of every page. The light color sets the ring color, the light brightness sets its opacity, and turning the light off hides the ring. Screen Ring Thickness sets the ring width in pixels. Screen Ring Progress, from 0 to 100%, draws only that part of the ring, clockwise from the top, so the ring can show progress or a countdown. At 100% the full ring is shown. The Screen Ring light also has an *Air Quality* effect that colors the ring by the current air-quality status (green, yellow, orange, red, or magenta for Critical) and keeps following it. The ring is off by default and its state is restored after a reboot, which makes it useful as a subtle status indicator driven by Home Assistant automations.
+Screen Ring draws a colored segment in the gap at the bottom of the display's ring, on top of every page. On the home screen it matches the pollutant arcs; on other screens it is a hairline. The light color sets the segment color, the light brightness sets its opacity, and turning the light off hides it. Screen Ring Progress, from 0 to 100%, fills only that part of the segment, from left to right, so it can show progress or a countdown. At 100% the full segment is shown. The Screen Ring light also has an *Air Quality* effect that colors the ring by the current air-quality status (green, yellow, orange, red, or magenta for Critical) and keeps following it. The segment is off by default and its state is restored after a reboot, which makes it useful as a subtle status indicator driven by Home Assistant automations.
 
 AirDot also exposes ESPHome API actions for display notifications:
 
@@ -272,6 +274,16 @@ Available pages:
 
 The time and weather page appears when time is available and either time sync or weather is enabled. The Flight Radar page appears when Wi-Fi is configured and Flight Radar is enabled.
 
+The air-quality summary shows a soft glow in the current status color behind the status and guidance, with five arcs around the edge for PM2.5, CO2, VOC, NOx and PM10, each colored by its own level. When the status is Moderate or worse, the measurement that sets it is shown with its value. From Poor upwards the screen switches to an alert view: the matching arc grows, the others dim, and the center shows what to do, the current value and how it changed over the last hour.
+
+Each history page shows the current value above an edge-to-edge graph of the last 24 hours. For air-quality measurements the graph is shaded by the selected guideline profile or custom thresholds, so it is easy to see when the air was Good, Moderate or Poor.
+
+### Calm View
+
+When the action button has not been pressed for a while, the summary fades to a calm view: a faint glow in the status color, a thin ring and a large clock. During the night mode schedule it starts after one minute. A button press, or any change in the air-quality status, brings back the full summary; the press that wakes it does not change the page. The calm view never starts while the air is Poor or worse, or during alerts and setup.
+
+Calm View, Calm View Delay and Calm View at Night can be changed from Home Assistant.
+
 ## Action Button
 
 The physical action button controls the local UI.
@@ -353,7 +365,7 @@ Flight Radar options:
 
 The radar uses the configured exact location when available. If exact location is not enabled, AirDot can use automatic location when Wi-Fi and internet access are available.
 
-The radar display is intentionally minimal: compass ticks, a north indicator, rotating aircraft markers, full callsigns, and connector lines. Standard aircraft use the display theme color, and military or priority aircraft are shown in orange.
+The radar display is intentionally minimal: range rings, a north indicator, aircraft dots with a short trail along their track, full callsigns, and the nearest aircraft with its distance at the bottom. Standard aircraft are shown in blue, and military or priority aircraft are shown in orange.
 
 ## Air-Quality Guidelines and Custom Thresholds
 

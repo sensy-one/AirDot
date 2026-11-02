@@ -1,0 +1,123 @@
+# Calm view: after a period without button presses, or during the night-mode window, the home screen fades
+# to a faint glow, a hairline ring and a large dim clock. A button press, or any change in the air-quality
+# level, brings back the full home screen; the press that wakes it does not also change the page.
+# The calm view never starts while the air is Poor or worse, during alerts, hazard focus or setup.
+# Home Assistant controls: Calm View (on/off), Calm View Delay (1-60 min) and Calm View at Night.
+
+globals:
+  - id: calm_view_active
+    type: int
+    restore_value: false
+    initial_value: "0"
+  - id: calm_view_last_activity_ms
+    type: uint32_t
+    restore_value: false
+    initial_value: "0"
+  # When a button press last woke the screen from the calm view; a second click right after it (a double
+  # click) is swallowed too, so it doesn't turn into a page change.
+  - id: calm_view_woke_ms
+    type: uint32_t
+    restore_value: false
+    initial_value: "0"
+  # Last air-quality level seen, -3 before the first check.
+  - id: calm_view_last_level
+    type: int
+    restore_value: false
+    initial_value: "-3"
+
+number:
+  - platform: template
+    id: calm_view_delay
+    name: Calm View Delay
+    entity_category: config
+    icon: mdi:timer-sand
+    unit_of_measurement: min
+    min_value: 1
+    max_value: 60
+    step: 1
+    initial_value: 5
+    restore_value: true
+    optimistic: true
+    mode: box
+
+switch:
+  # Master switch: off disables the calm view completely, day and night.
+  - platform: template
+    id: calm_view_enabled
+    name: Calm View
+    entity_category: config
+    icon: mdi:power-sleep
+    optimistic: true
+    restore_mode: RESTORE_DEFAULT_ON
+  - platform: template
+    id: calm_view_at_night
+    name: Calm View at Night
+    entity_category: config
+    icon: mdi:weather-night
+    optimistic: true
+    restore_mode: RESTORE_DEFAULT_ON
+
+script:
+  # Call on user activity (button press). Leaves the calm view if it is showing.
+  - id: calm_view_register_activity
+    mode: restart
+    then:
+      - lambda: |-
+          id(calm_view_last_activity_ms) = millis();
+          if (id(calm_view_active) != 0) {
+            id(calm_view_active) = 0;
+            id(ui_auto_page_switch_last_ms) = millis();
+            id(ui_refresh_air_quality_summary).execute();
+          }
+
+interval:
+  - interval: 1s
+    then:
+      - lambda: |-
+          const uint32_t now = millis();
+          if (id(calm_view_last_activity_ms) == 0)
+            id(calm_view_last_activity_ms) = now;
+
+          const int level = id(air_quality_status_level);
+          if (level != id(calm_view_last_level)) {
+            if (id(calm_view_last_level) != -3)
+              id(calm_view_last_activity_ms) = now;
+            id(calm_view_last_level) = level;
+          }
+
+          const bool hazard_focus_active =
+            id(air_quality_hazard_focus_hazard_since_ms) != 0 ||
+            id(air_quality_hazard_focus_metric) != -1 ||
+            id(air_quality_hazard_focus_clear_since_ms) != 0 ||
+            id(air_quality_hazard_focus_status_since_ms) != 0;
+          const bool blocked =
+            !id(calm_view_enabled).state || level < 0 || level >= 2 || hazard_focus_active ||
+            id(ui_alert_active) != 0 || id(page_button_pressed_at_ms) != 0 ||
+            AirDot::onboarding::setup_or_onboarding_active(
+              id(setup_ap_active), id(setup_portal_active), id(onboarding_ui_active));
+
+          const auto utc_now = id(sntp_time).utcnow();
+          const bool night_window =
+            id(calm_view_at_night).state && utc_now.is_valid() &&
+            AirDot::onboarding::screen_off_window_active_at_utc(static_cast<uint32_t>(utc_now.timestamp));
+          const uint32_t idle_ms = now - id(calm_view_last_activity_ms);
+          const float delay_minutes = id(calm_view_delay).state;
+
+          bool want = false;
+          if (!blocked) {
+            if (night_window && idle_ms >= 60UL * 1000UL)
+              want = true;
+            else if (std::isfinite(delay_minutes) && delay_minutes >= 1.0f &&
+                     idle_ms >= static_cast<uint32_t>(delay_minutes * 60.0f * 1000.0f))
+              want = true;
+          }
+
+          if (want == (id(calm_view_active) != 0))
+            return;
+          id(calm_view_active) = want ? 1 : 0;
+          if (want && !id(air_quality_summary_page)->is_showing()) {
+            id(air_quality_summary_page)->get_parent()->show_page(
+              id(air_quality_summary_page)->index, LV_SCREEN_LOAD_ANIM_NONE, 0);
+          }
+          id(ui_auto_page_switch_last_ms) = now;
+          id(ui_refresh_air_quality_summary).execute();

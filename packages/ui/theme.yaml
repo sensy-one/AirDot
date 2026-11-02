@@ -32,38 +32,26 @@ script:
           auto apply_history = [&](auto *page, auto *title, auto *max_label, auto *empty_label,
                                    auto *min_label, auto *current_label, auto *unit_label) {
             set_background(page);
-            set_text(title);
-            set_text(max_label);
+            AirDot::home_screen::set_text_style(AirDot::lv_obj(title), text, 153);
+            AirDot::home_screen::set_text_style(AirDot::lv_obj(max_label), text, 204);
             set_text(empty_label);
-            set_text(min_label);
+            AirDot::home_screen::set_text_style(AirDot::lv_obj(min_label), text, 204);
             set_text(current_label);
-            set_text(unit_label);
+            AirDot::home_screen::set_text_style(AirDot::lv_obj(unit_label), text, 204);
           };
 
           set_background(id(air_quality_summary_page));
           set_text(id(air_quality_summary_connection_label));
-          set_text(id(air_quality_summary_temperature_label));
-          set_text(id(air_quality_summary_temperature_unit_label));
-          set_text(id(air_quality_summary_humidity_label));
-          set_text(id(air_quality_summary_humidity_unit_label));
-          set_text(id(air_quality_summary_pressure_label));
-          set_text(id(air_quality_summary_pressure_unit_label));
-          set_text(id(air_quality_summary_status_label));
-          set_text(id(air_quality_summary_action_label));
-          set_text(id(air_quality_summary_pm25_text_label));
-          set_text(id(air_quality_summary_co2_text_label));
-          set_text(id(air_quality_summary_voc_text_label));
-          set_text(id(air_quality_summary_pm10_text_label));
-          set_text(id(air_quality_summary_nox_text_label));
+          id(ui_refresh_air_quality_summary).execute();
 
           set_background(id(time_page));
-          set_text(id(time_page_connection_label));
-          set_text(id(time_page_outdoor_temperature_label));
-          set_text(id(time_page_outdoor_temperature_unit_label));
-          set_text(id(time_page_outdoor_humidity_label));
-          set_text(id(time_page_outdoor_humidity_unit_label));
-          set_text(id(time_page_outdoor_pressure_label));
-          set_text(id(time_page_outdoor_pressure_unit_label));
+          AirDot::home_screen::set_text_style(AirDot::lv_obj(id(time_page_connection_label)), text, 128);
+          AirDot::home_screen::set_text_style(AirDot::lv_obj(id(time_page_outdoor_temperature_label)), text, 128);
+          AirDot::home_screen::set_text_style(AirDot::lv_obj(id(time_page_outdoor_temperature_unit_label)), text, 128);
+          AirDot::home_screen::set_text_style(AirDot::lv_obj(id(time_page_outdoor_humidity_label)), text, 128);
+          AirDot::home_screen::set_text_style(AirDot::lv_obj(id(time_page_outdoor_humidity_unit_label)), text, 128);
+          AirDot::home_screen::set_text_style(AirDot::lv_obj(id(time_page_outdoor_pressure_label)), text, 128);
+          AirDot::home_screen::set_text_style(AirDot::lv_obj(id(time_page_outdoor_pressure_unit_label)), text, 128);
           set_text(id(time_page_placeholder_label));
           set_text(id(time_page_24h_hour_tens_label));
           set_text(id(time_page_24h_hour_ones_label));
@@ -76,12 +64,11 @@ script:
           set_text(id(time_page_12h_minute_tens_label));
           set_text(id(time_page_12h_minute_ones_label));
           set_text(id(time_page_suffix_label));
-          set_text(id(time_page_date_label));
-          set_text(id(time_page_weather_label));
-          set_text(id(time_page_weather_high_low_label));
+          AirDot::home_screen::set_text_style(AirDot::lv_obj(id(time_page_date_label)), text, 153);
+          AirDot::home_screen::set_text_style(AirDot::lv_obj(id(time_page_weather_label)), text, 217);
+          AirDot::home_screen::set_text_style(AirDot::lv_obj(id(time_page_weather_high_low_label)), text, 153);
 
           set_radar_background(id(flight_radar_page));
-          set_radar_background(id(flight_radar_scope));
           AirDot::flight_radar::refresh_radar_scope(
               id(flight_radar_scope), id(ui_font_radar_tag), id(ui_font_small));
 

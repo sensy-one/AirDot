@@ -517,7 +517,7 @@ script:
           }
           const std::string button_text = button_label == nullptr ? "" : button_label;
           const std::string button_display =
-              button_text.empty() ? std::string() : std::string("[ ") + button_text + " ]";
+              button_text.empty() ? std::string() : button_text;
           lv_label_set_text(id(modal_overlay_primary_button_label), button_display.c_str());
           lv_obj_clear_flag(id(modal_overlay_primary_button_group), LV_OBJ_FLAG_HIDDEN);
 
@@ -608,7 +608,7 @@ script:
                 const std::string button_text =
                     AirDot::onboarding::dismiss_button_text(ui_language);
                 const std::string button_display =
-                    button_text.empty() ? std::string() : std::string("[ ") + button_text + " ]";
+                    button_text.empty() ? std::string() : button_text;
                 const auto text_color =
                     id(ui_alert_text_color_set) != 0
                         ? lv_color_hex(id(ui_alert_text_color))

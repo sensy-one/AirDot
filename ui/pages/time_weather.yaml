@@ -4,9 +4,43 @@ bg_opa: COVER
 pad_all: 0
 
 widgets:
+  - image:
+      id: time_page_glow_image
+      src: snapshot_placeholder_image
+      align: CENTER
+      hidden: true
+  - arc:
+      id: time_page_ring
+      align: CENTER
+      width: 448
+      height: 448
+      adjustable: false
+      clickable: false
+      rotation: 270
+      start_angle: 215
+      end_angle: 145
+      min_value: 0
+      max_value: 1
+      value: 0
+      pad_all: 0
+      bg_opa: TRANSP
+      border_width: 0
+      arc_color: 0x20E840
+      arc_opa: 45%
+      arc_width: 3
+      arc_rounded: true
+      indicator:
+        arc_opa: TRANSP
+        arc_width: 0
+        pad_all: 0
+      knob:
+        bg_opa: TRANSP
+        border_width: 0
+        shadow_width: 0
+        pad_all: 0
   - obj:
-      align: TOP_MID
-      y: 58
+      align: CENTER
+      y: 156
       width: SIZE_CONTENT
       height: SIZE_CONTENT
       bg_opa: TRANSP
@@ -85,7 +119,7 @@ widgets:
                   text_color: 0xFFFFFF
                   bg_opa: TRANSP
                   translate_x: -7
-                  pad_right: 11
+                  pad_right: 0
               - label:
                   id: time_page_outdoor_pressure_label
                   text: "--"
@@ -130,46 +164,46 @@ widgets:
       widgets:
         - label:
             id: time_page_24h_hour_tens_label
-            width: 30
+            width: 62
             text: "0"
-            text_font: ui_font_status
+            text_font: ui_font_calm_time
             text_color: 0xFFFFFF
             bg_opa: TRANSP
             long_mode: CLIP
             text_align: CENTER
         - label:
             id: time_page_24h_hour_ones_label
-            width: 30
+            width: 62
             text: "0"
-            text_font: ui_font_status
+            text_font: ui_font_calm_time
             text_color: 0xFFFFFF
             bg_opa: TRANSP
             long_mode: CLIP
             text_align: CENTER
         - label:
             id: time_page_24h_colon_label
-            width: 18
+            width: 30
             text: ":"
-            text_font: ui_font_status
+            text_font: ui_font_calm_time
             text_color: 0xFFFFFF
             bg_opa: TRANSP
             long_mode: CLIP
             text_align: CENTER
-            translate_y: -4
+            translate_y: -8
         - label:
             id: time_page_24h_minute_tens_label
-            width: 30
+            width: 62
             text: "0"
-            text_font: ui_font_status
+            text_font: ui_font_calm_time
             text_color: 0xFFFFFF
             bg_opa: TRANSP
             long_mode: CLIP
             text_align: CENTER
         - label:
             id: time_page_24h_minute_ones_label
-            width: 30
+            width: 62
             text: "0"
-            text_font: ui_font_status
+            text_font: ui_font_calm_time
             text_color: 0xFFFFFF
             bg_opa: TRANSP
             long_mode: CLIP
@@ -193,7 +227,7 @@ widgets:
         pad_column: 0
       widgets:
         - obj:
-            width: 52
+            width: 60
             height: 1
             bg_opa: TRANSP
             border_width: 0
@@ -213,53 +247,53 @@ widgets:
             widgets:
               - label:
                   id: time_page_12h_hour_tens_label
-                  width: 30
+                  width: 62
                   text: "0"
-                  text_font: ui_font_status
+                  text_font: ui_font_calm_time
                   text_color: 0xFFFFFF
                   bg_opa: TRANSP
                   long_mode: CLIP
                   text_align: CENTER
               - label:
                   id: time_page_12h_hour_ones_label
-                  width: 30
+                  width: 62
                   text: "0"
-                  text_font: ui_font_status
+                  text_font: ui_font_calm_time
                   text_color: 0xFFFFFF
                   bg_opa: TRANSP
                   long_mode: CLIP
                   text_align: CENTER
               - label:
                   id: time_page_12h_colon_label
-                  width: 18
+                  width: 30
                   text: ":"
-                  text_font: ui_font_status
+                  text_font: ui_font_calm_time
                   text_color: 0xFFFFFF
                   bg_opa: TRANSP
                   long_mode: CLIP
                   text_align: CENTER
-                  translate_y: -4
+                  translate_y: -8
               - label:
                   id: time_page_12h_minute_tens_label
-                  width: 30
+                  width: 62
                   text: "0"
-                  text_font: ui_font_status
+                  text_font: ui_font_calm_time
                   text_color: 0xFFFFFF
                   bg_opa: TRANSP
                   long_mode: CLIP
                   text_align: CENTER
               - label:
                   id: time_page_12h_minute_ones_label
-                  width: 30
+                  width: 62
                   text: "0"
-                  text_font: ui_font_status
+                  text_font: ui_font_calm_time
                   text_color: 0xFFFFFF
                   bg_opa: TRANSP
                   long_mode: CLIP
                   text_align: CENTER
         - label:
             id: time_page_suffix_label
-            width: 52
+            width: 60
             text: ""
             text_font: ui_font_time_suffix
             text_color: 0xFFFFFF
@@ -267,12 +301,12 @@ widgets:
             long_mode: CLIP
             text_align: LEFT
             pad_left: 8
-            translate_y: 11
+            translate_y: 30
   - label:
       id: time_page_date_label
       align: CENTER
       x: 0
-      y: 28
+      y: -118
       width: 360
       text: "--"
       text_font: ui_font_action
@@ -282,8 +316,8 @@ widgets:
       long_mode: CLIP
       text_align: CENTER
   - obj:
-      align: BOTTOM_MID
-      y: -58
+      align: CENTER
+      y: 84
       width: SIZE_CONTENT
       height: SIZE_CONTENT
       bg_opa: TRANSP

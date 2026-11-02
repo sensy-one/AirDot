@@ -1,24 +1,232 @@
+# Air-quality home screen: a soft glow in the status color, five pollutant arcs, one status and one action.
+# The calm view (idle and night) replaces it with a faint glow, a hairline ring and a large dim clock.
+# Widgets are driven by ui_refresh_air_quality_summary (packages/features/air_quality.yaml).
 id: air_quality_summary_page
 bg_color: 0x000000
 bg_opa: COVER
 pad_all: 0
 
 widgets:
+  - image:
+      id: air_quality_summary_glow_image
+      src: snapshot_placeholder_image
+      align: CENTER
+      hidden: true
+
   - obj:
-      align: TOP_MID
-      y: 58
-      width: SIZE_CONTENT
-      height: SIZE_CONTENT
+      id: air_quality_summary_home_group
+      align: CENTER
+      width: 480
+      height: 480
       bg_opa: TRANSP
       border_width: 0
       pad_all: 0
-      layout:
-        type: FLEX
-        flex_flow: COLUMN
-        flex_align_main: CENTER
-        flex_align_cross: CENTER
+      radius: 0
+      clickable: false
+      scrollable: false
       widgets:
+        - arc:
+            id: air_quality_summary_pm25_arc
+            align: CENTER
+            width: 448
+            height: 448
+            adjustable: false
+            clickable: false
+            rotation: 270
+            start_angle: 215
+            end_angle: 268
+            min_value: 0
+            max_value: 1
+            value: 0
+            pad_all: 0
+            bg_opa: TRANSP
+            border_width: 0
+            arc_color: 0x2A2A2C
+            arc_opa: COVER
+            arc_width: 12
+            arc_rounded: true
+            indicator:
+              arc_opa: TRANSP
+              arc_width: 0
+              pad_all: 0
+            knob:
+              bg_opa: TRANSP
+              border_width: 0
+              shadow_width: 0
+              pad_all: 0
+        - arc:
+            id: air_quality_summary_co2_arc
+            align: CENTER
+            width: 448
+            height: 448
+            adjustable: false
+            clickable: false
+            rotation: 270
+            start_angle: 274
+            end_angle: 327
+            min_value: 0
+            max_value: 1
+            value: 0
+            pad_all: 0
+            bg_opa: TRANSP
+            border_width: 0
+            arc_color: 0x2A2A2C
+            arc_opa: COVER
+            arc_width: 12
+            arc_rounded: true
+            indicator:
+              arc_opa: TRANSP
+              arc_width: 0
+              pad_all: 0
+            knob:
+              bg_opa: TRANSP
+              border_width: 0
+              shadow_width: 0
+              pad_all: 0
+        - arc:
+            id: air_quality_summary_voc_arc
+            align: CENTER
+            width: 448
+            height: 448
+            adjustable: false
+            clickable: false
+            rotation: 270
+            start_angle: 333
+            end_angle: 26
+            min_value: 0
+            max_value: 1
+            value: 0
+            pad_all: 0
+            bg_opa: TRANSP
+            border_width: 0
+            arc_color: 0x2A2A2C
+            arc_opa: COVER
+            arc_width: 12
+            arc_rounded: true
+            indicator:
+              arc_opa: TRANSP
+              arc_width: 0
+              pad_all: 0
+            knob:
+              bg_opa: TRANSP
+              border_width: 0
+              shadow_width: 0
+              pad_all: 0
+        - arc:
+            id: air_quality_summary_nox_arc
+            align: CENTER
+            width: 448
+            height: 448
+            adjustable: false
+            clickable: false
+            rotation: 270
+            start_angle: 32
+            end_angle: 85
+            min_value: 0
+            max_value: 1
+            value: 0
+            pad_all: 0
+            bg_opa: TRANSP
+            border_width: 0
+            arc_color: 0x2A2A2C
+            arc_opa: COVER
+            arc_width: 12
+            arc_rounded: true
+            indicator:
+              arc_opa: TRANSP
+              arc_width: 0
+              pad_all: 0
+            knob:
+              bg_opa: TRANSP
+              border_width: 0
+              shadow_width: 0
+              pad_all: 0
+        - arc:
+            id: air_quality_summary_pm10_arc
+            align: CENTER
+            width: 448
+            height: 448
+            adjustable: false
+            clickable: false
+            rotation: 270
+            start_angle: 91
+            end_angle: 144
+            min_value: 0
+            max_value: 1
+            value: 0
+            pad_all: 0
+            bg_opa: TRANSP
+            border_width: 0
+            arc_color: 0x2A2A2C
+            arc_opa: COVER
+            arc_width: 12
+            arc_rounded: true
+            indicator:
+              arc_opa: TRANSP
+              arc_width: 0
+              pad_all: 0
+            knob:
+              bg_opa: TRANSP
+              border_width: 0
+              shadow_width: 0
+              pad_all: 0
+        - label:
+            id: air_quality_summary_pm25_ring_label
+            align: CENTER
+            x: -163
+            y: 89
+            text: "PM₂.₅"
+            text_font: ui_font_ring_label
+            text_color: 0xFFFFFF
+            text_opa: 60%
+            bg_opa: TRANSP
+        - label:
+            id: air_quality_summary_co2_ring_label
+            align: CENTER
+            x: -160
+            y: -94
+            text: "CO₂"
+            text_font: ui_font_ring_label
+            text_color: 0xFFFFFF
+            text_opa: 60%
+            bg_opa: TRANSP
+        - label:
+            id: air_quality_summary_voc_ring_label
+            align: CENTER
+            x: -2
+            y: -186
+            text: "VOC"
+            text_font: ui_font_ring_label
+            text_color: 0xFFFFFF
+            text_opa: 60%
+            bg_opa: TRANSP
+        - label:
+            id: air_quality_summary_nox_ring_label
+            align: CENTER
+            x: 159
+            y: -97
+            text: "NOx"
+            text_font: ui_font_ring_label
+            text_color: 0xFFFFFF
+            text_opa: 60%
+            bg_opa: TRANSP
+        - label:
+            id: air_quality_summary_pm10_ring_label
+            align: CENTER
+            x: 165
+            y: 86
+            text: "PM₁₀"
+            text_font: ui_font_ring_label
+            text_color: 0xFFFFFF
+            text_opa: 60%
+            bg_opa: TRANSP
+
+        # Connection status, shown only while Wi-Fi is configured but offline.
         - obj:
+            id: air_quality_summary_connection_group
+            align: TOP_MID
+            y: 92
+            hidden: true
             width: SIZE_CONTENT
             height: SIZE_CONTENT
             bg_opa: TRANSP
@@ -43,13 +251,60 @@ widgets:
                   text_font: ui_font_small
                   text_color: 0xFFFFFF
                   bg_opa: TRANSP
+
+        - label:
+            id: air_quality_summary_time_label
+            align: CENTER
+            y: -92
+            text: ""
+            text_font: ui_font_small
+            text_color: 0xFFFFFF
+            text_opa: 60%
+            bg_opa: TRANSP
+            text_letter_space: 1
+
+        - label:
+            id: air_quality_summary_status_label
+            align: CENTER
+            y: -16
+            text: "--"
+            text_font: ui_font_status
+            text_color: 0xFFFFFF
+            bg_opa: TRANSP
+            text_letter_space: 1
+
+        - label:
+            id: air_quality_summary_action_label
+            align: CENTER
+            y: 30
+            text: "--"
+            text_font: ui_font_action
+            text_color: 0xFFFFFF
+            text_opa: 85%
+            bg_opa: TRANSP
+            text_letter_space: 1
+
+        # Worst pollutant with its value, colored by its level. Hidden while everything is Good.
+        - label:
+            id: air_quality_summary_worst_label
+            align: CENTER
+            y: 78
+            hidden: true
+            text: ""
+            text_font: ui_font_small
+            text_color: 0xFFFFFF
+            bg_opa: TRANSP
+            text_letter_space: 1
+
         - obj:
+            id: air_quality_summary_comfort_group
+            align: CENTER
+            y: 150
             width: SIZE_CONTENT
             height: SIZE_CONTENT
             bg_opa: TRANSP
             border_width: 0
             pad_all: 0
-            pad_top: 6
             layout:
               type: FLEX
               flex_flow: ROW
@@ -61,6 +316,7 @@ widgets:
                   text: "--"
                   text_font: ui_font_small
                   text_color: 0xFFFFFF
+                  text_opa: 60%
                   bg_opa: TRANSP
                   text_letter_space: 1
               - label:
@@ -68,6 +324,7 @@ widgets:
                   text: "°C"
                   text_font: ui_font_summary_unit
                   text_color: 0xFFFFFF
+                  text_opa: 60%
                   bg_opa: TRANSP
                   translate_x: -7
                   pad_right: 11
@@ -76,6 +333,7 @@ widgets:
                   text: "--"
                   text_font: ui_font_small
                   text_color: 0xFFFFFF
+                  text_opa: 60%
                   bg_opa: TRANSP
                   text_letter_space: 1
               - label:
@@ -83,151 +341,186 @@ widgets:
                   text: "%"
                   text_font: ui_font_summary_unit
                   text_color: 0xFFFFFF
+                  text_opa: 60%
                   bg_opa: TRANSP
                   translate_x: -7
-                  pad_right: 11
+
+        # Alert takeover (Poor or worse): one instruction, the culprit's value and its trend.
+        - obj:
+            id: air_quality_summary_alert_group
+            hidden: true
+            align: CENTER
+            width: 480
+            height: 480
+            bg_opa: TRANSP
+            border_width: 0
+            pad_all: 0
+            radius: 0
+            clickable: false
+            scrollable: false
+            widgets:
+              - label:
+                  id: air_quality_summary_alert_action_label
+                  align: CENTER
+                  y: -88
+                  text: ""
+                  text_font: ui_font_modal_title
+                  text_color: 0xFFFFFF
+                  bg_opa: TRANSP
+              - label:
+                  id: air_quality_summary_alert_value_label
+                  align: CENTER
+                  y: -10
+                  text: ""
+                  text_font: ui_font_history_value
+                  text_color: 0xFFFFFF
+                  bg_opa: TRANSP
+              - label:
+                  id: air_quality_summary_alert_unit_label
+                  align: CENTER
+                  y: 44
+                  text: ""
+                  text_font: ui_font_small
+                  text_color: 0xFFFFFF
+                  text_opa: 90%
+                  bg_opa: TRANSP
+              - label:
+                  id: air_quality_summary_alert_trend_label
+                  align: CENTER
+                  y: 92
+                  text: ""
+                  text_font: ui_font_small
+                  text_color: 0xFFFFFF
+                  bg_opa: TRANSP
+
+        # Previous layout's widgets, kept hidden so existing scripts that update them keep working.
+        - obj:
+            hidden: true
+            width: SIZE_CONTENT
+            height: SIZE_CONTENT
+            bg_opa: TRANSP
+            border_width: 0
+            pad_all: 0
+            widgets:
               - label:
                   id: air_quality_summary_pressure_label
                   text: "--"
                   text_font: ui_font_small
-                  text_color: 0xFFFFFF
                   bg_opa: TRANSP
-                  text_letter_space: 1
               - label:
                   id: air_quality_summary_pressure_unit_label
                   text: "hPa"
                   text_font: ui_font_summary_unit
-                  text_color: 0xFFFFFF
                   bg_opa: TRANSP
-                  translate_x: -7
-                  pad_left: 1
-
-  - label:
-      id: air_quality_summary_status_label
-      align: CENTER
-      x: 0
-      y: -16
-      text: "--"
-      text_font: ui_font_status
-      text_color: 0xFFFFFF
-      bg_opa: TRANSP
-      text_letter_space: 1
-
-  - label:
-      id: air_quality_summary_action_label
-      align: CENTER
-      x: 0
-      y: 28
-      text: "--"
-      text_font: ui_font_action
-      text_color: 0xFFFFFF
-      bg_opa: TRANSP
-      text_letter_space: 1
-
-  - obj:
-      align: BOTTOM_MID
-      y: -58
-      width: SIZE_CONTENT
-      height: SIZE_CONTENT
-      bg_opa: TRANSP
-      border_width: 0
-      pad_all: 0
-      layout:
-        type: FLEX
-        flex_flow: COLUMN
-        flex_align_main: CENTER
-        flex_align_cross: CENTER
-      widgets:
-        - obj:
-            width: SIZE_CONTENT
-            height: SIZE_CONTENT
-            bg_opa: TRANSP
-            border_width: 0
-            pad_all: 0
-            layout:
-              type: FLEX
-              flex_flow: ROW
-              flex_align_main: CENTER
-              flex_align_cross: CENTER
-            widgets:
               - label:
                   id: air_quality_summary_pm25_indicator_label
                   text: "●"
                   text_font: ui_font_small
-                  text_color: 0xFFFFFF
                   bg_opa: TRANSP
-                  translate_y: -2
               - label:
                   id: air_quality_summary_pm25_text_label
                   text: "PM₂"
                   text_font: ui_font_small
-                  text_color: 0xFFFFFF
                   bg_opa: TRANSP
-                  pad_right: 18
               - label:
                   id: air_quality_summary_co2_indicator_label
                   text: "●"
                   text_font: ui_font_small
-                  text_color: 0xFFFFFF
                   bg_opa: TRANSP
-                  translate_y: -2
               - label:
                   id: air_quality_summary_co2_text_label
                   text: "CO₂"
                   text_font: ui_font_small
-                  text_color: 0xFFFFFF
                   bg_opa: TRANSP
-                  pad_right: 18
               - label:
                   id: air_quality_summary_voc_indicator_label
                   text: "●"
                   text_font: ui_font_small
-                  text_color: 0xFFFFFF
                   bg_opa: TRANSP
-                  translate_y: -2
               - label:
                   id: air_quality_summary_voc_text_label
                   text: "VOC"
                   text_font: ui_font_small
-                  text_color: 0xFFFFFF
                   bg_opa: TRANSP
-        - obj:
-            width: SIZE_CONTENT
-            height: SIZE_CONTENT
-            bg_opa: TRANSP
-            border_width: 0
-            pad_all: 0
-            pad_top: 6
-            layout:
-              type: FLEX
-              flex_flow: ROW
-              flex_align_main: CENTER
-              flex_align_cross: CENTER
-            widgets:
               - label:
                   id: air_quality_summary_pm10_indicator_label
                   text: "●"
                   text_font: ui_font_small
-                  text_color: 0xFFFFFF
                   bg_opa: TRANSP
-                  translate_y: -2
               - label:
                   id: air_quality_summary_pm10_text_label
                   text: "PM₁₀"
                   text_font: ui_font_small
-                  text_color: 0xFFFFFF
                   bg_opa: TRANSP
-                  pad_right: 18
               - label:
                   id: air_quality_summary_nox_indicator_label
                   text: "●"
                   text_font: ui_font_small
-                  text_color: 0xFFFFFF
                   bg_opa: TRANSP
-                  translate_y: -2
               - label:
                   id: air_quality_summary_nox_text_label
                   text: "NOx"
                   text_font: ui_font_small
-                  text_color: 0xFFFFFF
                   bg_opa: TRANSP
+
+  - obj:
+      id: air_quality_summary_calm_group
+      hidden: true
+      align: CENTER
+      width: 480
+      height: 480
+      bg_opa: TRANSP
+      border_width: 0
+      pad_all: 0
+      radius: 0
+      clickable: false
+      scrollable: false
+      widgets:
+        - arc:
+            id: air_quality_summary_calm_ring
+            align: CENTER
+            width: 448
+            height: 448
+            adjustable: false
+            clickable: false
+            rotation: 270
+            start_angle: 215
+            end_angle: 145
+            min_value: 0
+            max_value: 1
+            value: 0
+            pad_all: 0
+            bg_opa: TRANSP
+            border_width: 0
+            arc_color: 0x20E840
+            arc_opa: 45%
+            arc_width: 3
+            arc_rounded: true
+            indicator:
+              arc_opa: TRANSP
+              arc_width: 0
+              pad_all: 0
+            knob:
+              bg_opa: TRANSP
+              border_width: 0
+              shadow_width: 0
+              pad_all: 0
+        - label:
+            id: air_quality_summary_calm_time_label
+            align: CENTER
+            y: -10
+            text: ""
+            text_font: ui_font_calm_time
+            text_color: 0xFFFFFF
+            text_opa: 85%
+            bg_opa: TRANSP
+        - label:
+            id: air_quality_summary_calm_status_label
+            align: CENTER
+            y: 62
+            text: ""
+            text_font: ui_font_action
+            text_color: 0xFFFFFF
+            text_opa: 55%
+            bg_opa: TRANSP
+            text_letter_space: 2

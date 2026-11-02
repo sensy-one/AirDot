@@ -10,7 +10,7 @@ script:
               esphome::wifi::global_wifi_component->is_connected();
           lv_label_set_text(
               id(time_page_connection_label),
-              AirDot::connection_location_text(true, ui_language));
+              AirDot::connection_offline_text(ui_language));
           lv_obj_set_style_text_font(
               id(time_page_connection_label), id(ui_font_small),
               LV_PART_MAIN);
@@ -124,6 +124,8 @@ script:
           digit[0] = static_cast<char>('0' + (hour / 10));
           if (time_format_12h) {
             lv_label_set_text(id(time_page_12h_hour_tens_label), digit);
+            // No leading zero in 12-hour time ("9:47", not "09:47").
+            AirDot::home_screen::set_hidden(AirDot::lv_obj(id(time_page_12h_hour_tens_label)), hour < 10);
           } else {
             lv_label_set_text(id(time_page_24h_hour_tens_label), digit);
           }

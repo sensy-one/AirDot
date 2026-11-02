@@ -1,0 +1,94 @@
+# Styles messages sent from Home Assistant (show_display_alert): a glow in the message's text color (blue for
+# plain white text) behind the title and body, and a ring that counts down until the message closes.
+# Also keeps the overlay's button pill in the button text color on every overlay screen.
+# Snapshot alerts, setup and onboarding screens use the same overlay and are left unstyled.
+
+globals:
+  - id: message_style_started_ms
+    type: uint32_t
+    restore_value: false
+    initial_value: "0"
+  - id: message_style_until_ms
+    type: uint32_t
+    restore_value: false
+    initial_value: "0"
+
+interval:
+  - interval: 250ms
+    then:
+      - lambda: |-
+          namespace hs = AirDot::home_screen;
+          lv_obj_t *glow = AirDot::lv_obj(id(modal_overlay_glow_image));
+          lv_obj_t *ring = AirDot::lv_obj(id(modal_overlay_countdown_arc));
+          static bool filter_installed = false;
+          if (!filter_installed) {
+            hs::install_arc_draw_filter(ring);
+            filter_installed = true;
+          }
+
+          {
+            lv_obj_t *pill = AirDot::lv_obj(id(modal_overlay_primary_button_label));
+            const char *pill_text = lv_label_get_text(pill);
+            const bool has_text = pill_text != nullptr && pill_text[0] != '\0';
+            const lv_color_t pill_color = lv_obj_get_style_text_color(pill, LV_PART_MAIN);
+            if (!lv_color_eq(lv_obj_get_style_bg_color(pill, LV_PART_MAIN), pill_color))
+              lv_obj_set_style_bg_color(pill, pill_color, LV_PART_MAIN);
+            if (!lv_color_eq(lv_obj_get_style_border_color(pill, LV_PART_MAIN), pill_color))
+              lv_obj_set_style_border_color(pill, pill_color, LV_PART_MAIN);
+            const lv_opa_t pill_bg = has_text ? 36 : LV_OPA_TRANSP;
+            const lv_opa_t pill_border = has_text ? 102 : LV_OPA_TRANSP;
+            if (lv_obj_get_style_bg_opa(pill, LV_PART_MAIN) != pill_bg)
+              lv_obj_set_style_bg_opa(pill, pill_bg, LV_PART_MAIN);
+            if (lv_obj_get_style_border_opa(pill, LV_PART_MAIN) != pill_border)
+              lv_obj_set_style_border_opa(pill, pill_border, LV_PART_MAIN);
+          }
+
+          const bool snapshot_visible =
+            !lv_obj_has_flag(AirDot::lv_obj(id(modal_overlay_snapshot_container)), LV_OBJ_FLAG_HIDDEN);
+          const bool message =
+            id(ui_alert_active) != 0 && id(onboarding_ui_active) == 0 && !snapshot_visible &&
+            !lv_obj_has_flag(AirDot::lv_obj(id(modal_overlay_layer)), LV_OBJ_FLAG_HIDDEN);
+          if (!message) {
+            if (id(message_style_until_ms) != 0)
+              lv_anim_delete(ring, nullptr);
+            hs::set_hidden(glow, true);
+            hs::set_hidden(ring, true);
+            id(message_style_until_ms) = 0;
+            return;
+          }
+
+          const uint32_t text_rgb = id(ui_alert_text_color_set) != 0 ? id(ui_alert_text_color) : 0xFFFFFF;
+          const uint32_t glow_rgb = (text_rgb & 0xFFFFFF) == 0xFFFFFF ? 0x40A6FF : (text_rgb & 0xFFFFFF);
+          const lv_color_t glow_color = lv_color_hex(glow_rgb);
+          hs::show_glow(glow, hs::message_glow(), glow_color, 0.6f, true);
+
+          // A new message (or a new duration) restarts the countdown: LVGL animates the ring on every frame
+          // from the remaining fraction down to zero, so it moves smoothly instead of in 250 ms steps.
+          const uint32_t now = millis();
+          const uint32_t until = id(ui_alert_until_ms);
+          auto set_ring_value = [](void *obj, int32_t value) {
+            lv_arc_set_value(static_cast<lv_obj_t *>(obj), value);
+          };
+          if (until != id(message_style_until_ms)) {
+            id(message_style_until_ms) = until;
+            id(message_style_started_ms) = now;
+            lv_anim_delete(ring, nullptr);
+            if (until != 0 && static_cast<int32_t>(until - now) > 0) {
+              lv_arc_set_value(ring, lv_arc_get_max_value(ring));
+              lv_anim_t anim;
+              lv_anim_init(&anim);
+              lv_anim_set_var(&anim, ring);
+              lv_anim_set_exec_cb(&anim, set_ring_value);
+              lv_anim_set_values(&anim, lv_arc_get_max_value(ring), 0);
+              lv_anim_set_duration(&anim, until - now);
+              lv_anim_set_path_cb(&anim, lv_anim_path_linear);
+              lv_anim_start(&anim);
+            }
+          }
+          if (until == 0) {
+            hs::set_hidden(ring, true);
+            return;
+          }
+          if (!lv_color_eq(lv_obj_get_style_arc_color(ring, LV_PART_INDICATOR), glow_color))
+            lv_obj_set_style_arc_color(ring, glow_color, LV_PART_INDICATOR);
+          hs::set_hidden(ring, false);

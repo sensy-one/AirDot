@@ -51,8 +51,19 @@ inline lv_color_t radar_background_color_() { return AirDot::display_background_
 inline lv_color_t radar_target_color_() { return AirDot::display_text_color(); }
 inline lv_color_t radar_military_color_() { return AirDot::color(0xFF, 0x8C, 0x00); }
 
+inline lv_color_t radar_traffic_color_() { return AirDot::color(0x40, 0xA6, 0xFF); }
 inline lv_color_t radar_aircraft_color_(const Aircraft &aircraft) {
-  return aircraft.military ? radar_military_color_() : radar_target_color_();
+  return aircraft.military ? radar_military_color_() : radar_traffic_color_();
+}
+// Tag text: a light tint of the traffic color (orange stays orange for priority traffic).
+inline lv_color_t radar_tag_color_(const Aircraft &aircraft) {
+  return aircraft.military ? radar_military_color_()
+                           : lv_color_mix(radar_traffic_color_(), radar_target_color_(), 90);
+}
+// Range rings, crosshair and the N marker: a faint mix of the text color into the background.
+inline lv_color_t radar_grid_color_() { return lv_color_mix(radar_target_color_(), radar_background_color_(), 48); }
+inline lv_color_t radar_connector_color_(lv_color_t color) {
+  return lv_color_mix(color, radar_background_color_(), 110);
 }
 
 inline void disable_radar_antialiasing_(lv_obj_t *scope) {
@@ -61,7 +72,8 @@ inline void disable_radar_antialiasing_(lv_obj_t *scope) {
   if (display == nullptr || display == disabled_display)
     return;
 
-  lv_display_set_antialiasing(display, false);
+  // Anti-aliasing stays on: the redesigned radar draws smooth rings and dots, and turning it off here
+  // affected every screen on the display.
   disabled_display = display;
 }
 
@@ -240,6 +252,7 @@ struct RadarAircraftRender {
   float heading_deg{0.0f};
   lv_color_t color{};
   const char *text{nullptr};
+  lv_color_t tag_color{};
 };
 
 inline lv_area_t label_area_from_top_left_(int x, int y, const lv_point_t &text_size) {
@@ -733,29 +746,73 @@ inline RadarLabelPlacement place_aircraft_label_(const lv_area_t &scope_area, co
   return placement;
 }
 
+inline void draw_ring_(lv_layer_t *layer, int center_x, int center_y, int radius, lv_color_t color, int width) {
+  lv_draw_arc_dsc_t dsc;
+  lv_draw_arc_dsc_init(&dsc);
+  dsc.color = color;
+  dsc.width = width;
+  dsc.center.x = center_x;
+  dsc.center.y = center_y;
+  dsc.radius = radius;
+  dsc.start_angle = 0;
+  dsc.end_angle = 360;
+  dsc.opa = LV_OPA_COVER;
+  lv_draw_arc(layer, &dsc);
+}
+
 inline void draw_compass_(lv_layer_t *layer, const lv_area_t &scope_area, const lv_font_t *font,
                           int center_x, int center_y, int outer_radius) {
   if (outer_radius <= 0)
     return;
 
-  const lv_color_t color = radar_target_color_();
-  for (int index = 0; index < RADAR_TICK_COUNT; index++) {
-    const float angle = (index * 30.0f) * DEG_TO_RAD;
-    const int outer_x = center_x + static_cast<int>(std::round(std::sin(angle) * outer_radius));
-    const int outer_y = center_y - static_cast<int>(std::round(std::cos(angle) * outer_radius));
-    const int inner_x = center_x + static_cast<int>(
-        std::round(std::sin(angle) * (outer_radius - RADAR_TICK_LENGTH_PX)));
-    const int inner_y = center_y - static_cast<int>(
-        std::round(std::cos(angle) * (outer_radius - RADAR_TICK_LENGTH_PX)));
-    draw_pixel_line_(layer, color, inner_x, inner_y, outer_x, outer_y, RADAR_TICK_WIDTH_PX);
-  }
+  const lv_color_t grid = radar_grid_color_();
+  for (int ring = 1; ring <= 3; ring++)
+    draw_ring_(layer, center_x, center_y, outer_radius * ring / 3, grid, 2);
+  draw_pixel_line_(layer, grid, center_x, center_y - outer_radius, center_x, center_y + outer_radius, 1);
+  draw_pixel_line_(layer, grid, center_x - outer_radius, center_y, center_x + outer_radius, center_y, 1);
 
   const lv_font_t *draw_font = font != nullptr ? font : lv_font_get_default();
   lv_point_t text_size{};
   lv_text_get_size(&text_size, "N", draw_font, 0, 0, LV_COORD_MAX, LV_TEXT_FLAG_NONE);
   const int x = center_x - text_size.x / 2;
-  const int y = center_y - outer_radius + RADAR_TICK_LENGTH_PX + RADAR_N_GAP_PX;
-  draw_label_(layer, scope_area, draw_font, color, x, y, "N", LV_TEXT_ALIGN_CENTER);
+  const int y = center_y - outer_radius + RADAR_N_GAP_PX;
+  draw_label_(layer, scope_area, draw_font, lv_color_mix(radar_target_color_(), radar_background_color_(), 140),
+              x, y, "N", LV_TEXT_ALIGN_CENTER);
+}
+
+// Aircraft marker: a dot with a short fading tail pointing back along its track.
+inline void draw_aircraft_dot_(lv_layer_t *layer, lv_color_t color, int x, int y, float heading_deg) {
+  const float heading = heading_deg * DEG_TO_RAD;
+  const float back_x = -std::sin(heading);
+  const float back_y = std::cos(heading);
+  static constexpr int TAIL_SEGMENTS = 3;
+  static constexpr int TAIL_LENGTH_PX = 24;
+  for (int segment = 0; segment < TAIL_SEGMENTS; segment++) {
+    lv_draw_line_dsc_t line;
+    lv_draw_line_dsc_init(&line);
+    line.color = color;
+    line.width = 4;
+    line.round_start = 1;
+    line.round_end = 1;
+    line.opa = static_cast<lv_opa_t>(110 - segment * 35);
+    const float from = 6.0f + segment * (TAIL_LENGTH_PX / static_cast<float>(TAIL_SEGMENTS));
+    const float to = 6.0f + (segment + 1) * (TAIL_LENGTH_PX / static_cast<float>(TAIL_SEGMENTS));
+    line.p1.x = x + back_x * from;
+    line.p1.y = y + back_y * from;
+    line.p2.x = x + back_x * to;
+    line.p2.y = y + back_y * to;
+    lv_draw_line(layer, &line);
+  }
+
+  lv_draw_rect_dsc_t dot;
+  lv_draw_rect_dsc_init(&dot);
+  dot.bg_color = color;
+  dot.bg_opa = LV_OPA_COVER;
+  dot.radius = LV_RADIUS_CIRCLE;
+  dot.border_width = 0;
+  const lv_area_t area{static_cast<lv_coord_t>(x - 7), static_cast<lv_coord_t>(y - 7), static_cast<lv_coord_t>(x + 7),
+                       static_cast<lv_coord_t>(y + 7)};
+  lv_draw_rect(layer, &dot, &area);
 }
 
 inline void draw_aircraft_(lv_layer_t *layer, const lv_area_t &scope_area, const lv_font_t *font,
@@ -792,12 +849,13 @@ inline void draw_aircraft_(lv_layer_t *layer, const lv_area_t &scope_area, const
         heading,
         aircraft_color,
         aircraft.callsign[0] == '\0' ? "--" : aircraft.callsign,
+        radar_tag_color_(aircraft),
     };
   }
 
   for (int index = 0; index < aircraft_render_count; index++) {
     const RadarAircraftRender &aircraft = aircraft_render[index];
-    draw_aircraft_triangle_(layer, aircraft.color, aircraft.x, aircraft.y, aircraft.heading_deg);
+    draw_aircraft_dot_(layer, aircraft.color, aircraft.x, aircraft.y, aircraft.heading_deg);
   }
 
   std::sort(aircraft_render, aircraft_render + aircraft_render_count,
@@ -812,18 +870,44 @@ inline void draw_aircraft_(lv_layer_t *layer, const lv_area_t &scope_area, const
   for (int index = 0; index < aircraft_render_count; index++) {
     const RadarAircraftRender &aircraft = aircraft_render[index];
     RadarLabelPlacement label = place_aircraft_label_(
-        scope_area, font, aircraft.color, center_x, aircraft.x, center_y, aircraft.y,
+        scope_area, font, aircraft.tag_color, center_x, aircraft.x, center_y, aircraft.y,
         aircraft.bearing_rad, aircraft.heading_deg, aircraft.text,
         placed_labels, placed_label_count, aircraft_render, aircraft_render_count);
-    draw_pixel_line_(layer, aircraft.color, label.connector_kink.x, label.connector_kink.y,
-                     label.connector_end.x, label.connector_end.y, RADAR_TICK_WIDTH_PX);
-    draw_pixel_line_(layer, aircraft.color, label.connector_kink.x, label.connector_kink.y,
-                     label.connector_start.x, label.connector_start.y, RADAR_TICK_WIDTH_PX);
+    const lv_color_t connector = radar_connector_color_(aircraft.color);
+    draw_pixel_line_(layer, connector, label.connector_kink.x, label.connector_kink.y,
+                     label.connector_end.x, label.connector_end.y, 1);
+    draw_pixel_line_(layer, connector, label.connector_kink.x, label.connector_kink.y,
+                     label.connector_start.x, label.connector_start.y, 1);
     draw_label_in_area_(layer, label);
 
     if (placed_label_count < FLIGHT_RADAR_MAX_AIRCRAFT)
       placed_labels[placed_label_count++] = label;
   }
+}
+
+// "UAL1234 · 3.1 km" for the closest aircraft, centered near the bottom of the scope.
+inline void draw_nearest_callout_(lv_layer_t *layer, const lv_area_t &scope_area, const lv_font_t *font,
+                                  int center_x, int bottom_y, const Snapshot &snapshot) {
+  if (!snapshot.valid || snapshot.count == 0 ||
+      static_cast<uint32_t>(esphome::millis() - snapshot.received_ms) > 30000UL)
+    return;
+  const int count = std::min<int>(snapshot.count, FLIGHT_RADAR_MAX_AIRCRAFT);
+  int nearest = 0;
+  for (int index = 1; index < count; index++) {
+    if (snapshot.aircraft[index].distance_km < snapshot.aircraft[nearest].distance_km)
+      nearest = index;
+  }
+  const Aircraft &aircraft = snapshot.aircraft[nearest];
+  const bool imperial = AirDot::onboarding::load_unit_system() == AirDot::onboarding::UNIT_SYSTEM_IMPERIAL;
+  const float distance = imperial ? aircraft.distance_km * 0.621371f : aircraft.distance_km;
+  char text[40];
+  std::snprintf(text, sizeof(text), "%s \xC2\xB7 %.1f %s", aircraft.callsign[0] == '\0' ? "--" : aircraft.callsign,
+                distance, imperial ? "mi" : "km");
+  const lv_font_t *draw_font = font != nullptr ? font : lv_font_get_default();
+  lv_point_t text_size{};
+  lv_text_get_size(&text_size, text, draw_font, 0, 0, LV_COORD_MAX, LV_TEXT_FLAG_NONE);
+  draw_label_(layer, scope_area, draw_font, lv_color_mix(radar_target_color_(), radar_background_color_(), 210),
+              center_x - text_size.x / 2, bottom_y - text_size.y, text, LV_TEXT_ALIGN_CENTER);
 }
 
 inline void draw_radar_scope_(lv_event_t *event) {
@@ -835,7 +919,7 @@ inline void draw_radar_scope_(lv_event_t *event) {
 
   lv_area_t area;
   lv_obj_get_coords(scope, &area);
-  draw_rect_(layer, area, radar_background_color_());
+  // No background fill: the page background and the status glow behind the scope show through.
 
   const int width = radar_area_width_(area);
   const int height = radar_area_height_(area);
@@ -847,6 +931,8 @@ inline void draw_radar_scope_(lv_event_t *event) {
   draw_compass_(layer, area, state->bearing_font, center_x, center_y, radius);
   draw_aircraft_(layer, area, state->aircraft_font, center_x, center_y,
                  std::max(20, radius - RADAR_TRAFFIC_EDGE_RESERVE_PX), current_snapshot());
+  draw_pixel_(layer, radar_target_color_(), center_x - 2, center_y - 2, 5);
+  draw_nearest_callout_(layer, area, state->bearing_font, center_x, center_y + radius - 34, current_snapshot());
 }
 
 inline void prepare_radar_scope_(lv_obj_t *scope, const lv_font_t *aircraft_font, const lv_font_t *bearing_font) {
@@ -862,8 +948,7 @@ inline void prepare_radar_scope_(lv_obj_t *scope, const lv_font_t *aircraft_font
     lv_obj_add_event_cb(scope, draw_radar_scope_, LV_EVENT_DRAW_MAIN, &state);
   }
 
-  lv_obj_set_style_bg_color(scope, radar_background_color_(), LV_PART_MAIN);
-  lv_obj_set_style_bg_opa(scope, LV_OPA_COVER, LV_PART_MAIN);
+  lv_obj_set_style_bg_opa(scope, LV_OPA_TRANSP, LV_PART_MAIN);
   lv_obj_set_style_border_width(scope, 0, LV_PART_MAIN);
   lv_obj_set_style_pad_all(scope, 0, LV_PART_MAIN);
   lv_obj_remove_flag(scope, LV_OBJ_FLAG_SCROLLABLE);

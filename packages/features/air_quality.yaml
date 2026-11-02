@@ -22,22 +22,22 @@ script:
           lv_label_set_text(id(co2_history_title_label), history_text.co2_title);
           lv_label_set_text(id(voc_history_title_label), history_text.voc_title);
           lv_label_set_text(id(nox_history_title_label), history_text.nox_title);
-          const int16_t history_max_label_offset = -8;
+          const int16_t history_max_label_offset = 0;
           lv_obj_set_style_text_font(
             id(temp_history_title_label),
-            id(ui_font_large),
+            id(ui_font_small),
             LV_PART_MAIN);
           lv_obj_set_style_text_font(
             id(hum_history_title_label),
-            id(ui_font_large),
+            id(ui_font_small),
             LV_PART_MAIN);
           lv_obj_set_style_text_font(
             id(pressure_history_title_label),
-            id(ui_font_large),
+            id(ui_font_small),
             LV_PART_MAIN);
           lv_obj_set_style_text_font(
             id(lux_history_title_label),
-            id(ui_font_large),
+            id(ui_font_small),
             LV_PART_MAIN);
           const auto history_stat_font = id(ui_font_small);
           lv_obj_set_style_text_font(id(pm1_history_min_label), history_stat_font, LV_PART_MAIN);
@@ -98,7 +98,7 @@ script:
             esphome::wifi::global_wifi_component->is_connected();
           lv_label_set_text(
             id(air_quality_summary_connection_label),
-            AirDot::connection_location_text(false, ui_language));
+            AirDot::connection_offline_text(ui_language));
           lv_obj_set_style_text_font(
             id(air_quality_summary_connection_label), id(ui_font_small),
             LV_PART_MAIN);
@@ -128,22 +128,20 @@ script:
           if (warmup_active) {
             AirDot::set_value_placeholder_spacing(id(air_quality_summary_status_label), true);
             AirDot::set_value_placeholder_spacing(id(air_quality_summary_action_label), true);
-            lv_label_set_text(id(air_quality_summary_status_label), "--");
-            lv_label_set_text(id(air_quality_summary_action_label), "--");
+            AirDot::home_screen::set_text(id(air_quality_summary_status_label), "--");
+            AirDot::home_screen::set_text(id(air_quality_summary_action_label), "--");
           } else if (level < 0) {
             AirDot::set_value_placeholder_spacing(id(air_quality_summary_status_label), true);
             AirDot::set_value_placeholder_spacing(id(air_quality_summary_action_label), true);
-            lv_label_set_text(id(air_quality_summary_status_label), "--");
-            lv_label_set_text(id(air_quality_summary_action_label), "--");
+            AirDot::home_screen::set_text(id(air_quality_summary_status_label), "--");
+            AirDot::home_screen::set_text(id(air_quality_summary_action_label), "--");
           } else {
             const auto text = AirDot::air_quality_text(level, ui_language);
             AirDot::set_value_placeholder_spacing(id(air_quality_summary_status_label), false);
             AirDot::set_value_placeholder_spacing(id(air_quality_summary_action_label), false);
-            lv_label_set_text(id(air_quality_summary_status_label), text.status);
-            lv_label_set_text(id(air_quality_summary_action_label), text.action);
+            AirDot::home_screen::set_text(id(air_quality_summary_status_label), text.status);
+            AirDot::home_screen::set_text(id(air_quality_summary_action_label), text.action);
           }
-          AirDot::set_text_color(
-            id(air_quality_summary_status_label), AirDot::air_quality_status_color(level));
           const bool setup_or_onboarding_active =
             AirDot::onboarding::setup_or_onboarding_active(
               id(setup_ap_active), id(setup_portal_active), id(onboarding_ui_active));
@@ -191,6 +189,204 @@ script:
             AirDot::color_for_thresholds(
               id(nox).state,
               AirDot::onboarding::load_air_quality_status_thresholds(AirDot::AirQualityMetric::NOX)));
+
+          // Glow home screen and calm view (see ui/pages/air_quality_summary.yaml).
+          {
+            namespace hs = AirDot::home_screen;
+            const auto text_color = AirDot::display_text_color();
+            const auto off_color = hs::arc_off_color(text_color, AirDot::display_background_color());
+            lv_obj_t *arcs[hs::ARC_COUNT] = {
+              AirDot::lv_obj(id(air_quality_summary_pm25_arc)),
+              AirDot::lv_obj(id(air_quality_summary_co2_arc)),
+              AirDot::lv_obj(id(air_quality_summary_voc_arc)),
+              AirDot::lv_obj(id(air_quality_summary_nox_arc)),
+              AirDot::lv_obj(id(air_quality_summary_pm10_arc)),
+            };
+            lv_obj_t *ring_labels[hs::ARC_COUNT] = {
+              AirDot::lv_obj(id(air_quality_summary_pm25_ring_label)),
+              AirDot::lv_obj(id(air_quality_summary_co2_ring_label)),
+              AirDot::lv_obj(id(air_quality_summary_voc_ring_label)),
+              AirDot::lv_obj(id(air_quality_summary_nox_ring_label)),
+              AirDot::lv_obj(id(air_quality_summary_pm10_ring_label)),
+            };
+            lv_obj_t *calm_ring = AirDot::lv_obj(id(air_quality_summary_calm_ring));
+            static bool arc_filters_installed = false;
+            if (!arc_filters_installed) {
+              for (auto *arc : arcs)
+                hs::install_arc_draw_filter(arc);
+              hs::install_arc_draw_filter(calm_ring);
+              arc_filters_installed = true;
+            }
+
+            const std::pair<AirDot::AirQualityMetric, float> arc_metrics[hs::ARC_COUNT] = {
+              {AirDot::AirQualityMetric::PM25, id(pm25).state},
+              {AirDot::AirQualityMetric::CO2, id(co2).state},
+              {AirDot::AirQualityMetric::VOC, id(voc).state},
+              {AirDot::AirQualityMetric::NOX, id(nox).state},
+              {AirDot::AirQualityMetric::PM10, id(pm10).state},
+            };
+            const bool calm_active = id(calm_view_active) != 0;
+            const int worst_metric = id(air_quality_status_worst_metric);
+            const bool alert = !calm_active && !warmup_active && level >= 2 && worst_metric >= 0;
+            const int culprit_arc = alert ? hs::arc_for_worst_metric(worst_metric) : -1;
+            for (int i = 0; i < hs::ARC_COUNT; i++) {
+              const auto metric = arc_metrics[i].first;
+              const int metric_level = warmup_active ? -1 : AirDot::threshold_level(
+                AirDot::sanitized_air_quality_metric_value(metric, arc_metrics[i].second),
+                AirDot::onboarding::load_air_quality_status_thresholds(metric));
+              const bool dimmed = culprit_arc >= 0 && i != culprit_arc;
+              hs::set_arc_color(
+                arcs[i], metric_level < 0 ? off_color : AirDot::air_quality_status_color(metric_level),
+                dimmed ? 100 : LV_OPA_COVER);
+              hs::set_arc_width(arcs[i], i == culprit_arc ? 20 : 12);
+              hs::set_text_style(ring_labels[i], text_color, dimmed ? 80 : (i == culprit_arc ? 230 : hs::SECONDARY_TEXT_OPA));
+            }
+
+            // One sample per minute of every metric, for the alert trend.
+            static hs::TrendTracker trend;
+            const float trend_values[hs::TrendTracker::METRICS] = {
+              id(pm25).state, id(pm10).state, id(co2).state, id(voc).state, id(nox).state, id(pm1).state, id(pm4).state};
+            trend.record(static_cast<uint32_t>(millis() / 60000UL), trend_values);
+
+            char time_text[16] = "";
+            char calm_time_text[16] = "--:--";
+            auto utc_now = id(sntp_time).utcnow();
+            if (utc_now.is_valid() && AirDot::onboarding::has_time_zone_offset_minutes()) {
+              const int16_t offset_minutes =
+                AirDot::onboarding::time_zone_offset_minutes_for_utc(static_cast<uint32_t>(utc_now.timestamp));
+              const auto local =
+                esphome::ESPTime::from_epoch_utc(utc_now.timestamp + static_cast<time_t>(offset_minutes) * 60);
+              const bool time_format_12h =
+                AirDot::onboarding::load_time_format() == AirDot::onboarding::TIME_FORMAT_12H;
+              hs::format_time(time_text, sizeof(time_text), local, time_format_12h, true);
+              hs::format_time(calm_time_text, sizeof(calm_time_text), local, time_format_12h, false);
+            }
+
+            const bool calm = calm_active;
+            const auto status_color = AirDot::air_quality_status_color(level);
+            hs::set_hidden(AirDot::lv_obj(id(air_quality_summary_home_group)), calm);
+            hs::set_hidden(AirDot::lv_obj(id(air_quality_summary_calm_group)), !calm);
+            hs::show_glow(
+              AirDot::lv_obj(id(air_quality_summary_glow_image)), calm ? hs::calm_glow() : hs::home_glow(),
+              status_color, calm ? 1.0f : hs::glow_opa_for_level(level) / 255.0f, level >= 0);
+
+            hs::set_text(AirDot::lv_obj(id(air_quality_summary_time_label)), time_text);
+            hs::set_text_style(AirDot::lv_obj(id(air_quality_summary_time_label)), text_color, hs::SECONDARY_TEXT_OPA);
+            hs::set_text_style(AirDot::lv_obj(id(air_quality_summary_status_label)), text_color, LV_OPA_COVER);
+            hs::set_text_style(AirDot::lv_obj(id(air_quality_summary_action_label)), text_color, 217);
+            hs::set_text_style(
+              AirDot::lv_obj(id(air_quality_summary_temperature_label)), text_color, hs::SECONDARY_TEXT_OPA);
+            hs::set_text_style(
+              AirDot::lv_obj(id(air_quality_summary_temperature_unit_label)), text_color, hs::SECONDARY_TEXT_OPA);
+            hs::set_text_style(
+              AirDot::lv_obj(id(air_quality_summary_humidity_label)), text_color, hs::SECONDARY_TEXT_OPA);
+            hs::set_text_style(
+              AirDot::lv_obj(id(air_quality_summary_humidity_unit_label)), text_color, hs::SECONDARY_TEXT_OPA);
+            hs::set_hidden(
+              AirDot::lv_obj(id(air_quality_summary_connection_group)),
+              !AirDot::onboarding::has_saved_wifi_settings() || wifi_connected);
+
+            lv_obj_t *worst_label = AirDot::lv_obj(id(air_quality_summary_worst_label));
+            const int worst = id(air_quality_status_worst_metric);
+            const float worst_values[] = {
+              id(pm25).state, id(pm10).state, id(co2).state, id(voc).state, id(nox).state, id(pm1).state, id(pm4).state};
+            if (!alert && !warmup_active && level >= 1 && worst >= 0 &&
+                worst < static_cast<int>(sizeof(worst_values) / sizeof(worst_values[0])) &&
+                std::isfinite(worst_values[worst])) {
+              char worst_text[40];
+              std::snprintf(
+                worst_text, sizeof(worst_text), "%s %.0f%s", hs::worst_metric_name(worst), worst_values[worst],
+                hs::worst_metric_unit(worst));
+              hs::set_text(worst_label, worst_text);
+              hs::set_text_style(
+                worst_label, AirDot::air_quality_status_color(std::max(id(air_quality_status_level), 1)),
+                LV_OPA_COVER);
+              hs::set_hidden(worst_label, false);
+            } else {
+              hs::set_hidden(worst_label, true);
+            }
+
+            // Alert takeover replaces the status block.
+            hs::set_hidden(AirDot::lv_obj(id(air_quality_summary_alert_group)), !alert);
+            hs::set_hidden(AirDot::lv_obj(id(air_quality_summary_time_label)), alert);
+            hs::set_hidden(AirDot::lv_obj(id(air_quality_summary_status_label)), alert);
+            hs::set_hidden(AirDot::lv_obj(id(air_quality_summary_action_label)), alert);
+            hs::set_hidden(AirDot::lv_obj(id(air_quality_summary_comfort_group)), alert);
+            if (alert) {
+              hs::set_hidden(worst_label, true);
+              lv_obj_t *alert_action = AirDot::lv_obj(id(air_quality_summary_alert_action_label));
+              lv_obj_t *alert_value = AirDot::lv_obj(id(air_quality_summary_alert_value_label));
+              lv_obj_t *alert_unit = AirDot::lv_obj(id(air_quality_summary_alert_unit_label));
+              lv_obj_t *alert_trend = AirDot::lv_obj(id(air_quality_summary_alert_trend_label));
+              hs::set_text(alert_action, AirDot::air_quality_text(level, ui_language).action);
+              hs::set_text_style(alert_action, text_color, LV_OPA_COVER);
+              const float current = trend_values[worst_metric];
+              char value_text[16] = "--";
+              if (std::isfinite(current))
+                hs::format_metric_value(value_text, sizeof(value_text), current);
+              hs::set_text(alert_value, value_text);
+              hs::set_text_style(alert_value, text_color, LV_OPA_COVER);
+              hs::set_text(alert_unit, hs::alert_unit_text(worst_metric));
+              hs::set_text_style(alert_unit, text_color, 230);
+              float delta = 0.0f;
+              int minutes = 0;
+              if (trend.change(worst_metric, current, delta, minutes)) {
+                char delta_text[16];
+                hs::format_metric_value(delta_text, sizeof(delta_text), std::fabs(delta));
+                char trend_text[48];
+                const char *sign = delta >= 0.0f ? "+" : "-";
+                if (minutes >= 60) {
+                  std::snprintf(trend_text, sizeof(trend_text), "%s%s in the last hour", sign, delta_text);
+                } else {
+                  std::snprintf(trend_text, sizeof(trend_text), "%s%s in the last %d min", sign, delta_text, minutes);
+                }
+                hs::set_text(alert_trend, trend_text);
+                hs::set_hidden(alert_trend, false);
+              } else {
+                hs::set_hidden(alert_trend, true);
+              }
+              hs::set_text_style(alert_trend, text_color, LV_OPA_COVER);
+            }
+
+            // Screen ring segment: full width next to the pollutant arcs, a hairline on every other screen.
+            {
+              const int32_t ring_width = id(air_quality_summary_page)->is_showing() && !calm &&
+                                                 lv_obj_has_flag(AirDot::lv_obj(id(modal_overlay_layer)), LV_OBJ_FLAG_HIDDEN)
+                                             ? AirDot::screen_ring::SEGMENT_WIDTH
+                                             : AirDot::screen_ring::HAIRLINE_WIDTH;
+              if (ring_width != AirDot::screen_ring::current_width()) {
+                AirDot::screen_ring::current_width() = ring_width;
+                id(ui_apply_screen_ring).execute();
+              }
+            }
+
+            // Time & weather page: the connection label only shows while offline, pressure is left out.
+            hs::set_hidden(AirDot::lv_obj(id(time_page_connection_indicator_label)), wifi_connected);
+            hs::set_hidden(AirDot::lv_obj(id(time_page_connection_label)), wifi_connected);
+            hs::set_hidden(AirDot::lv_obj(id(time_page_outdoor_pressure_label)), true);
+            hs::set_hidden(AirDot::lv_obj(id(time_page_outdoor_pressure_unit_label)), true);
+            hs::set_hidden(AirDot::lv_obj(id(time_page_outdoor_humidity_unit_label)), false);
+
+            // Time & weather page: faint status glow and hairline ring.
+            hs::show_glow(AirDot::lv_obj(id(time_page_glow_image)), hs::calm_glow(), status_color, 1.0f, level >= 0);
+            hs::show_glow(AirDot::lv_obj(id(flight_radar_glow_image)), hs::calm_glow(), status_color, 1.0f, level >= 0);
+            hs::set_arc_color(AirDot::lv_obj(id(time_page_ring)), level >= 0 ? status_color : off_color, 115);
+            {
+              static bool time_ring_filter_installed = false;
+              if (!time_ring_filter_installed) {
+                hs::install_arc_draw_filter(AirDot::lv_obj(id(time_page_ring)));
+                time_ring_filter_installed = true;
+              }
+            }
+
+            lv_obj_t *calm_time_label = AirDot::lv_obj(id(air_quality_summary_calm_time_label));
+            lv_obj_t *calm_status_label = AirDot::lv_obj(id(air_quality_summary_calm_status_label));
+            hs::set_text(calm_time_label, calm_time_text);
+            hs::set_text_style(calm_time_label, text_color, 217);
+            hs::set_text(calm_status_label, level >= 0 ? AirDot::air_quality_text(level, ui_language).status : "");
+            hs::set_text_style(calm_status_label, text_color, 140);
+            hs::set_arc_color(calm_ring, level >= 0 ? status_color : off_color, 115);
+          }
 
       - script.execute: ui_update_hazard_focus
 
