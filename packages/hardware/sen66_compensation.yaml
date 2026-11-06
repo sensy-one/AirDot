@@ -4,6 +4,19 @@ globals:
     restore_value: false
     initial_value: "0"
 
+  - id: sen66_applied_voc_learning_time_hours
+    type: int
+    restore_value: false
+    initial_value: "0"
+  - id: sen66_voc_state_saved
+    type: bool
+    restore_value: false
+    initial_value: "false"
+  - id: sen66_voc_state
+    type: std::array<uint16_t, 4>
+    restore_value: false
+    initial_value: "{0, 0, 0, 0}"
+
 script:
   - id: sen66_apply_temperature_offset
     mode: single
@@ -39,3 +52,37 @@ script:
       - lambda: |-
           AirDot::sen66_start_measurement(id(sen66_air_quality_sensor));
           id(sen66_air_quality_sensor).start_poller();
+
+  # Writes the stored VOC learning time to the sensor. The tuning command needs
+  # the sensor idle, so this stops and restarts measurement. Stopping resets the
+  # VOC engine, so the learned VOC state is read first and restored before the
+  # restart to keep the baseline. After boot the sensor was just reset, so there is
+  # no state worth keeping. Skipped when the sensor already runs with the stored value.
+  - id: sen66_apply_learning_times
+    mode: single
+    then:
+      - if:
+          condition:
+            lambda: |-
+              return id(sen66_applied_voc_learning_time_hours) != AirDot::onboarding::load_voc_learning_time_hours();
+          then:
+            - lambda: |-
+                id(sen66_voc_state_saved) = id(sen66_applied_voc_learning_time_hours) != 0 &&
+                    AirDot::sen66_get_voc_algorithm_state(id(sen66_air_quality_sensor), id(sen66_voc_state).data());
+                id(sen66_air_quality_sensor).stop_poller();
+                id(sen66_air_quality_sensor).cancel_timeout(1);
+                AirDot::sen66_stop_measurement(id(sen66_air_quality_sensor));
+            - delay: 1500ms
+            - lambda: |-
+                const uint16_t voc_hours = AirDot::onboarding::load_voc_learning_time_hours();
+                if (AirDot::sen66_set_voc_learning_time(id(sen66_air_quality_sensor), voc_hours))
+                  id(sen66_applied_voc_learning_time_hours) = voc_hours;
+            # The sensor needs about 20 ms to process each parameter write before the next command.
+            - delay: 50ms
+            - lambda: |-
+                if (id(sen66_voc_state_saved))
+                  AirDot::sen66_set_voc_algorithm_state(id(sen66_air_quality_sensor), id(sen66_voc_state).data());
+            - delay: 50ms
+            - lambda: |-
+                AirDot::sen66_start_measurement(id(sen66_air_quality_sensor));
+                id(sen66_air_quality_sensor).start_poller();
