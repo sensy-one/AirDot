@@ -1,3 +1,7 @@
+# Brightness controls. Display Brightness is the brightness setting: the fixed level, or the ceiling when
+# Auto Brightness is on. Min Brightness is the floor Auto Brightness uses in a dark room, and Night Brightness
+# fades the night calm view's clock and ring (the backlight is already at its lowest there). Backlight Level
+# reports what the screen is actually at.
 number:
   - platform: template
     id: ha_display_brightness_percent
@@ -6,37 +10,107 @@ number:
     entity_category: config
     icon: mdi:brightness-percent
     unit_of_measurement: "%"
-    min_value: 0
+    min_value: 1
     max_value: 100
     step: 1
     mode: box
     update_interval: ${ha_sensor_update_interval}
     lambda: |-
-      return AirDot::onboarding::current_display_brightness_percent(id(display_backlight));
+      return AirDot::onboarding::load_display_brightness_percent();
     set_action:
       - lambda: |-
-          const uint8_t percent =
-            AirDot::onboarding::normalize_display_brightness_percent_(static_cast<int>(std::round(x)));
-          const bool auto_brightness_enabled = AirDot::onboarding::load_auto_dim_enabled();
-          if (!auto_brightness_enabled)
-            AirDot::onboarding::save_display_brightness_percent(percent);
-          if (AirDot::onboarding::load_display_power_enabled()) {
-            const auto now = id(sntp_time).utcnow();
-            const bool night_screen_active =
-              now.is_valid() &&
-              AirDot::onboarding::screen_off_window_active_at_utc(static_cast<uint32_t>(now.timestamp));
-            if (night_screen_active) {
-              AirDot::onboarding::apply_night_screen_state(id(display_panel), id(display_backlight));
-            } else {
-              AirDot::onboarding::wake_display_with_brightness(
-                id(display_panel), id(display_backlight), id(ambient_light_sensor).state,
-                ${display_auto_dim_min_lux}, ${display_auto_dim_max_lux},
-                ${display_auto_dim_min_brightness});
-            }
+          AirDot::onboarding::save_display_brightness_percent(
+            AirDot::onboarding::normalize_display_brightness_percent_(static_cast<int>(std::round(x))));
+      - script.execute: display_apply_brightness_settings
+
+  - platform: template
+    id: display_min_brightness
+    name: Min Brightness
+    entity_category: config
+    icon: mdi:brightness-4
+    unit_of_measurement: "%"
+    min_value: 1
+    max_value: 100
+    step: 1
+    initial_value: 10
+    restore_value: true
+    optimistic: true
+    mode: box
+    set_action:
+      # The new value is stored right after this action runs, so apply it on the next loop.
+      - delay: 50ms
+      - script.execute: display_apply_brightness_settings
+
+  - platform: template
+    id: display_night_brightness
+    name: Night Brightness
+    entity_category: config
+    icon: mdi:weather-night
+    unit_of_measurement: "%"
+    min_value: 5
+    max_value: 100
+    step: 5
+    initial_value: 40
+    restore_value: true
+    optimistic: true
+    mode: box
+    set_action:
+      - delay: 50ms
+      - script.execute: ui_refresh_air_quality_summary
+
+sensor:
+  - platform: template
+    id: ha_display_backlight_level
+    name: Backlight Level
+    entity_category: diagnostic
+    icon: mdi:brightness-auto
+    unit_of_measurement: "%"
+    accuracy_decimals: 0
+    update_interval: 30s
+    lambda: |-
+      if (!id(display_backlight).current_values.is_on())
+        return 0.0f;
+      return static_cast<float>(AirDot::onboarding::current_display_brightness_percent(id(display_backlight)));
+
+script:
+  - id: display_apply_brightness_settings
+    mode: restart
+    then:
+      - lambda: |-
+          if (!AirDot::onboarding::load_display_power_enabled())
+            return;
+          const auto now = id(sntp_time).utcnow();
+          const bool night_screen_active =
+            now.is_valid() &&
+            AirDot::onboarding::screen_off_window_active_at_utc(static_cast<uint32_t>(now.timestamp));
+          if (night_screen_active) {
+            AirDot::onboarding::apply_night_screen_state(id(display_panel), id(display_backlight));
+          } else {
+            AirDot::onboarding::wake_display_with_brightness(
+              id(display_panel), id(display_backlight), id(ambient_light_sensor).state,
+              ${display_auto_dim_min_lux}, ${display_auto_dim_max_lux},
+              ${display_auto_dim_min_brightness});
           }
       - component.update: ha_display_brightness_percent
+      - component.update: ha_display_backlight_level
 
 switch:
+  - platform: template
+    id: ha_auto_brightness
+    name: Auto Brightness
+    internal: false
+    entity_category: config
+    icon: mdi:brightness-auto
+    restore_mode: DISABLED
+    lambda: |-
+      return AirDot::onboarding::load_auto_dim_enabled();
+    turn_on_action:
+      - lambda: AirDot::onboarding::save_auto_dim_enabled(true);
+      - script.execute: display_apply_brightness_settings
+    turn_off_action:
+      - lambda: AirDot::onboarding::save_auto_dim_enabled(false);
+      - script.execute: display_apply_brightness_settings
+
   - platform: template
     id: ha_display_power
     name: Display Power

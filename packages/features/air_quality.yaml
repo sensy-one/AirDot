@@ -266,11 +266,26 @@ script:
 
             const bool calm = calm_active;
             const auto status_color = AirDot::air_quality_status_color(level);
+            // At night the backlight already sits at its lowest level, so Night Brightness dims the calm
+            // view itself: the clock, ring and glow fade to that share of their normal strength.
+            float calm_strength = 1.0f;
+            if (calm && utc_now.is_valid() &&
+                AirDot::onboarding::screen_off_window_active_at_utc(static_cast<uint32_t>(utc_now.timestamp))) {
+              const float night_percent = id(display_night_brightness).state;
+              if (std::isfinite(night_percent))
+                calm_strength = std::clamp(night_percent / 100.0f, 0.05f, 1.0f);
+            }
             hs::set_hidden(AirDot::lv_obj(id(air_quality_summary_home_group)), calm);
             hs::set_hidden(AirDot::lv_obj(id(air_quality_summary_calm_group)), !calm);
+            {
+              lv_obj_t *calm_group = AirDot::lv_obj(id(air_quality_summary_calm_group));
+              const auto calm_opa = static_cast<lv_opa_t>(std::lround(calm_strength * 255.0f));
+              if (calm_group != nullptr && lv_obj_get_style_opa(calm_group, LV_PART_MAIN) != calm_opa)
+                lv_obj_set_style_opa(calm_group, calm_opa, LV_PART_MAIN);
+            }
             hs::show_glow(
               AirDot::lv_obj(id(air_quality_summary_glow_image)), calm ? hs::calm_glow() : hs::home_glow(),
-              status_color, calm ? 1.0f : hs::glow_opa_for_level(level) / 255.0f, level >= 0);
+              status_color, calm ? calm_strength : hs::glow_opa_for_level(level) / 255.0f, level >= 0);
 
             hs::set_text(AirDot::lv_obj(id(air_quality_summary_time_label)), time_text);
             hs::set_text_style(AirDot::lv_obj(id(air_quality_summary_time_label)), text_color, hs::SECONDARY_TEXT_OPA);

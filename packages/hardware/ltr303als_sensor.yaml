@@ -75,6 +75,3 @@ sensor:
               id(display_panel), id(display_backlight), x,
               ${display_auto_dim_min_lux}, ${display_auto_dim_max_lux},
               ${display_auto_dim_min_brightness});
-        - lambda: |-
-            AirDot::onboarding::publish_current_display_brightness_percent(
-              id(display_backlight), id(ha_display_brightness_percent));

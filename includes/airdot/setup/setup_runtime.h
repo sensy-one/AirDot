@@ -710,12 +710,42 @@ inline uint8_t effective_display_brightness_percent(float ambient_lux, float min
   if (!std::isfinite(ambient_lux))
     return min_percent;
 
+  // Brightness follows the logarithm of the room light, which is how the eye judges it. A straight line in lux
+  // left any artificially lit room (5-50 lux) at the bottom few percent.
   const float corrected_min_lux = std::max(0.1f, min_lux);
-  const float corrected_max_lux = std::max(corrected_min_lux + 1.0f, max_lux);
-  const float corrected_lux = std::clamp(ambient_lux, corrected_min_lux, corrected_max_lux);
-  const float ratio = (corrected_lux - corrected_min_lux) / (corrected_max_lux - corrected_min_lux);
-  const float percent = static_cast<float>(min_percent) + ratio * static_cast<float>(max_percent - min_percent);
-  return normalize_display_brightness_percent_(static_cast<int>(std::round(percent)));
+  const float corrected_max_lux = std::max(corrected_min_lux * 2.0f, max_lux);
+  const float log_min = std::log(corrected_min_lux);
+  const float log_max = std::log(corrected_max_lux);
+  const float log_lux = std::log(std::clamp(ambient_lux, corrected_min_lux, corrected_max_lux));
+
+  // Smooth the reading (about 5 s at the 1 s sensor rate) and only move by 2 points or more, so a dark room
+  // whose reading hops between 0 and 10 lux doesn't make the screen flicker between two levels.
+  static float smoothed_log_lux = NAN;
+  static int last_percent = -1;
+  static uint8_t last_min_percent = 0;
+  static uint8_t last_max_percent = 0;
+  smoothed_log_lux =
+      std::isfinite(smoothed_log_lux) ? smoothed_log_lux + 0.2f * (log_lux - smoothed_log_lux) : log_lux;
+  const float ratio = std::clamp((smoothed_log_lux - log_min) / (log_max - log_min), 0.0f, 1.0f);
+  const int target = static_cast<int>(
+      std::round(static_cast<float>(min_percent) + ratio * static_cast<float>(max_percent - min_percent)));
+
+  const bool settings_changed = last_min_percent != min_percent || last_max_percent != max_percent;
+  if (last_percent >= 0 && !settings_changed && std::abs(target - last_percent) < 2)
+    return normalize_display_brightness_percent_(last_percent);
+
+  last_percent = target;
+  last_min_percent = min_percent;
+  last_max_percent = max_percent;
+  return normalize_display_brightness_percent_(target);
+}
+
+// Floor of the automatic brightness, from the Min Brightness control (percent on the same scale as the
+// maximum). Falls back to 1 % before the control has a value.
+inline float auto_dim_min_brightness_value(float min_percent) {
+  const int percent = std::isfinite(min_percent) ? static_cast<int>(std::round(min_percent)) : 1;
+  return display_brightness_value_for_percent_(
+      normalize_display_brightness_percent_(std::max(1, percent)));
 }
 
 inline float effective_display_brightness(float ambient_lux, float min_lux, float max_lux, float min_brightness) {

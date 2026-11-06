@@ -18,7 +18,7 @@ sensor_lux_update_interval: 1s
 sensor_environment_update_interval: 1s
 sensor_air_quality_update_interval: 1s
 
-display_auto_dim_min_brightness: "0.0002"
+display_auto_dim_min_brightness: "AirDot::onboarding::auto_dim_min_brightness_value(id(display_min_brightness).state)"
 display_auto_dim_min_lux: "1"
 display_auto_dim_max_lux: "300"
 sensor_lux_window_correction: "4"
