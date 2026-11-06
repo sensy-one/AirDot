@@ -52,6 +52,8 @@ setup_page:
   sen66_co2_reference_label: Referenční hodnota CO2
   sen66_co2_calibration_title: Vynutit kalibraci referenční hodnoty CO2
   sen66_co2_calibration_description: Umístěte AirDot alespoň na 3 minuty na čerstvý venkovní vzduch a poté nastavení uložte.
+  sen66_voc_learning_time_label: Doba učení základní úrovně VOC
+  sen66_learning_time_help: Hodiny (1-1000). Pro často prázdné místnosti zvolte delší dobu.
 
   alerts_title: Upozornění
   alerts_note: Nastavte, kdy vás má AirDot upozornit.

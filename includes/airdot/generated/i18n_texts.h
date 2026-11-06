@@ -1258,6 +1258,8 @@ struct SetupPageText {
   const char *sen66_co2_reference_label;
   const char *sen66_co2_calibration_title;
   const char *sen66_co2_calibration_description;
+  const char *sen66_voc_learning_time_label;
+  const char *sen66_learning_time_help;
   const char *alerts_title;
   const char *alerts_note;
   const char *alert_snooze_label;
@@ -1497,6 +1499,8 @@ inline SetupPageText setup_page_text(AirDot::UiLanguage language) {
         "CO2 baseline",
         "Force CO2 baseline calibration",
         "Place AirDot in fresh outdoor air for at least 3 minutes, then save.",
+        "VOC baseline learning time",
+        "Hours (1-1000). Use longer times for rooms that are often empty.",
         "Alerts",
         "Set when AirDot should alert you.",
         "Snooze duration",
@@ -1634,6 +1638,8 @@ inline SetupPageText setup_page_text(AirDot::UiLanguage language) {
         "CO2-Baseline",
         "CO2-Baselinekalibrierung erzwingen",
         "Stelle AirDot mindestens 3 Minuten in frische Außenluft und speichere dann.",
+        "VOC-Baseline-Lernzeit",
+        "Stunden (1-1000). Längere Zeiten eignen sich für oft leere Räume.",
         "Warnungen",
         "Lege fest, wann du eine Warnung erhältst.",
         "Schlummerdauer",
@@ -1771,6 +1777,8 @@ inline SetupPageText setup_page_text(AirDot::UiLanguage language) {
         "CO2-baseline",
         "Forceer CO2-baselinekalibratie",
         "Zet AirDot minstens 3 minuten in frisse buitenlucht en sla daarna op.",
+        "Leertijd VOC-basislijn",
+        "Uren (1-1000). Gebruik langere tijden voor vaak lege ruimtes.",
         "Meldingen",
         "Stel in wanneer je een waarschuwing ontvangt.",
         "Snoozeduur",
@@ -1908,6 +1916,8 @@ inline SetupPageText setup_page_text(AirDot::UiLanguage language) {
         "Référence CO2",
         "Forcer l’étalonnage de référence CO2",
         "Placez AirDot à l’air extérieur frais pendant au moins 3 minutes, puis enregistrez.",
+        "Durée d'apprentissage de la base COV",
+        "Heures (1-1000). Utilisez une durée plus longue pour les pièces souvent vides.",
         "Alertes",
         "Définissez quand recevoir une alerte.",
         "Durée de répétition",
@@ -2045,6 +2055,8 @@ inline SetupPageText setup_page_text(AirDot::UiLanguage language) {
         "CO2 bázisérték",
         "CO2 bázisérték kényszerített kalibrálása",
         "Helyezd az AirDot-ot friss, kültéri levegőre legalább 3 percre, majd mentsd el.",
+        "VOC alapszint tanulási ideje",
+        "Órák (1-1000). Gyakran üres helyiségekhez hosszabb idő ajánlott.",
         "Riasztások",
         "Állítsd be, mikor riasszon az AirDot.",
         "Szundi időtartama",
@@ -2182,6 +2194,8 @@ inline SetupPageText setup_page_text(AirDot::UiLanguage language) {
         "Referenční hodnota CO2",
         "Vynutit kalibraci referenční hodnoty CO2",
         "Umístěte AirDot alespoň na 3 minuty na čerstvý venkovní vzduch a poté nastavení uložte.",
+        "Doba učení základní úrovně VOC",
+        "Hodiny (1-1000). Pro často prázdné místnosti zvolte delší dobu.",
         "Upozornění",
         "Nastavte, kdy vás má AirDot upozornit.",
         "Doba odložení",
@@ -2319,6 +2333,8 @@ inline SetupPageText setup_page_text(AirDot::UiLanguage language) {
         "Baseline CO₂",
         "Forza la calibrazione della baseline CO₂",
         "Metti AirDot all'aria aperta per almeno 3 minuti, quindi salva.",
+        "Tempo di apprendimento baseline VOC",
+        "Ore (1-1000). Usa tempi più lunghi per stanze spesso vuote.",
         "Avvisi",
         "Imposta quando AirDot deve avvisarti.",
         "Durata posticipo",
@@ -2456,6 +2472,8 @@ inline SetupPageText setup_page_text(AirDot::UiLanguage language) {
         "Referință CO2",
         "Forțează calibrarea referinței CO2",
         "Pune AirDot în aer proaspăt de afară timp de cel puțin 3 minute, apoi salvează.",
+        "Timp de învățare a bazei VOC",
+        "Ore (1-1000). Folosește timpi mai lungi pentru camerele des goale.",
         "Alerte",
         "Setează când AirDot trebuie să te alerteze.",
         "Durata amânării",
@@ -2637,6 +2655,8 @@ inline void append_setup_page_translation_json(std::string &html, AirDot::UiLang
   append_json_field_(html, "sen66_co2_reference_label", text.sen66_co2_reference_label, first);
   append_json_field_(html, "sen66_co2_calibration_title", text.sen66_co2_calibration_title, first);
   append_json_field_(html, "sen66_co2_calibration_description", text.sen66_co2_calibration_description, first);
+  append_json_field_(html, "sen66_voc_learning_time_label", text.sen66_voc_learning_time_label, first);
+  append_json_field_(html, "sen66_learning_time_help", text.sen66_learning_time_help, first);
   append_json_field_(html, "alerts_title", text.alerts_title, first);
   append_json_field_(html, "alerts_note", text.alerts_note, first);
   append_json_field_(html, "alert_snooze_label", text.alert_snooze_label, first);

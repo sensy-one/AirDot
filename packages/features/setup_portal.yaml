@@ -364,6 +364,8 @@ script:
                   id(air_quality_hazard_sound_snooze_until_ms) = 0;
                   id(air_quality_hazard_focus_snooze_until_ms) = 0;
                 }
+            - script.execute: sen66_apply_learning_times
+            - script.wait: sen66_apply_learning_times
             - script.execute: ui_apply_display_theme
             - script.execute: ui_refresh_air_quality_summary
             - script.execute: ui_refresh_time_weather_page

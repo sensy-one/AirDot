@@ -134,6 +134,7 @@ class SetupPageRenderer {
     const bool custom_air_quality_thresholds_enabled = custom_air_quality_thresholds.enabled == 1;
     const std::string sen66_temperature_offset_value =
         temperature_offset_input_value_(sen66_temperature_offset_display_c());
+    const std::string sen66_voc_learning_time_value = std::to_string(load_voc_learning_time_hours());
     const auto &mqtt_settings = load_mqtt_settings();
     const bool stored_mqtt_enabled = mqtt_settings.enabled == 1;
     const std::string mqtt_broker = fixed_string_(mqtt_settings.broker);
@@ -376,6 +377,12 @@ class SetupPageRenderer {
       color: var(--muted-2);
       font-size: 13px;
       line-height: 1.35;
+    }
+    .field-hint {
+      margin: 0;
+      color: var(--muted-2);
+      font-size: 13px;
+      line-height: 1.4;
     }
     .field {
       display: grid;
@@ -1431,6 +1438,22 @@ class SetupPageRenderer {
     html += html_escape_(sen66_temperature_offset_value);
     html += R"html(">
                   <span class="unit-suffix" aria-hidden="true">°C</span>
+                </div>
+              </div>
+
+              <div class="field">
+)html";
+    html += "                <label for=\"sen66_voc_learning_time_hours\" data-i18n=\"sen66_voc_learning_time_label\">";
+    html += text.sen66_voc_learning_time_label;
+    html += R"html(</label>
+                <p class="field-hint" data-i18n="sen66_learning_time_help">)html";
+    html += text.sen66_learning_time_help;
+    html += R"html(</p>
+                <div class="unit-input">
+                  <input id="sen66_voc_learning_time_hours" name="sen66_voc_learning_time_hours" type="text" inputmode="numeric" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false" maxlength="4" pattern="[0-9]{1,4}" value=")html";
+    html += html_escape_(sen66_voc_learning_time_value);
+    html += R"html(">
+                  <span class="unit-suffix" aria-hidden="true">h</span>
                 </div>
               </div>
 

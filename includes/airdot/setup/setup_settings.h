@@ -69,6 +69,7 @@ static constexpr uint32_t CUSTOM_AIR_QUALITY_THRESHOLDS_PREF_KEY = 2918394856UL;
 static constexpr uint32_t ALERT_SNOOZE_DURATION_PREF_KEY = 2918394858UL;
 static constexpr uint8_t ALERT_SNOOZE_DEFAULT_MINUTES = 15;
 static constexpr uint8_t ALERT_SNOOZE_MAX_MINUTES = 60;
+static constexpr uint32_t VOC_LEARNING_TIME_HOURS_PREF_KEY = 2918394857UL;
 static constexpr uint8_t CUSTOM_AIR_QUALITY_THRESHOLDS_VERSION = 1;
 static constexpr uint8_t CUSTOM_AIR_QUALITY_METRIC_COUNT = 7;
 static constexpr uint8_t CUSTOM_AIR_QUALITY_THRESHOLD_COUNT = 4;
@@ -86,6 +87,9 @@ static constexpr int16_t TIME_ZONE_OFFSET_MINUTES_UNSET = 32767;
 static constexpr uint8_t TIME_ZONE_OFFSET_MAX_TRANSITIONS = 48;
 static constexpr int16_t SEN66_TEMPERATURE_OFFSET_MIN_CENTI_C = -2000;
 static constexpr int16_t SEN66_TEMPERATURE_OFFSET_MAX_CENTI_C = 0;
+static constexpr uint16_t SEN66_INDEX_LEARNING_TIME_MIN_HOURS = 1;
+static constexpr uint16_t SEN66_INDEX_LEARNING_TIME_MAX_HOURS = 1000;
+static constexpr uint16_t SEN66_INDEX_LEARNING_TIME_DEFAULT_HOURS = 12;
 static constexpr uint16_t SCREEN_OFF_DEFAULT_START_MINUTES = 22 * 60;
 static constexpr uint16_t SCREEN_OFF_DEFAULT_END_MINUTES = 7 * 60;
 static constexpr float DISPLAY_MIN_BRIGHTNESS = 0.0002f;
@@ -1105,6 +1109,21 @@ inline CachedUint8Preference &night_screen_mode_pref_() {
   return cache;
 }
 
+inline uint16_t normalize_sen66_index_learning_time_hours_(int value) {
+  return static_cast<uint16_t>(std::max<int>(SEN66_INDEX_LEARNING_TIME_MIN_HOURS,
+                                             std::min<int>(SEN66_INDEX_LEARNING_TIME_MAX_HOURS, value)));
+}
+
+inline CachedUint16Preference &voc_learning_time_hours_pref_() {
+  static CachedUint16Preference cache{VOC_LEARNING_TIME_HOURS_PREF_KEY,
+                                      SEN66_INDEX_LEARNING_TIME_DEFAULT_HOURS,
+                                      SEN66_INDEX_LEARNING_TIME_DEFAULT_HOURS,
+                                      false,
+                                      false,
+                                      {}};
+  return cache;
+}
+
 inline CachedUint16Preference &screen_off_start_minutes_pref_() {
   static CachedUint16Preference cache{
       SCREEN_OFF_START_MINUTES_PREF_KEY,
@@ -1659,6 +1678,13 @@ inline void save_sen66_temperature_offset_display_c(float correction_celsius) {
       -static_cast<int>(std::round(positive_correction * 100.0f)));
 }
 
+inline uint16_t load_voc_learning_time_hours() {
+  return normalize_sen66_index_learning_time_hours_(load_cached_uint16_preference_(voc_learning_time_hours_pref_()));
+}
+
+inline void save_voc_learning_time_hours(int voc_hours) {
+  save_cached_uint16_preference_(voc_learning_time_hours_pref_(), normalize_sen66_index_learning_time_hours_(voc_hours));
+}
 inline bool load_local_time_enabled() {
   return load_time_server_enabled() || load_manual_time_enabled();
 }

@@ -24,6 +24,47 @@ void sen66_apply_temperature_offset(Sen66Sensor *sensor, float offset_celsius, f
   sensor->write_command(static_cast<uint16_t>(0x60B2), data, 4);
 }
 
+// Sets the same learning time on both the offset and gain parameters of the VOC
+// index algorithm. The other tuning parameters are read back from the sensor and
+// written unchanged. The sensor must be idle (measurement stopped).
+template<typename Sen66Sensor> bool sen66_set_voc_learning_time(Sen66Sensor *sensor, uint16_t learning_time_hours) {
+  if (sensor == nullptr)
+    return false;
+
+  constexpr uint16_t VOC_TUNING_COMMAND = 0x60D0;
+  uint16_t params[6] = {0, 0, 0, 0, 0, 0};
+  if (!sensor->write_command(VOC_TUNING_COMMAND))
+    return false;
+  delay(20);
+  if (!sensor->read_data(params, 6))
+    return false;
+
+  // Word order: index offset, learning time offset (h), learning time gain (h),
+  // gating max duration (min), initial std, gain factor.
+  params[1] = learning_time_hours;
+  params[2] = learning_time_hours;
+  return sensor->write_command(VOC_TUNING_COMMAND, params, 6);
+}
+
+// The VOC algorithm state is 8 bytes (4 words). It can be read while measuring
+// and written back in idle mode, where it is applied at the next measurement start.
+template<typename Sen66Sensor> bool sen66_get_voc_algorithm_state(Sen66Sensor *sensor, uint16_t *state) {
+  if (sensor == nullptr || state == nullptr)
+    return false;
+
+  if (!sensor->write_command(static_cast<uint16_t>(0x6181)))
+    return false;
+  delay(20);
+  return sensor->read_data(state, 4);
+}
+
+template<typename Sen66Sensor> bool sen66_set_voc_algorithm_state(Sen66Sensor *sensor, const uint16_t *state) {
+  if (sensor == nullptr || state == nullptr)
+    return false;
+
+  return sensor->write_command(static_cast<uint16_t>(0x6181), state, 4);
+}
+
 template<typename Sen66Sensor> bool sen66_stop_measurement(Sen66Sensor *sensor) {
   if (sensor == nullptr)
     return false;

@@ -52,6 +52,8 @@ setup_page:
   sen66_co2_reference_label: CO2-baseline
   sen66_co2_calibration_title: Forceer CO2-baselinekalibratie
   sen66_co2_calibration_description: Zet AirDot minstens 3 minuten in frisse buitenlucht en sla daarna op.
+  sen66_voc_learning_time_label: Leertijd VOC-basislijn
+  sen66_learning_time_help: Uren (1-1000). Gebruik langere tijden voor vaak lege ruimtes.
 
   alerts_title: Meldingen
   alerts_note: Stel in wanneer je een waarschuwing ontvangt.

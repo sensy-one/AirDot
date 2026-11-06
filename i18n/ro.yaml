@@ -52,6 +52,8 @@ setup_page:
   sen66_co2_reference_label: Referință CO2
   sen66_co2_calibration_title: Forțează calibrarea referinței CO2
   sen66_co2_calibration_description: Pune AirDot în aer proaspăt de afară timp de cel puțin 3 minute, apoi salvează.
+  sen66_voc_learning_time_label: Timp de învățare a bazei VOC
+  sen66_learning_time_help: Ore (1-1000). Folosește timpi mai lungi pentru camerele des goale.
 
   alerts_title: Alerte
   alerts_note: Setează când AirDot trebuie să te alerteze.
