@@ -117,6 +117,7 @@ class SetupPageRenderer {
     const bool audio_alerts_enabled = load_audio_alerts_enabled();
     const bool display_alert_wake_screen_enabled = load_display_alert_wake_screen_enabled();
     const bool hazard_focus_mode_enabled = load_hazard_focus_mode_enabled();
+    const std::string alert_snooze_minutes_value = std::to_string(load_alert_snooze_minutes());
     uint8_t stored_time_server_value = 0;
     const bool time_server_setting_stored =
         load_optional_cached_uint8_preference_(time_server_pref_(), stored_time_server_value);
@@ -1474,6 +1475,22 @@ class SetupPageRenderer {
     html += "</h2>\n                  <p class=\"section-note\" data-i18n=\"alerts_note\">";
     html += text.alerts_note;
     html += R"html(</p>
+                </div>
+              </div>
+
+              <div class="field is-first">
+)html";
+    html += "                <label for=\"alert_snooze_minutes\" data-i18n=\"alert_snooze_label\">";
+    html += text.alert_snooze_label;
+    html += R"html(</label>
+                <p class="toggle-description" data-i18n="alert_snooze_description">)html";
+    html += text.alert_snooze_description;
+    html += R"html(</p>
+                <div class="unit-input">
+                  <input id="alert_snooze_minutes" name="alert_snooze_minutes" type="number" inputmode="numeric" min="0" max="60" step="1" required value=")html";
+    html += html_escape_(alert_snooze_minutes_value);
+    html += R"html(">
+                  <span class="unit-suffix" aria-hidden="true">min</span>
                 </div>
               </div>
 

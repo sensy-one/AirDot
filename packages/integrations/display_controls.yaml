@@ -3,7 +3,6 @@ number:
     id: ha_display_brightness_percent
     name: Display Brightness
     internal: false
-    entity_category: config
     icon: mdi:brightness-percent
     unit_of_measurement: "%"
     min_value: 0
@@ -41,7 +40,6 @@ switch:
     id: ha_display_power
     name: Display Power
     internal: false
-    entity_category: config
     icon: mdi:monitor
     restore_mode: DISABLED
     lambda: |-
@@ -72,7 +70,6 @@ switch:
     id: ha_buzzer
     name: Buzzer
     internal: false
-    entity_category: config
     icon: mdi:volume-high
     restore_mode: DISABLED
     lambda: |-

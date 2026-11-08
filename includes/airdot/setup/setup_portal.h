@@ -266,6 +266,9 @@ class SetupHandler : public AsyncWebHandler {
     save_display_alert_wake_screen_enabled(request->hasArg("display_alert_wake_screen"));
     save_audio_alerts_enabled(request->hasArg("audio_alerts"));
     save_hazard_focus_mode_enabled(request->hasArg("hazard_focus_mode"));
+    save_alert_snooze_minutes(parse_bounded_uint16_(
+        bounded_arg_(request, "alert_snooze_minutes", 12), load_alert_snooze_minutes(), 0,
+        ALERT_SNOOZE_MAX_MINUTES));
     const auto stored_air_quality_profile = load_air_quality_profile();
     const auto selected_air_quality_profile =
         AirDot::air_quality_profile_from_value(bounded_arg_(request, "air_quality_profile", 32));

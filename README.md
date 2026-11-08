@@ -173,6 +173,10 @@ AirDot publishes these entities to Home Assistant:
 - Display Brightness, as a number from 0 to 100%
 - Display Power, as an on/off switch
 - Buzzer, as an on/off switch
+- Display Page, as a dropdown for selecting the page shown on AirDot
+- Firmware Update, for installing available firmware updates
+
+Display Page, Display Brightness, Display Power, and Buzzer appear under **Controls** in Home Assistant. The same controls are available through MQTT discovery.
 
 The default publication interval is 10 seconds. In setup, this can be changed to 5, 10, or 30 seconds.
 
@@ -262,13 +266,15 @@ Available pages:
 
 The time and weather page appears when time is available and either time sync or weather is enabled. The Flight Radar page appears when Wi-Fi is configured and Flight Radar is enabled.
 
+You can also choose a page using **Display Page** in Home Assistant or through MQTT, including from automations. Automatic page switching continues if enabled. To keep the selected page on screen, turn off automatic page switching in setup.
+
 ## Action Button
 
 The physical action button controls the local UI.
 
 - Short press: move to the next display page.
 - Double press: return to the overview screen.
-- Short press during a critical air-quality alert: snooze the alert sound and critical value focus for 15 minutes.
+- Short press during a critical air-quality alert: snooze the alert, even when the display is asleep.
 - Long press, about 0.8 seconds: open setup or confirm the current onboarding action.
 - Press during night mode or when display power is off: wake the display temporarily.
 - Hold for about 10 seconds: factory reset AirDot. Keep holding through the countdown to complete the reset.
@@ -420,13 +426,15 @@ Available alert settings:
 - Critical value focus: automatically switch to the chart for the highest-risk sensor.
 - Wake screen for alerts: turn on the display for Homey Pro or Home Assistant alerts and critical air-quality readings.
 
-When a critical air-quality tone or focus page is active, a short button press snoozes the alert sound and critical focus for 15 minutes and returns control to the normal page flow.
+Press the action button once to snooze air-quality alert sounds, critical value focus, and automatic screen wake. Set **Snooze duration** under **Alerts** in setup: the default is 15 minutes.
 
 ## Firmware Updates
 
-AirDot supports firmware updates through the setup page.
+AirDot supports firmware updates through Home Assistant and the setup page.
 
-The firmware update section shows the currently installed firmware version.
+### Update From Home Assistant
+
+Open your AirDot device in Home Assistant and select **Firmware Update** to install an available update. AirDot checks for updates every 6 hours. Updates are installed when you choose, or automatically if you set up a Home Assistant automation.
 
 ### Update From AirDot Setup
 

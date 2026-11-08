@@ -52,9 +52,9 @@ def apply_pending_changes():
             raise
 
 
-def replace_once(path, old, new):
+def replace_once(path, old, new, already_applied=None):
     text = read_patch_text(path)
-    if new in text:
+    if new in text or (already_applied is not None and already_applied in text):
         return
     candidates = (old,) if isinstance(old, str) else old
     for candidate in candidates:
@@ -658,6 +658,49 @@ replace_once(
 )
 
 replace_once(
+    mqtt_client,
+    """void MQTTClientComponent::set_topic_prefix(const std::string &topic_prefix, const std::string &check_topic_prefix) {
+  if (App.is_name_add_mac_suffix_enabled() && (topic_prefix == check_topic_prefix)) {
+    char buf[ESPHOME_DEVICE_NAME_MAX_LEN + 1];
+    this->topic_prefix_ = str_sanitize_to(buf, App.get_name().c_str());
+  } else {
+    this->topic_prefix_ = topic_prefix;
+  }
+}
+""",
+    """void MQTTClientComponent::set_topic_prefix(const std::string &topic_prefix, const std::string &check_topic_prefix) {
+  const std::string previous_topic_prefix = this->topic_prefix_;
+  if (App.is_name_add_mac_suffix_enabled() && (topic_prefix == check_topic_prefix)) {
+    char buf[ESPHOME_DEVICE_NAME_MAX_LEN + 1];
+    this->topic_prefix_ = str_sanitize_to(buf, App.get_name().c_str());
+  } else {
+    this->topic_prefix_ = topic_prefix;
+  }
+  if (previous_topic_prefix.empty() || previous_topic_prefix == this->topic_prefix_)
+    return;
+
+  const std::string previous_prefix = previous_topic_prefix + "/";
+  for (auto &subscription : this->subscriptions_) {
+    if (subscription.topic.compare(0, previous_prefix.size(), previous_prefix) != 0)
+      continue;
+    if (this->is_connected() && subscription.subscribed)
+      this->mqtt_backend_.unsubscribe(subscription.topic.c_str());
+    subscription.topic = this->topic_prefix_ + subscription.topic.substr(previous_topic_prefix.size());
+    subscription.subscribed = false;
+    subscription.resubscribe_timeout = 0;
+  }
+}
+""",
+)
+
+api_server_header_text = read_patch_text(api_server.with_suffix(".h"))
+api_clients_reset = (
+    "  this->clients_ = {};\n  this->api_connection_count_ = 0;\n"
+    if "std::array<APIConnectionPtr" in api_server_header_text
+    else "  this->clients_.clear();\n"
+)
+
+replace_once(
     api_server,
     (
         """void APIServer::setup() {
@@ -670,12 +713,9 @@ replace_once(
   ControllerRegistry::register_controller(this);
 """,
     ),
-    """void APIServer::setup() {
-  this->shutting_down_ = false;
-  this->clients_.clear();
-
-  ControllerRegistry::register_controller(this);
-""",
+    "void APIServer::setup() {\n  this->shutting_down_ = false;\n"
+    + api_clients_reset
+    + "\n  ControllerRegistry::register_controller(this);\n",
 )
 
 replace_once(
@@ -847,6 +887,7 @@ replace_once(
     """static const char *const TAG = "web_server_idf";
 static constexpr size_t AIRDOT_HTTPD_MAX_FORM_BODY_LEN = 4096;
 """,
+    already_applied="static constexpr size_t AIRDOT_HTTPD_MAX_FORM_BODY_LEN = 4096;",
 )
 
 replace_once(
@@ -867,6 +908,7 @@ replace_once(
     return ESP_FAIL;
   }
 """,
+    already_applied="if (r->content_len > AIRDOT_HTTPD_MAX_FORM_BODY_LEN) {",
 )
 
 replace_once(

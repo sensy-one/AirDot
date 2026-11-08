@@ -55,6 +55,8 @@ setup_page:
 
   alerts_title: Alerte
   alerts_note: Setează când AirDot trebuie să te alerteze.
+  alert_snooze_label: Durata amânării
+  alert_snooze_description: Minute (0–60). Suspendă sunetul, focalizarea și activarea ecranului pentru alertele de calitate a aerului. 0 dezactivează amânarea.
 
   display_alert_wake_screen_title: Trezire ecran
   display_alert_wake_screen_description: Pornește afișajul pentru alertele Home Assistant și valorile critice ale aerului.

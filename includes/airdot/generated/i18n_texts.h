@@ -1260,6 +1260,8 @@ struct SetupPageText {
   const char *sen66_co2_calibration_description;
   const char *alerts_title;
   const char *alerts_note;
+  const char *alert_snooze_label;
+  const char *alert_snooze_description;
   const char *display_alert_wake_screen_title;
   const char *display_alert_wake_screen_description;
   const char *integrations_title;
@@ -1497,6 +1499,8 @@ inline SetupPageText setup_page_text(AirDot::UiLanguage language) {
         "Place AirDot in fresh outdoor air for at least 3 minutes, then save.",
         "Alerts",
         "Set when AirDot should alert you.",
+        "Snooze duration",
+        "Minutes (0–60). Pause air-quality alert sound, focus and screen wake. 0 disables snooze.",
         "Wake screen",
         "Turn on the display for Home Assistant alerts and critical air-quality readings.",
         "Integrations",
@@ -1632,6 +1636,8 @@ inline SetupPageText setup_page_text(AirDot::UiLanguage language) {
         "Stelle AirDot mindestens 3 Minuten in frische Außenluft und speichere dann.",
         "Warnungen",
         "Lege fest, wann du eine Warnung erhältst.",
+        "Schlummerdauer",
+        "Minuten (0–60). Pausiert Ton, Fokus und Bildschirmaktivierung bei Luftqualitätsalarmen. 0 deaktiviert die Schlummerfunktion.",
         "Display aufwecken",
         "Schaltet das Display bei Home-Assistant-Meldungen und kritischer Luftqualität ein.",
         "Integrationen",
@@ -1767,6 +1773,8 @@ inline SetupPageText setup_page_text(AirDot::UiLanguage language) {
         "Zet AirDot minstens 3 minuten in frisse buitenlucht en sla daarna op.",
         "Meldingen",
         "Stel in wanneer je een waarschuwing ontvangt.",
+        "Snoozeduur",
+        "Minuten (0–60). Pauzeer geluid, focus en schermactivatie bij luchtkwaliteitsalarmen. 0 schakelt snooze uit.",
         "Scherm wakker maken",
         "Zet het scherm aan bij meldingen van Home Assistant en kritieke luchtkwaliteit.",
         "Koppelingen",
@@ -1902,6 +1910,8 @@ inline SetupPageText setup_page_text(AirDot::UiLanguage language) {
         "Placez AirDot à l’air extérieur frais pendant au moins 3 minutes, puis enregistrez.",
         "Alertes",
         "Définissez quand recevoir une alerte.",
+        "Durée de répétition",
+        "Minutes (0–60). Suspend le son, le focus et le réveil de l’écran pour les alertes de qualité de l’air. 0 désactive la répétition.",
         "Réveiller l’écran",
         "Allume l’écran pour les alertes Home Assistant et une qualité de l’air critique.",
         "Intégrations",
@@ -2037,6 +2047,8 @@ inline SetupPageText setup_page_text(AirDot::UiLanguage language) {
         "Helyezd az AirDot-ot friss, kültéri levegőre legalább 3 percre, majd mentsd el.",
         "Riasztások",
         "Állítsd be, mikor riasszon az AirDot.",
+        "Szundi időtartama",
+        "Perc (0–60). Szünetelteti a levegőminőségi riasztások hangját, fókuszát és képernyőébresztését. A 0 kikapcsolja a szundit.",
         "Képernyő ébresztése",
         "Kapcsolja be a kijelzőt Home Assistant-riasztás vagy kritikus levegőminőség esetén.",
         "Integrációk",
@@ -2172,6 +2184,8 @@ inline SetupPageText setup_page_text(AirDot::UiLanguage language) {
         "Umístěte AirDot alespoň na 3 minuty na čerstvý venkovní vzduch a poté nastavení uložte.",
         "Upozornění",
         "Nastavte, kdy vás má AirDot upozornit.",
+        "Doba odložení",
+        "Minuty (0–60). Pozastaví zvuk, zaměření a probouzení obrazovky při upozornění na kvalitu vzduchu. 0 vypne odložení.",
         "Probuzení displeje",
         "Zapne displej při upozornění z Home Assistantu a kritické kvalitě vzduchu.",
         "Integrace",
@@ -2307,6 +2321,8 @@ inline SetupPageText setup_page_text(AirDot::UiLanguage language) {
         "Metti AirDot all'aria aperta per almeno 3 minuti, quindi salva.",
         "Avvisi",
         "Imposta quando AirDot deve avvisarti.",
+        "Durata posticipo",
+        "Minuti (0–60). Sospende suono, focus e riattivazione dello schermo per gli avvisi sulla qualità dell’aria. 0 disattiva il posticipo.",
         "Riattiva schermo",
         "Accendi il display per gli avvisi di Home Assistant e una qualità dell’aria critica.",
         "Integrazioni",
@@ -2442,6 +2458,8 @@ inline SetupPageText setup_page_text(AirDot::UiLanguage language) {
         "Pune AirDot în aer proaspăt de afară timp de cel puțin 3 minute, apoi salvează.",
         "Alerte",
         "Setează când AirDot trebuie să te alerteze.",
+        "Durata amânării",
+        "Minute (0–60). Suspendă sunetul, focalizarea și activarea ecranului pentru alertele de calitate a aerului. 0 dezactivează amânarea.",
         "Trezire ecran",
         "Pornește afișajul pentru alertele Home Assistant și valorile critice ale aerului.",
         "Integrări",
@@ -2621,6 +2639,8 @@ inline void append_setup_page_translation_json(std::string &html, AirDot::UiLang
   append_json_field_(html, "sen66_co2_calibration_description", text.sen66_co2_calibration_description, first);
   append_json_field_(html, "alerts_title", text.alerts_title, first);
   append_json_field_(html, "alerts_note", text.alerts_note, first);
+  append_json_field_(html, "alert_snooze_label", text.alert_snooze_label, first);
+  append_json_field_(html, "alert_snooze_description", text.alert_snooze_description, first);
   append_json_field_(html, "display_alert_wake_screen_title", text.display_alert_wake_screen_title, first);
   append_json_field_(html, "display_alert_wake_screen_description", text.display_alert_wake_screen_description, first);
   append_json_field_(html, "integrations_title", text.integrations_title, first);

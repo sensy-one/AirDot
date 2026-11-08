@@ -55,6 +55,8 @@ setup_page:
 
   alerts_title: Avvisi
   alerts_note: Imposta quando AirDot deve avvisarti.
+  alert_snooze_label: Durata posticipo
+  alert_snooze_description: Minuti (0–60). Sospende suono, focus e riattivazione dello schermo per gli avvisi sulla qualità dell’aria. 0 disattiva il posticipo.
 
   display_alert_wake_screen_title: Riattiva schermo
   display_alert_wake_screen_description: Accendi il display per gli avvisi di Home Assistant e una qualità dell’aria critica.

@@ -55,6 +55,8 @@ setup_page:
 
   alerts_title: Alertes
   alerts_note: Définissez quand recevoir une alerte.
+  alert_snooze_label: Durée de répétition
+  alert_snooze_description: Minutes (0–60). Suspend le son, le focus et le réveil de l’écran pour les alertes de qualité de l’air. 0 désactive la répétition.
 
   display_alert_wake_screen_title: Réveiller l’écran
   display_alert_wake_screen_description: Allume l’écran pour les alertes Home Assistant et une qualité de l’air critique.

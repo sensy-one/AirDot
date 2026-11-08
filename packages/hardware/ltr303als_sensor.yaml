@@ -35,9 +35,11 @@ sensor:
               id(page_button_pressed_at_ms) != 0 ||
               (id(display_sleep_wake_until_ms) != 0 &&
                static_cast<int32_t>(now_ms - id(display_sleep_wake_until_ms)) < 0);
-            const bool hazard_focus_snoozed =
-              id(air_quality_hazard_focus_snooze_until_ms) != 0 &&
-              static_cast<int32_t>(now_ms - id(air_quality_hazard_focus_snooze_until_ms)) < 0;
+            const bool hazard_snoozed =
+              (id(air_quality_hazard_focus_snooze_until_ms) != 0 &&
+               static_cast<int32_t>(now_ms - id(air_quality_hazard_focus_snooze_until_ms)) < 0) ||
+              (id(air_quality_hazard_sound_snooze_until_ms) != 0 &&
+               static_cast<int32_t>(now_ms - id(air_quality_hazard_sound_snooze_until_ms)) < 0);
             const bool hazard_focus_pending_or_active =
               id(air_quality_hazard_focus_hazard_since_ms) != 0 ||
               id(air_quality_hazard_focus_metric) != -1 ||
@@ -50,9 +52,10 @@ sensor:
               AirDot::onboarding::load_hazard_focus_mode_enabled() &&
               alert_wake_screen_enabled &&
               !setup_or_onboarding_active &&
-              !hazard_focus_snoozed;
+              !hazard_snoozed;
             const bool wake_for_display_alert =
-              (id(ui_alert_active) != 0 || AirDot::air_quality_alert_active(air_quality_level)) &&
+              (id(ui_alert_active) != 0 ||
+               (AirDot::air_quality_alert_active(air_quality_level) && !hazard_snoozed)) &&
               alert_wake_screen_enabled &&
               !setup_or_onboarding_active;
             const bool temporary_wake_active =

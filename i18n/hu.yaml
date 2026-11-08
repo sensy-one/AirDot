@@ -55,6 +55,8 @@ setup_page:
 
   alerts_title: Riasztások
   alerts_note: Állítsd be, mikor riasszon az AirDot.
+  alert_snooze_label: Szundi időtartama
+  alert_snooze_description: Perc (0–60). Szünetelteti a levegőminőségi riasztások hangját, fókuszát és képernyőébresztését. A 0 kikapcsolja a szundit.
 
   display_alert_wake_screen_title: Képernyő ébresztése
   display_alert_wake_screen_description: Kapcsolja be a kijelzőt Home Assistant-riasztás vagy kritikus levegőminőség esetén.

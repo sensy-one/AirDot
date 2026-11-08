@@ -359,6 +359,11 @@ script:
                       id(setup_pending_sen66_co2_calibration) = 0;
                       id(setup_pending_sen66_co2_reference_ppm) = 427;
             - script.execute: sen66_apply_temperature_offset
+            - lambda: |-
+                if (AirDot::onboarding::load_alert_snooze_minutes() == 0) {
+                  id(air_quality_hazard_sound_snooze_until_ms) = 0;
+                  id(air_quality_hazard_focus_snooze_until_ms) = 0;
+                }
             - script.execute: ui_apply_display_theme
             - script.execute: ui_refresh_air_quality_summary
             - script.execute: ui_refresh_time_weather_page

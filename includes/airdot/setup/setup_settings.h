@@ -66,6 +66,9 @@ static constexpr uint32_t DISPLAY_POWER_HA_CONTROL_RECOVERY_PREF_KEY = 291839485
 static constexpr uint32_t AUTO_PAGE_SWITCH_MODE_PREF_KEY = 2918394854UL;
 static constexpr uint32_t AUTO_PAGE_SWITCH_SCREENS_PREF_KEY = 2918394855UL;
 static constexpr uint32_t CUSTOM_AIR_QUALITY_THRESHOLDS_PREF_KEY = 2918394856UL;
+static constexpr uint32_t ALERT_SNOOZE_DURATION_PREF_KEY = 2918394858UL;
+static constexpr uint8_t ALERT_SNOOZE_DEFAULT_MINUTES = 15;
+static constexpr uint8_t ALERT_SNOOZE_MAX_MINUTES = 60;
 static constexpr uint8_t CUSTOM_AIR_QUALITY_THRESHOLDS_VERSION = 1;
 static constexpr uint8_t CUSTOM_AIR_QUALITY_METRIC_COUNT = 7;
 static constexpr uint8_t CUSTOM_AIR_QUALITY_THRESHOLD_COUNT = 4;
@@ -1021,6 +1024,12 @@ inline CachedUint8Preference &hazard_focus_mode_pref_() {
   return cache;
 }
 
+inline CachedUint8Preference &alert_snooze_duration_pref_() {
+  static CachedUint8Preference cache{ALERT_SNOOZE_DURATION_PREF_KEY, ALERT_SNOOZE_DEFAULT_MINUTES,
+                                     ALERT_SNOOZE_DEFAULT_MINUTES, false, false, {}};
+  return cache;
+}
+
 inline CachedUint8Preference &display_alert_wake_screen_pref_() {
   static CachedUint8Preference cache{DISPLAY_ALERT_WAKE_SCREEN_PREF_KEY, 0, 0, false, false, {}};
   return cache;
@@ -1959,6 +1968,26 @@ inline bool auto_page_switch_screen_enabled(uint16_t screen) {
   if (load_auto_page_switch_mode() == AUTO_PAGE_SWITCH_MODE_ALL)
     return true;
   return (load_auto_page_switch_screens() & screen) != 0;
+}
+
+inline uint8_t normalize_alert_snooze_minutes_(int minutes) {
+  return static_cast<uint8_t>(std::clamp(minutes, 0, static_cast<int>(ALERT_SNOOZE_MAX_MINUTES)));
+}
+
+inline uint8_t load_alert_snooze_minutes() {
+  return normalize_alert_snooze_minutes_(load_cached_uint8_preference_(alert_snooze_duration_pref_()));
+}
+
+inline void save_alert_snooze_minutes(int minutes) {
+  save_cached_uint8_preference_(alert_snooze_duration_pref_(), normalize_alert_snooze_minutes_(minutes));
+}
+
+inline uint32_t alert_snooze_until_ms(uint32_t now_ms) {
+  const uint32_t duration_ms = static_cast<uint32_t>(load_alert_snooze_minutes()) * 60UL * 1000UL;
+  if (duration_ms == 0)
+    return 0;
+  const uint32_t until_ms = now_ms + duration_ms;
+  return until_ms == 0 ? 1 : until_ms;
 }
 
 inline bool load_hazard_focus_mode_enabled() {

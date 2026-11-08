@@ -1,6 +1,19 @@
 ota:
   - platform: esphome
   - platform: web_server
+  - platform: http_request
+    id: firmware_http_ota
+    http_request_id: ipwhois_http_request
+    on_begin:
+      - lambda: |-
+          id(setup_firmware_update_active) = 2;
+          id(display_panel).set_low_bandwidth_mode(true);
+          AirDot::onboarding::turn_display_backlight_off(id(display_backlight));
+          id(display_panel).set_screen_powered(false);
+    on_error:
+      - lambda: |-
+          id(setup_firmware_update_active) = -1;
+      - script.execute: setup_display_restore_bandwidth
 
 safe_mode:
   boot_is_good_after: 90s

@@ -11,23 +11,19 @@ script:
       - lambda: |-
           const uint32_t now_ms = millis();
           id(ui_auto_page_switch_last_ms) = now_ms;
-          constexpr uint32_t HAZARD_SNOOZE_MS = 15UL * 60UL * 1000UL;
-          constexpr uint32_t FOCUS_SNOOZE_MS = HAZARD_SNOOZE_MS;
-          constexpr uint32_t SOUND_SNOOZE_MS = HAZARD_SNOOZE_MS;
-          const uint32_t focus_snooze_until_ms = now_ms + FOCUS_SNOOZE_MS;
-          const uint32_t sound_snooze_until_ms = now_ms + SOUND_SNOOZE_MS;
+          const uint32_t snooze_until_ms = AirDot::onboarding::alert_snooze_until_ms(now_ms);
           const int air_quality_level = AirDot::onboarding::load_sanitized_air_quality_level(
             id(pm1).state, id(pm25).state, id(pm4).state, id(pm10).state,
             id(voc).state, id(nox).state, id(co2).state);
           if (AirDot::air_quality_alert_active(air_quality_level)) {
-            id(air_quality_hazard_sound_snooze_until_ms) = sound_snooze_until_ms;
+            id(air_quality_hazard_sound_snooze_until_ms) = snooze_until_ms;
             id(air_quality_hazard_last_chirp_ms) = 0;
             id(hazard_alert_chirp).stop();
             if (id(ha_buzzer_active) != 1)
               id(alert_buzzer_pwm).turn_off();
           }
 
-          id(air_quality_hazard_focus_snooze_until_ms) = focus_snooze_until_ms;
+          id(air_quality_hazard_focus_snooze_until_ms) = snooze_until_ms;
           id(air_quality_hazard_focus_metric) = -1;
           id(air_quality_hazard_focus_last_switch_ms) = 0;
           id(air_quality_hazard_focus_hazard_since_ms) = 0;
@@ -52,16 +48,15 @@ script:
       - lambda: |-
           const uint32_t now_ms = millis();
           id(ui_auto_page_switch_last_ms) = now_ms;
-          constexpr uint32_t HAZARD_SNOOZE_MS = 15UL * 60UL * 1000UL;
-          constexpr uint32_t FOCUS_SNOOZE_MS = HAZARD_SNOOZE_MS;
-          constexpr uint32_t SOUND_SNOOZE_MS = HAZARD_SNOOZE_MS;
+          const uint32_t snooze_until_ms = AirDot::onboarding::alert_snooze_until_ms(now_ms);
           auto snooze_hazard_sound = [&]() {
             const int air_quality_level = AirDot::onboarding::load_sanitized_air_quality_level(
               id(pm1).state, id(pm25).state, id(pm4).state, id(pm10).state,
               id(voc).state, id(nox).state, id(co2).state);
             if (!AirDot::air_quality_alert_active(air_quality_level))
               return;
-            id(air_quality_hazard_sound_snooze_until_ms) = now_ms + SOUND_SNOOZE_MS;
+            id(air_quality_hazard_sound_snooze_until_ms) = snooze_until_ms;
+            id(air_quality_hazard_focus_snooze_until_ms) = snooze_until_ms;
             id(air_quality_hazard_last_chirp_ms) = 0;
             id(hazard_alert_chirp).stop();
             if (id(ha_buzzer_active) != 1)
@@ -77,7 +72,6 @@ script:
             if (!user_initiated)
               return;
 
-            const uint32_t snooze_until_ms = now_ms + FOCUS_SNOOZE_MS;
             const int return_page = id(air_quality_hazard_focus_return_page);
             snooze_hazard_sound();
             id(air_quality_hazard_focus_snooze_until_ms) = snooze_until_ms;

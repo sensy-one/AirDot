@@ -55,6 +55,8 @@ setup_page:
 
   alerts_title: Meldingen
   alerts_note: Stel in wanneer je een waarschuwing ontvangt.
+  alert_snooze_label: Snoozeduur
+  alert_snooze_description: Minuten (0–60). Pauzeer geluid, focus en schermactivatie bij luchtkwaliteitsalarmen. 0 schakelt snooze uit.
 
   display_alert_wake_screen_title: Scherm wakker maken
   display_alert_wake_screen_description: Zet het scherm aan bij meldingen van Home Assistant en kritieke luchtkwaliteit.

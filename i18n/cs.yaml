@@ -55,6 +55,8 @@ setup_page:
 
   alerts_title: Upozornění
   alerts_note: Nastavte, kdy vás má AirDot upozornit.
+  alert_snooze_label: Doba odložení
+  alert_snooze_description: Minuty (0–60). Pozastaví zvuk, zaměření a probouzení obrazovky při upozornění na kvalitu vzduchu. 0 vypne odložení.
 
   display_alert_wake_screen_title: Probuzení displeje
   display_alert_wake_screen_description: Zapne displej při upozornění z Home Assistantu a kritické kvalitě vzduchu.

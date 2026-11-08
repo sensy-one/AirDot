@@ -4,5 +4,10 @@ network:
 
 http_request:
   id: ipwhois_http_request
-  timeout: 6s
+  timeout: 30s
+  watchdog_timeout: 35s
   verify_ssl: true
+  follow_redirects: true
+  redirect_limit: 5
+  buffer_size_rx: 4096
+  buffer_size_tx: 1024

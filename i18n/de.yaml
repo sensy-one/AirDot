@@ -55,6 +55,8 @@ setup_page:
 
   alerts_title: Warnungen
   alerts_note: Lege fest, wann du eine Warnung erhältst.
+  alert_snooze_label: Schlummerdauer
+  alert_snooze_description: Minuten (0–60). Pausiert Ton, Fokus und Bildschirmaktivierung bei Luftqualitätsalarmen. 0 deaktiviert die Schlummerfunktion.
 
   display_alert_wake_screen_title: Display aufwecken
   display_alert_wake_screen_description: Schaltet das Display bei Home-Assistant-Meldungen und kritischer Luftqualität ein.

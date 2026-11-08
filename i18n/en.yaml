@@ -55,6 +55,8 @@ setup_page:
 
   alerts_title: Alerts
   alerts_note: Set when AirDot should alert you.
+  alert_snooze_label: Snooze duration
+  alert_snooze_description: Minutes (0–60). Pause air-quality alert sound, focus and screen wake. 0 disables snooze.
 
   display_alert_wake_screen_title: Wake screen
   display_alert_wake_screen_description: Turn on the display for Home Assistant alerts and critical air-quality readings.

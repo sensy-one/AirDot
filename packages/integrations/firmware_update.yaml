@@ -1,0 +1,10 @@
+update:
+  - platform: http_request
+    id: firmware_update
+    name: Firmware Update
+    device_class: firmware
+    entity_category: config
+    http_request_id: ipwhois_http_request
+    ota_id: firmware_http_ota
+    source: ${firmware_manifest_url}
+    update_interval: 6h

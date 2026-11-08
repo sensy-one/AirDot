@@ -334,6 +334,23 @@ binary_sensor:
                         id(page_button_long_press_handled) = 0;
                         id(page_button_last_short_release_ms) = 0;
                         id(page_button_double_click_pending) = 0;
+                    - if:
+                        condition:
+                          lambda: |-
+                            if (id(page_button_press_duration_ms) < 50 ||
+                                id(page_button_press_duration_ms) >= 800 ||
+                                id(ui_alert_active) != 0 || id(onboarding_ui_active) != 0)
+                              return false;
+                            const int level = AirDot::onboarding::load_sanitized_air_quality_level(
+                              id(pm1).state, id(pm25).state, id(pm4).state, id(pm10).state,
+                              id(voc).state, id(nox).state, id(co2).state);
+                            return AirDot::air_quality_alert_active(level) ||
+                                id(air_quality_hazard_focus_hazard_since_ms) != 0 ||
+                                id(air_quality_hazard_focus_metric) != -1 ||
+                                id(air_quality_hazard_focus_clear_since_ms) != 0 ||
+                                id(air_quality_hazard_focus_status_since_ms) != 0;
+                        then:
+                          - script.execute: ui_show_next_page
                   else:
                     - if:
                         condition:

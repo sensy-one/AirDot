@@ -150,6 +150,8 @@ SETUP_PAGE_KEYS = (
     "sen66_co2_calibration_description",
     "alerts_title",
     "alerts_note",
+    "alert_snooze_label",
+    "alert_snooze_description",
     "display_alert_wake_screen_title",
     "display_alert_wake_screen_description",
     "integrations_title",
