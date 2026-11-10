@@ -62,10 +62,11 @@ script:
                   - delay: 10s
                   - lambda: |-
                       id(sen66_measurement_running) = AirDot::sen66_start_measurement(id(sen66_air_quality_sensor));
-                      if (id(sen66_measurement_running))
+                      if (id(sen66_measurement_running)) {
                         ESP_LOGI("sen66", "Measurement restarted by recovery");
-                      else
+                      } else {
                         ESP_LOGW("sen66", "Recovery restart attempt failed");
+                      }
       - if:
           condition:
             lambda: 'return !id(sen66_measurement_running);'
@@ -146,7 +147,8 @@ script:
             - script.execute: sen66_restart_measurement
             - script.wait: sen66_restart_measurement
             - lambda: |-
-                if (id(sen66_tuning_ok) && id(sen66_measurement_running))
+                if (id(sen66_tuning_ok) && id(sen66_measurement_running)) {
                   id(sen66_applied_voc_learning_time_hours) = AirDot::onboarding::load_voc_learning_time_hours();
-                else
+                } else {
                   ESP_LOGW("sen66", "VOC learning time not marked as applied; will retry");
+                }
