@@ -120,4 +120,5 @@ esphome:
               ${display_auto_dim_min_brightness});
         - delay: 2s
         - script.execute: sen66_apply_temperature_offset
+        - delay: 50ms
         - script.execute: sen66_apply_learning_times
