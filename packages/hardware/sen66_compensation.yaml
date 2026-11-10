@@ -16,6 +16,10 @@ globals:
     type: bool
     restore_value: false
     initial_value: "true"
+  - id: sen66_tuning_ok
+    type: bool
+    restore_value: false
+    initial_value: "false"
   - id: sen66_stop_ok
     type: bool
     restore_value: false
@@ -121,15 +125,15 @@ script:
                 });
             - delay: 1500ms
             - lambda: |-
+                id(sen66_tuning_ok) = false;
                 if (!id(sen66_stop_ok)) {
                   ESP_LOGE("sen66", "Skipping VOC learning time update: sensor did not stop");
                   return;
                 }
                 const uint16_t voc_hours = AirDot::onboarding::load_voc_learning_time_hours();
-                if (AirDot::sen66_retry("set VOC learning time", 3, 50, [&]() {
-                      return AirDot::sen66_set_voc_learning_time(id(sen66_air_quality_sensor), voc_hours);
-                    }))
-                  id(sen66_applied_voc_learning_time_hours) = voc_hours;
+                id(sen66_tuning_ok) = AirDot::sen66_retry("set VOC learning time", 3, 50, [&]() {
+                  return AirDot::sen66_set_voc_learning_time(id(sen66_air_quality_sensor), voc_hours);
+                });
             - delay: 50ms
             - lambda: |-
                 if (id(sen66_stop_ok) && id(sen66_voc_state_saved)) {
@@ -140,3 +144,9 @@ script:
                 }
             - delay: 50ms
             - script.execute: sen66_restart_measurement
+            - script.wait: sen66_restart_measurement
+            - lambda: |-
+                if (id(sen66_tuning_ok) && id(sen66_measurement_running))
+                  id(sen66_applied_voc_learning_time_hours) = AirDot::onboarding::load_voc_learning_time_hours();
+                else
+                  ESP_LOGW("sen66", "VOC learning time not marked as applied; will retry");
