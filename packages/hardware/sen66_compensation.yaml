@@ -12,12 +12,62 @@ globals:
     type: bool
     restore_value: false
     initial_value: "false"
+  - id: sen66_measurement_running
+    type: bool
+    restore_value: false
+    initial_value: "true"
+  - id: sen66_stop_ok
+    type: bool
+    restore_value: false
+    initial_value: "true"
   - id: sen66_voc_state
     type: std::array<uint16_t, 4>
     restore_value: false
     initial_value: "{0, 0, 0, 0}"
 
 script:
+  - id: sen66_restart_measurement
+    mode: restart
+    then:
+      - lambda: |-
+          if (!id(sen66_stop_ok)) {
+            id(sen66_measurement_running) = true;
+            id(sen66_air_quality_sensor).start_poller();
+            return;
+          }
+          id(sen66_measurement_running) = AirDot::sen66_retry("start measurement", 3, 200, [&]() {
+            return AirDot::sen66_start_measurement(id(sen66_air_quality_sensor));
+          });
+          id(sen66_air_quality_sensor).start_poller();
+      - if:
+          condition:
+            lambda: 'return !id(sen66_measurement_running);'
+          then:
+            - script.execute: sen66_recover_measurement
+
+  - id: sen66_recover_measurement
+    mode: single
+    then:
+      - repeat:
+          count: 6
+          then:
+            - if:
+                condition:
+                  lambda: 'return !id(sen66_measurement_running);'
+                then:
+                  - delay: 10s
+                  - lambda: |-
+                      id(sen66_measurement_running) = AirDot::sen66_start_measurement(id(sen66_air_quality_sensor));
+                      if (id(sen66_measurement_running))
+                        ESP_LOGI("sen66", "Measurement restarted by recovery");
+                      else
+                        ESP_LOGW("sen66", "Recovery restart attempt failed");
+      - if:
+          condition:
+            lambda: 'return !id(sen66_measurement_running);'
+          then:
+            - lambda: 'ESP_LOGE("sen66", "Could not restart SEN66 measurement; giving up recovery");'
+
   - id: sen66_apply_temperature_offset
     mode: single
     then:
@@ -53,11 +103,6 @@ script:
           AirDot::sen66_start_measurement(id(sen66_air_quality_sensor));
           id(sen66_air_quality_sensor).start_poller();
 
-  # Writes the stored VOC learning time to the sensor. The tuning command needs
-  # the sensor idle, so this stops and restarts measurement. Stopping resets the
-  # VOC engine, so the learned VOC state is read first and restored before the
-  # restart to keep the baseline. After boot the sensor was just reset, so there is
-  # no state worth keeping. Skipped when the sensor already runs with the stored value.
   - id: sen66_apply_learning_times
     mode: single
     then:
@@ -71,18 +116,27 @@ script:
                     AirDot::sen66_get_voc_algorithm_state(id(sen66_air_quality_sensor), id(sen66_voc_state).data());
                 id(sen66_air_quality_sensor).stop_poller();
                 id(sen66_air_quality_sensor).cancel_timeout(1);
-                AirDot::sen66_stop_measurement(id(sen66_air_quality_sensor));
+                id(sen66_stop_ok) = AirDot::sen66_retry("stop measurement", 3, 100, [&]() {
+                  return AirDot::sen66_stop_measurement(id(sen66_air_quality_sensor));
+                });
             - delay: 1500ms
             - lambda: |-
+                if (!id(sen66_stop_ok)) {
+                  ESP_LOGE("sen66", "Skipping VOC learning time update: sensor did not stop");
+                  return;
+                }
                 const uint16_t voc_hours = AirDot::onboarding::load_voc_learning_time_hours();
-                if (AirDot::sen66_set_voc_learning_time(id(sen66_air_quality_sensor), voc_hours))
+                if (AirDot::sen66_retry("set VOC learning time", 3, 50, [&]() {
+                      return AirDot::sen66_set_voc_learning_time(id(sen66_air_quality_sensor), voc_hours);
+                    }))
                   id(sen66_applied_voc_learning_time_hours) = voc_hours;
-            # The sensor needs about 20 ms to process each parameter write before the next command.
             - delay: 50ms
             - lambda: |-
-                if (id(sen66_voc_state_saved))
-                  AirDot::sen66_set_voc_algorithm_state(id(sen66_air_quality_sensor), id(sen66_voc_state).data());
+                if (id(sen66_stop_ok) && id(sen66_voc_state_saved)) {
+                  AirDot::sen66_retry("restore VOC state", 3, 50, [&]() {
+                    return AirDot::sen66_set_voc_algorithm_state(id(sen66_air_quality_sensor),
+                                                                 id(sen66_voc_state).data());
+                  });
+                }
             - delay: 50ms
-            - lambda: |-
-                AirDot::sen66_start_measurement(id(sen66_air_quality_sensor));
-                id(sen66_air_quality_sensor).start_poller();
+            - script.execute: sen66_restart_measurement

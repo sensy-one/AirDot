@@ -4,8 +4,21 @@
 #include <cstdint>
 
 #include "esphome/core/hal.h"
+#include "esphome/core/log.h"
 
 namespace AirDot {
+
+template<typename Op> bool sen66_retry(const char *name, uint8_t attempts, uint32_t retry_delay_ms, Op &&op) {
+  for (uint8_t attempt = 1; attempt <= attempts; attempt++) {
+    if (op())
+      return true;
+    ESP_LOGW("sen66", "%s failed (attempt %u/%u)", name, attempt, attempts);
+    if (attempt < attempts)
+      delay(retry_delay_ms);
+  }
+  ESP_LOGE("sen66", "%s failed after %u attempts", name, attempts);
+  return false;
+}
 
 template<typename Sen66Sensor>
 void sen66_apply_temperature_offset(Sen66Sensor *sensor, float offset_celsius, float slope,
