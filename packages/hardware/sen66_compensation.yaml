@@ -28,6 +28,14 @@ globals:
     type: std::array<uint16_t, 4>
     restore_value: false
     initial_value: "{0, 0, 0, 0}"
+  - id: sen66_voc_state_restored
+    type: bool
+    restore_value: false
+    initial_value: "false"
+  - id: sen66_voc_state_ready_at_ms
+    type: uint32_t
+    restore_value: false
+    initial_value: "0"
 
 script:
   - id: sen66_restart_measurement
@@ -111,14 +119,28 @@ script:
   - id: sen66_apply_learning_times
     mode: single
     then:
+      - lambda: |-
+          if (id(sen66_applied_voc_learning_time_hours) != 0)
+            return;
+          id(sen66_voc_state_saved) = AirDot::sen66_boot_was_soft_restart() &&
+              AirDot::onboarding::load_sen66_voc_state(id(sen66_voc_state).data());
+          if (!id(sen66_voc_state_saved) &&
+              AirDot::onboarding::load_voc_learning_time_hours() == AirDot::onboarding::SEN66_INDEX_LEARNING_TIME_DEFAULT_HOURS) {
+            id(sen66_voc_state_ready_at_ms) = millis() + ${sen66_voc_state_min_run_s} * 1000UL;
+            id(sen66_applied_voc_learning_time_hours) = AirDot::onboarding::SEN66_INDEX_LEARNING_TIME_DEFAULT_HOURS;
+          }
       - if:
           condition:
             lambda: |-
               return id(sen66_applied_voc_learning_time_hours) != AirDot::onboarding::load_voc_learning_time_hours();
           then:
             - lambda: |-
-                id(sen66_voc_state_saved) = id(sen66_applied_voc_learning_time_hours) != 0 &&
-                    AirDot::sen66_get_voc_algorithm_state(id(sen66_air_quality_sensor), id(sen66_voc_state).data());
+                id(sen66_air_quality_sensor).cancel_timeout(1);
+                if (id(sen66_applied_voc_learning_time_hours) != 0) {
+                  id(sen66_voc_state_saved) =
+                      AirDot::sen66_voc_state_eligible(id(sen66_voc_state_ready_at_ms)) &&
+                      AirDot::sen66_capture_voc_state(id(sen66_air_quality_sensor), id(sen66_voc_state).data(), false);
+                }
                 id(sen66_air_quality_sensor).stop_poller();
                 id(sen66_air_quality_sensor).cancel_timeout(1);
                 id(sen66_stop_ok) = AirDot::sen66_retry("stop measurement", 3, 100, [&]() {
@@ -137,18 +159,36 @@ script:
                 });
             - delay: 50ms
             - lambda: |-
+                bool restored = false;
                 if (id(sen66_stop_ok) && id(sen66_voc_state_saved)) {
-                  AirDot::sen66_retry("restore VOC state", 3, 50, [&]() {
+                  restored = AirDot::sen66_retry("restore VOC state", 3, 50, [&]() {
                     return AirDot::sen66_set_voc_algorithm_state(id(sen66_air_quality_sensor),
                                                                  id(sen66_voc_state).data());
                   });
                 }
+                id(sen66_voc_state_restored) = restored;
             - delay: 50ms
             - script.execute: sen66_restart_measurement
             - script.wait: sen66_restart_measurement
             - lambda: |-
+                id(sen66_voc_state_ready_at_ms) =
+                    millis() + (id(sen66_voc_state_restored) ? ${sen66_voc_state_restored_min_run_s} : ${sen66_voc_state_min_run_s}) * 1000UL;
                 if (id(sen66_tuning_ok) && id(sen66_measurement_running)) {
                   id(sen66_applied_voc_learning_time_hours) = AirDot::onboarding::load_voc_learning_time_hours();
                 } else {
                   ESP_LOGW("sen66", "VOC learning time not marked as applied; will retry");
                 }
+
+interval:
+  - interval: ${sen66_voc_state_save_interval}
+    then:
+      - lambda: |-
+          if (id(sen66_applied_voc_learning_time_hours) == 0 || !id(sen66_measurement_running) ||
+              id(sen66_apply_learning_times).is_running() || id(sen66_force_co2_calibration).is_running())
+            return;
+          if (!AirDot::sen66_voc_state_eligible(id(sen66_voc_state_ready_at_ms)))
+            return;
+          id(sen66_air_quality_sensor).cancel_timeout(1);
+          uint16_t state[4] = {0, 0, 0, 0};
+          if (AirDot::sen66_capture_voc_state(id(sen66_air_quality_sensor), state, true))
+            AirDot::onboarding::save_sen66_voc_state(state);
