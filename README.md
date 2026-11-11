@@ -416,6 +416,14 @@ To calibrate:
 
 Only perform CO2 calibration when the air is stable and genuinely fresh. Calibrating in occupied indoor air can make future CO2 readings inaccurate.
 
+### VOC Learning Time
+
+The SEN66 reports VOC as an index relative to a rolling baseline. By default it learns over 12 hours. In a room that is empty overnight, the baseline can drift very low and the index spikes when people return in the morning.
+
+The setup page lets you set the VOC learning time in hours (1-1000). The value is applied to both the offset and gain learning times. For intermittently occupied rooms, try 48 to 72 hours.
+
+AirDot keeps the learned VOC baseline across restarts where the sensor stays powered, such as firmware updates and crashes. It saves the baseline once an hour and right before a restart, and loads it again at boot. The baseline is only saved after the sensor has run for at least 3 hours (15 minutes after a restore), and a power cycle starts a fresh learning phase. The NOx index always restarts after a reboot.
+
 ## Alerts
 
 AirDot can warn you when measurements become critical.

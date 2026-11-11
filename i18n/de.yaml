@@ -52,6 +52,8 @@ setup_page:
   sen66_co2_reference_label: CO2-Baseline
   sen66_co2_calibration_title: CO2-Baselinekalibrierung erzwingen
   sen66_co2_calibration_description: Stelle AirDot mindestens 3 Minuten in frische Außenluft und speichere dann.
+  sen66_voc_learning_time_label: VOC-Baseline-Lernzeit
+  sen66_learning_time_help: Stunden (1-1000). Längere Zeiten eignen sich für oft leere Räume.
 
   alerts_title: Warnungen
   alerts_note: Lege fest, wann du eine Warnung erhältst.

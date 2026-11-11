@@ -52,6 +52,8 @@ setup_page:
   sen66_co2_reference_label: CO2 baseline
   sen66_co2_calibration_title: Force CO2 baseline calibration
   sen66_co2_calibration_description: Place AirDot in fresh outdoor air for at least 3 minutes, then save.
+  sen66_voc_learning_time_label: VOC baseline learning time
+  sen66_learning_time_help: Hours (1-1000). Use longer times for rooms that are often empty.
 
   alerts_title: Alerts
   alerts_note: Set when AirDot should alert you.

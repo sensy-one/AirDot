@@ -148,6 +148,8 @@ SETUP_PAGE_KEYS = (
     "sen66_co2_reference_label",
     "sen66_co2_calibration_title",
     "sen66_co2_calibration_description",
+    "sen66_voc_learning_time_label",
+    "sen66_learning_time_help",
     "alerts_title",
     "alerts_note",
     "alert_snooze_label",

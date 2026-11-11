@@ -52,6 +52,8 @@ setup_page:
   sen66_co2_reference_label: Référence CO2
   sen66_co2_calibration_title: Forcer l’étalonnage de référence CO2
   sen66_co2_calibration_description: Placez AirDot à l’air extérieur frais pendant au moins 3 minutes, puis enregistrez.
+  sen66_voc_learning_time_label: Durée d'apprentissage de la base COV
+  sen66_learning_time_help: Heures (1-1000). Utilisez une durée plus longue pour les pièces souvent vides.
 
   alerts_title: Alertes
   alerts_note: Définissez quand recevoir une alerte.

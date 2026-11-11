@@ -52,6 +52,8 @@ setup_page:
   sen66_co2_reference_label: CO2 bázisérték
   sen66_co2_calibration_title: CO2 bázisérték kényszerített kalibrálása
   sen66_co2_calibration_description: Helyezd az AirDot-ot friss, kültéri levegőre legalább 3 percre, majd mentsd el.
+  sen66_voc_learning_time_label: VOC alapszint tanulási ideje
+  sen66_learning_time_help: Órák (1-1000). Gyakran üres helyiségekhez hosszabb idő ajánlott.
 
   alerts_title: Riasztások
   alerts_note: Állítsd be, mikor riasszon az AirDot.

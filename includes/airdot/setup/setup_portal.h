@@ -300,6 +300,9 @@ class SetupHandler : public AsyncWebHandler {
     save_custom_air_quality_threshold_settings(custom_air_quality_thresholds);
     save_sen66_temperature_offset_display_c(parse_sen66_temperature_offset_display_c_(
         bounded_arg_(request, "sen66_temperature_offset_c", 8), sen66_temperature_offset_display_c()));
+    save_voc_learning_time_hours(parse_bounded_uint16_(
+        bounded_arg_(request, "sen66_voc_learning_time_hours", 4), load_voc_learning_time_hours(),
+        SEN66_INDEX_LEARNING_TIME_MIN_HOURS, SEN66_INDEX_LEARNING_TIME_MAX_HOURS));
     if (this->pending_sen66_co2_calibration_ != nullptr && this->pending_sen66_co2_reference_ppm_ != nullptr) {
       *this->pending_sen66_co2_calibration_ = request->hasArg("sen66_force_co2_calibration") ? 1 : 0;
       *this->pending_sen66_co2_reference_ppm_ =
