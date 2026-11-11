@@ -31,6 +31,9 @@ sen66_temperature_offset_c: "-4.3"
 sen66_temperature_offset_slope: "0"
 sen66_temperature_offset_time_constant_s: "0"
 sen66_temperature_offset_slot: "0"
+sen66_voc_state_min_run_s: "10800"
+sen66_voc_state_restored_min_run_s: "900"
+sen66_voc_state_save_interval: 1h
 
 ui_pm1_graph_min_ugm3: "0"
 ui_pm1_graph_max_ugm3: "35"

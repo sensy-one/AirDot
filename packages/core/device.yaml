@@ -122,3 +122,15 @@ esphome:
         - script.execute: sen66_apply_temperature_offset
         - delay: 50ms
         - script.execute: sen66_apply_learning_times
+  on_shutdown:
+    - lambda: |-
+        if (AirDot::onboarding::sen66_skip_voc_state_save_on_shutdown_() ||
+            id(sen66_applied_voc_learning_time_hours) == 0 || !id(sen66_measurement_running) ||
+            id(sen66_apply_learning_times).is_running() || id(sen66_force_co2_calibration).is_running())
+          return;
+        if (!AirDot::sen66_voc_state_eligible(id(sen66_voc_state_ready_at_ms)))
+          return;
+        id(sen66_air_quality_sensor).cancel_timeout(1);
+        uint16_t state[4] = {0, 0, 0, 0};
+        if (AirDot::sen66_capture_voc_state(id(sen66_air_quality_sensor), state, false))
+          AirDot::onboarding::save_sen66_voc_state(state);

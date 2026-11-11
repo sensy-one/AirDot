@@ -70,6 +70,7 @@ static constexpr uint32_t ALERT_SNOOZE_DURATION_PREF_KEY = 2918394858UL;
 static constexpr uint8_t ALERT_SNOOZE_DEFAULT_MINUTES = 15;
 static constexpr uint8_t ALERT_SNOOZE_MAX_MINUTES = 60;
 static constexpr uint32_t VOC_LEARNING_TIME_HOURS_PREF_KEY = 2918394857UL;
+static constexpr uint32_t SEN66_VOC_STATE_PREF_KEY = 2918394859UL;
 static constexpr uint8_t CUSTOM_AIR_QUALITY_THRESHOLDS_VERSION = 1;
 static constexpr uint8_t CUSTOM_AIR_QUALITY_METRIC_COUNT = 7;
 static constexpr uint8_t CUSTOM_AIR_QUALITY_THRESHOLD_COUNT = 4;
@@ -1520,7 +1521,54 @@ inline void save_first_run_onboarding_complete(bool complete) {
   save_cached_uint8_preference_(first_run_onboarding_complete_pref_(), value);
 }
 
+struct StoredSen66VocState {
+  uint8_t version;
+  uint8_t valid;
+  uint16_t state[4];
+};
+
+static constexpr uint8_t SEN66_VOC_STATE_VERSION = 1;
+
+inline bool sen66_voc_state_is_usable(const uint16_t *state) {
+  for (uint8_t i = 0; i < 4; i++) {
+    if (state[i] != 0)
+      return true;
+  }
+  return false;
+}
+
+inline bool &sen66_skip_voc_state_save_on_shutdown_() {
+  static bool skip = false;
+  return skip;
+}
+
+inline bool load_sen66_voc_state(uint16_t *out) {
+  if (esphome::global_preferences == nullptr)
+    return false;
+
+  auto preference = esphome::global_preferences->make_preference<StoredSen66VocState>(SEN66_VOC_STATE_PREF_KEY, true);
+  StoredSen66VocState stored{};
+  if (!preference.load(&stored) || stored.version != SEN66_VOC_STATE_VERSION || stored.valid != 1 ||
+      !sen66_voc_state_is_usable(stored.state))
+    return false;
+
+  for (uint8_t i = 0; i < 4; i++)
+    out[i] = stored.state[i];
+  return true;
+}
+
+inline void save_sen66_voc_state(const uint16_t *state) {
+  if (esphome::global_preferences == nullptr || !sen66_voc_state_is_usable(state))
+    return;
+
+  auto preference = esphome::global_preferences->make_preference<StoredSen66VocState>(SEN66_VOC_STATE_PREF_KEY, true);
+  StoredSen66VocState stored{SEN66_VOC_STATE_VERSION, 1, {state[0], state[1], state[2], state[3]}};
+  preference.save(&stored);
+  esphome::global_preferences->sync();
+}
+
 inline void factory_reset_preferences_and_reboot() {
+  sen66_skip_voc_state_save_on_shutdown_() = true;
   if (esphome::global_preferences != nullptr)
     esphome::global_preferences->reset();
   delay(100);

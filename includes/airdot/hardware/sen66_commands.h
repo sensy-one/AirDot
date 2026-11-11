@@ -3,6 +3,8 @@
 #include <cmath>
 #include <cstdint>
 
+#include <esp_system.h>
+
 #include "esphome/core/hal.h"
 #include "esphome/core/log.h"
 
@@ -69,6 +71,36 @@ template<typename Sen66Sensor> bool sen66_set_voc_algorithm_state(Sen66Sensor *s
     return false;
 
   return sensor->write_command(static_cast<uint16_t>(0x6181), state, 4);
+}
+
+inline bool sen66_boot_was_soft_restart() {
+  switch (esp_reset_reason()) {
+    case ESP_RST_SW:
+    case ESP_RST_PANIC:
+    case ESP_RST_INT_WDT:
+    case ESP_RST_TASK_WDT:
+    case ESP_RST_WDT:
+    case ESP_RST_EXT:
+      return true;
+    default:
+      return false;
+  }
+}
+
+inline bool sen66_voc_state_eligible(uint32_t ready_at_ms) {
+  return static_cast<int32_t>(millis() - ready_at_ms) >= 0;
+}
+
+template<typename Sen66Sensor>
+bool sen66_capture_voc_state(Sen66Sensor *sensor, uint16_t *state, bool resume_poller) {
+  if (sensor == nullptr || state == nullptr)
+    return false;
+
+  sensor->stop_poller();
+  const bool ok = sen66_retry("read VOC state", 3, 50, [&]() { return sen66_get_voc_algorithm_state(sensor, state); });
+  if (resume_poller)
+    sensor->start_poller();
+  return ok;
 }
 
 template<typename Sen66Sensor> bool sen66_stop_measurement(Sen66Sensor *sensor) {
