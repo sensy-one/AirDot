@@ -7,6 +7,9 @@
 #include <cstring>
 #include "esphome/core/hal.h"
 #include <lvgl.h>
+#ifdef USE_ESP32
+#include <esp_attr.h>
+#endif
 
 namespace AirDot {
 
@@ -21,6 +24,8 @@ inline void set_value_placeholder_spacing(lv_obj_t *label, bool placeholder) {
 
 class SensorHistoryGraph {
  public:
+  SensorHistoryGraph() {}
+
   static constexpr int WIDTH = 345;
   static constexpr int HEIGHT = 120;
   static constexpr uint32_t GRAPH_HISTORY_MS = 15UL * 60UL * 1000UL;

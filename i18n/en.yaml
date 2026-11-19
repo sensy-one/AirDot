@@ -47,8 +47,9 @@ setup_page:
   custom_threshold_unhealthy_label: Unhealthy
 
   sensor_calibration_title: Sensor calibration
-  sensor_calibration_note: Adjust the built-in temperature reading.
+  sensor_calibration_note: "Adjust the built-in temperature and humidity readings."
   sen66_temperature_offset_label: SEN66 reads high by
+  sen66_humidity_offset_label: "SEN66 humidity reads high by"
   sen66_co2_reference_label: CO2 baseline
   sen66_co2_calibration_title: Force CO2 baseline calibration
   sen66_co2_calibration_description: Place AirDot in fresh outdoor air for at least 3 minutes, then save.
@@ -138,6 +139,8 @@ setup_page:
   dark_mode_title: Dark mode
   dark_mode_description: Use a dark display theme.
 
+  radar_location_dot_title: Location dot
+
   adaptive_brightness_title: Automatic brightness
   adaptive_brightness_description: Adjust brightness automatically based on ambient light.
 
@@ -150,6 +153,7 @@ setup_page:
   auto_page_screen_summary_label: Overview
   auto_page_screen_time_weather_label: Time & weather
   auto_page_screen_flight_radar_label: Flight radar
+  auto_page_screen_weather_radar_label: Rain radar
   auto_page_screen_pm1_label: PM1
   auto_page_screen_pm25_label: PM2.5
   auto_page_screen_pm4_label: PM4

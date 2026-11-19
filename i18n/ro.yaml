@@ -47,8 +47,9 @@ setup_page:
   custom_threshold_unhealthy_label: Nefavorabilă
 
   sensor_calibration_title: Calibrare senzor
-  sensor_calibration_note: Ajustează citirea temperaturii interne.
+  sensor_calibration_note: "Ajustează măsurătorile interne de temperatură și umiditate."
   sen66_temperature_offset_label: SEN66 citește mai mult cu
+  sen66_humidity_offset_label: "SEN66 măsoară umiditatea mai mare cu"
   sen66_co2_reference_label: Referință CO2
   sen66_co2_calibration_title: Forțează calibrarea referinței CO2
   sen66_co2_calibration_description: Pune AirDot în aer proaspăt de afară timp de cel puțin 3 minute, apoi salvează.
@@ -138,6 +139,8 @@ setup_page:
   dark_mode_title: Mod întunecat
   dark_mode_description: Folosește o temă întunecată pentru afișaj.
 
+  radar_location_dot_title: Punct de localizare
+
   adaptive_brightness_title: Luminozitate automată
   adaptive_brightness_description: Ajustează automat luminozitatea în funcție de lumina ambientală.
 
@@ -150,6 +153,7 @@ setup_page:
   auto_page_screen_summary_label: Prezentare
   auto_page_screen_time_weather_label: Ora & vremea
   auto_page_screen_flight_radar_label: Radar avioane
+  auto_page_screen_weather_radar_label: Radar de precipitații
   auto_page_screen_pm1_label: PM1
   auto_page_screen_pm25_label: PM2.5
   auto_page_screen_pm4_label: PM4

@@ -125,6 +125,8 @@ script:
               return id(pressure_history_page)->index;
             if (id(lux_history_page)->is_showing())
               return id(lux_history_page)->index;
+            if (id(weather_radar_page)->is_showing())
+              return id(weather_radar_page)->index;
             return FOCUS_RETURN_UNKNOWN;
           };
           auto show_return_page = [&]() {

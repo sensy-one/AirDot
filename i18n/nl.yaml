@@ -47,8 +47,9 @@ setup_page:
   custom_threshold_unhealthy_label: Ongezond
 
   sensor_calibration_title: Sensorkalibratie
-  sensor_calibration_note: Pas de interne temperatuurmeting aan.
+  sensor_calibration_note: "Pas de interne temperatuur- en luchtvochtigheidsmeting aan."
   sen66_temperature_offset_label: SEN66 meet te hoog met
+  sen66_humidity_offset_label: "SEN66-luchtvochtigheid meet te hoog met"
   sen66_co2_reference_label: CO2-baseline
   sen66_co2_calibration_title: Forceer CO2-baselinekalibratie
   sen66_co2_calibration_description: Zet AirDot minstens 3 minuten in frisse buitenlucht en sla daarna op.
@@ -138,6 +139,8 @@ setup_page:
   dark_mode_title: Donkere modus
   dark_mode_description: Gebruik een donkere schermweergave.
 
+  radar_location_dot_title: Locatiepunt
+
   adaptive_brightness_title: Automatische helderheid
   adaptive_brightness_description: Pas de helderheid automatisch aan op basis van het omgevingslicht.
 
@@ -150,6 +153,7 @@ setup_page:
   auto_page_screen_summary_label: Overzicht
   auto_page_screen_time_weather_label: Tijd & weer
   auto_page_screen_flight_radar_label: Vluchtradar
+  auto_page_screen_weather_radar_label: Buienradar
   auto_page_screen_pm1_label: PM1
   auto_page_screen_pm25_label: PM2.5
   auto_page_screen_pm4_label: PM4

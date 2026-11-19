@@ -9,7 +9,7 @@ sensor:
     on_value:
       then:
         - lambda: |-
-            static AirDot::SensorHistoryGraph history;
+            static EXT_RAM_BSS_ATTR AirDot::SensorHistoryGraph history;
             AirDot::update_plain_history(
               history, id(lux_current_value_label), id(lux_history_line),
               id(lux_history_min_label), id(lux_history_max_label), id(lux_history_empty_label), x, "%.0f",

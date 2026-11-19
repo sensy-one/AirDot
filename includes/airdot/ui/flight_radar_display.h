@@ -12,6 +12,8 @@
 
 #include "display_runtime.h"
 #include "flight_radar_client.h"
+#include "setup_settings.h"
+#include "radar_map_display.h"
 
 namespace AirDot::flight_radar {
 
@@ -40,11 +42,93 @@ struct RadarScopeState {
   lv_obj_t *scope{nullptr};
   const lv_font_t *aircraft_font{nullptr};
   const lv_font_t *bearing_font{nullptr};
+  const lv_font_t *progress_font{nullptr};
+  float map_latitude{0.0f};
+  float map_longitude{0.0f};
+  uint8_t map_range_km{FLIGHT_RADAR_RADIUS_DEFAULT_KM};
+  bool map_location_valid{false};
 };
 
 inline RadarScopeState &radar_scope_state_() {
   static RadarScopeState state{};
   return state;
+}
+
+enum class RadarMapLoadingPhase : uint8_t { HIDDEN, LOADING, DOWNLOADING, RETRYING };
+struct RadarMapProgress { uint8_t percent{0}; };
+
+inline RadarMapLoadingPhase radar_map_loading_phase_(const RadarScopeState &state) {
+  if (state.map_location_valid && AirDot::radar_map::has_map(
+          state.map_latitude, state.map_longitude, state.map_range_km)) {
+    const lv_area_t area{0, 0, 479, 479};
+    return AirDot::radar_map::prepare_map(area, state.map_latitude, state.map_longitude,
+        state.map_range_km, 240 - RADAR_SCREEN_MARGIN - RADAR_TRAFFIC_EDGE_RESERVE_PX,
+        240 - RADAR_SCREEN_MARGIN, AirDot::onboarding::load_dark_mode_enabled())
+        ? RadarMapLoadingPhase::HIDDEN : RadarMapLoadingPhase::LOADING;
+  }
+  if (!state.map_location_valid) return RadarMapLoadingPhase::LOADING;
+  const auto status = AirDot::radar_map::status_for(state.map_latitude, state.map_longitude, state.map_range_km);
+  if (status == AirDot::radar_map::Status::OFFLINE || status == AirDot::radar_map::Status::UNAVAILABLE)
+    return RadarMapLoadingPhase::HIDDEN;
+  if (status == AirDot::radar_map::Status::LOADING) return RadarMapLoadingPhase::DOWNLOADING;
+  if (status == AirDot::radar_map::Status::FAILED) return RadarMapLoadingPhase::RETRYING;
+  return RadarMapLoadingPhase::LOADING;
+}
+inline bool radar_map_loading_visible_() {
+  return radar_map_loading_phase_(radar_scope_state_()) != RadarMapLoadingPhase::HIDDEN;
+}
+inline const char *radar_map_loading_text_(RadarMapLoadingPhase phase) {
+  switch (phase) {
+    case RadarMapLoadingPhase::LOADING: return "Loading...";
+    case RadarMapLoadingPhase::DOWNLOADING: return "Downloading...";
+    case RadarMapLoadingPhase::RETRYING: return "Retrying...";
+    default: return "";
+  }
+}
+inline RadarMapProgress radar_map_loading_progress_(const RadarScopeState &state) {
+  const auto phase = radar_map_loading_phase_(state);
+  if (phase == RadarMapLoadingPhase::HIDDEN) return {100};
+  if (phase == RadarMapLoadingPhase::LOADING && state.map_location_valid &&
+      AirDot::radar_map::has_map(state.map_latitude, state.map_longitude, state.map_range_km)) return {99};
+  if (phase != RadarMapLoadingPhase::DOWNLOADING) return {};
+  AirDot::radar_map::DownloadProgress progress;
+  if (!AirDot::radar_map::progress_for_key(state.map_latitude, state.map_longitude, state.map_range_km, progress))
+    return {};
+  return {static_cast<uint8_t>(std::min<unsigned>(99, progress.percentage))};
+}
+
+// Resolve the same origin and configured radius used by the aircraft request.
+inline void configure_radar_map_location(float outdoor_latitude, float outdoor_longitude, bool outdoor_valid) {
+  auto &state = radar_scope_state_();
+  const uint8_t range = AirDot::onboarding::load_flight_radar_range_km();
+  float latitude = 0.0f, longitude = 0.0f;
+  bool valid = AirDot::onboarding::load_exact_location(latitude, longitude);
+  if (!valid && outdoor_valid) {
+    latitude = outdoor_latitude; longitude = outdoor_longitude;
+    valid = std::isfinite(latitude) && std::isfinite(longitude) && latitude >= -90 && latitude <= 90 && longitude >= -180 && longitude <= 180;
+  }
+  if (!valid) {
+    const auto snapshot = current_snapshot();
+    if (snapshot.valid) {
+      latitude = snapshot.request_latitude; longitude = snapshot.request_longitude;
+      valid = true;
+    }
+  }
+  if (!valid) valid = AirDot::radar_map::cached_location_for_range(range, latitude, longitude);
+  if (valid) AirDot::radar_map::restore_cached_map(latitude, longitude, range);
+  const bool changed = state.map_location_valid != valid || state.map_latitude != latitude ||
+      state.map_longitude != longitude || state.map_range_km != range;
+  state.map_location_valid = valid;
+  state.map_latitude = latitude;
+  state.map_longitude = longitude;
+  state.map_range_km = range;
+  if (changed && state.scope != nullptr) lv_obj_invalidate(state.scope);
+}
+
+inline bool radar_snapshot_matches_map_(const Snapshot &snapshot, const RadarScopeState &state) {
+  return snapshot.valid && state.map_location_valid && snapshot.range_km == state.map_range_km &&
+      std::fabs(snapshot.request_latitude - state.map_latitude) < 0.00001f &&
+      std::fabs(std::remainder(snapshot.request_longitude - state.map_longitude, 360.0f)) < 0.00001f;
 }
 
 inline lv_color_t radar_background_color_() { return AirDot::display_background_color(); }
@@ -844,18 +928,66 @@ inline void draw_radar_scope_(lv_event_t *event) {
   const int center_y = area.y1 + height / 2;
   const int radius = std::max(20, size / 2 - RADAR_SCREEN_MARGIN);
 
+  const auto loading = radar_map_loading_phase_(*state);
+  if (loading != RadarMapLoadingPhase::HIDDEN) {
+    const lv_font_t *title_font = state->bearing_font != nullptr ? state->bearing_font : lv_font_get_default();
+    const lv_font_t *percent_font = state->progress_font != nullptr ? state->progress_font : title_font;
+    const auto color = radar_target_color_();
+    const auto progress = radar_map_loading_progress_(*state);
+    char percent[12];
+    std::snprintf(percent, sizeof(percent), "%u%%", static_cast<unsigned>(progress.percent));
+    const char *title = radar_map_loading_text_(loading);
+    lv_point_t title_size{}, percent_size{};
+    lv_text_get_size(&title_size, title, title_font, 0, 0, LV_COORD_MAX, LV_TEXT_FLAG_NONE);
+    lv_text_get_size(&percent_size, percent, percent_font, 0, 0, LV_COORD_MAX, LV_TEXT_FLAG_NONE);
+    constexpr int gap = 10;
+    const int top = center_y - (title_size.y + gap + percent_size.y) / 2;
+    draw_label_(layer, area, title_font, color, center_x - title_size.x / 2, top, title, LV_TEXT_ALIGN_CENTER);
+    draw_label_(layer, area, percent_font, color, center_x - percent_size.x / 2,
+                top + title_size.y + gap, percent, LV_TEXT_ALIGN_CENTER);
+    return;
+  }
+
+  const int aircraft_radius = std::max(20, radius - RADAR_TRAFFIC_EDGE_RESERVE_PX);
+  const bool dark = AirDot::onboarding::load_dark_mode_enabled();
+  if (state->map_location_valid)
+    AirDot::radar_map::draw_map(
+        layer, area, state->map_latitude, state->map_longitude, state->map_range_km,
+        aircraft_radius, radius, dark);
   draw_compass_(layer, area, state->bearing_font, center_x, center_y, radius);
-  draw_aircraft_(layer, area, state->aircraft_font, center_x, center_y,
-                 std::max(20, radius - RADAR_TRAFFIC_EDGE_RESERVE_PX), current_snapshot());
+  if (state->map_location_valid && AirDot::onboarding::load_radar_location_dot_enabled()) {
+    lv_draw_rect_dsc_t dot;
+    lv_draw_rect_dsc_init(&dot);
+    dot.bg_color = AirDot::color(0xFF, 0xFF, 0xFF);
+    dot.bg_opa = LV_OPA_COVER;
+    dot.radius = LV_RADIUS_CIRCLE;
+    lv_area_t location{center_x - 3, center_y - 3, center_x + 3, center_y + 3};
+    lv_draw_rect(layer, &dot, &location);
+  }
+  const auto snapshot = current_snapshot();
+  if (radar_snapshot_matches_map_(snapshot, *state))
+    draw_aircraft_(layer, area, state->aircraft_font, center_x, center_y, aircraft_radius, snapshot);
+  const bool imperial = AirDot::onboarding::load_unit_system() == AirDot::onboarding::UNIT_SYSTEM_IMPERIAL;
+  const unsigned range = imperial
+      ? static_cast<unsigned>(std::lround(state->map_range_km * 0.621371192)) : state->map_range_km;
+  char range_text[16];
+  std::snprintf(range_text, sizeof(range_text), "%u %s", range, imperial ? "MI" : "KM");
+  lv_point_t text_size{};
+  const auto *font = state->aircraft_font != nullptr ? state->aircraft_font : lv_font_get_default();
+  lv_text_get_size(&text_size, range_text, font, 0, 0, LV_COORD_MAX, LV_TEXT_FLAG_NONE);
+  draw_label_(layer, area, font, radar_target_color_(), area.x1 + (width - text_size.x) / 2,
+      area.y1 + 425 - text_size.y / 2, range_text, LV_TEXT_ALIGN_CENTER);
 }
 
-inline void prepare_radar_scope_(lv_obj_t *scope, const lv_font_t *aircraft_font, const lv_font_t *bearing_font) {
+inline void prepare_radar_scope_(lv_obj_t *scope, const lv_font_t *aircraft_font, const lv_font_t *bearing_font,
+                                 const lv_font_t *progress_font = nullptr) {
   if (scope == nullptr)
     return;
 
   auto &state = radar_scope_state_();
   state.aircraft_font = aircraft_font;
   state.bearing_font = bearing_font != nullptr ? bearing_font : aircraft_font;
+  state.progress_font = progress_font;
   disable_radar_antialiasing_(scope);
   if (state.scope != scope) {
     state.scope = scope;
@@ -871,16 +1003,18 @@ inline void prepare_radar_scope_(lv_obj_t *scope, const lv_font_t *aircraft_font
 }
 
 template<typename ScopeWidget>
-inline void refresh_radar_scope(ScopeWidget *scope, const lv_font_t *aircraft_font, const lv_font_t *bearing_font) {
-  prepare_radar_scope_(AirDot::lv_obj(scope), aircraft_font, bearing_font);
+inline void refresh_radar_scope(ScopeWidget *scope, const lv_font_t *aircraft_font, const lv_font_t *bearing_font,
+                                const lv_font_t *progress_font = nullptr) {
+  prepare_radar_scope_(AirDot::lv_obj(scope), aircraft_font, bearing_font, progress_font);
 }
 
 template<typename ScopeWidget>
 inline void refresh_radar_scope(ScopeWidget *scope, const esphome::font::Font *aircraft_font,
-                                const esphome::font::Font *bearing_font) {
+                                const esphome::font::Font *bearing_font, const esphome::font::Font *progress_font = nullptr) {
   const lv_font_t *aircraft_lv_font = aircraft_font == nullptr ? nullptr : aircraft_font->get_lv_font();
   const lv_font_t *bearing_lv_font = bearing_font == nullptr ? nullptr : bearing_font->get_lv_font();
-  prepare_radar_scope_(AirDot::lv_obj(scope), aircraft_lv_font, bearing_lv_font);
+  const lv_font_t *progress_lv_font = progress_font == nullptr ? nullptr : progress_font->get_lv_font();
+  prepare_radar_scope_(AirDot::lv_obj(scope), aircraft_lv_font, bearing_lv_font, progress_lv_font);
 }
 
 }  // namespace AirDot::flight_radar

@@ -240,6 +240,7 @@ class SetupHandler : public AsyncWebHandler {
     }
     save_display_brightness(parse_display_brightness_(bounded_arg_(request, "brightness", 8)));
     save_dark_mode_enabled(request->hasArg("dark_mode"));
+    save_radar_location_dot_enabled(request->hasArg("radar_location_dot"));
     save_auto_dim_enabled(request->hasArg("auto_dim"));
     const bool auto_page_switch_enabled = bounded_arg_(request, "auto_page_switch", 1) == "1";
     save_auto_page_switch_enabled(auto_page_switch_enabled);
@@ -298,8 +299,10 @@ class SetupHandler : public AsyncWebHandler {
     parse_custom_air_quality_metric_thresholds_(
         request, "co2", AirDot::AirQualityMetric::CO2, custom_air_quality_thresholds);
     save_custom_air_quality_threshold_settings(custom_air_quality_thresholds);
-    save_sen66_temperature_offset_display_c(parse_sen66_temperature_offset_display_c_(
+    save_sen66_temperature_offset_display_c(parse_positive_correction_(
         bounded_arg_(request, "sen66_temperature_offset_c", 8), sen66_temperature_offset_display_c()));
+    save_sen66_humidity_offset_display_percent(parse_positive_correction_(
+        bounded_arg_(request, "sen66_humidity_offset_percent", 8), sen66_humidity_offset_display_percent()));
     if (this->pending_sen66_co2_calibration_ != nullptr && this->pending_sen66_co2_reference_ppm_ != nullptr) {
       *this->pending_sen66_co2_calibration_ = request->hasArg("sen66_force_co2_calibration") ? 1 : 0;
       *this->pending_sen66_co2_reference_ppm_ =
@@ -438,6 +441,8 @@ class SetupHandler : public AsyncWebHandler {
       screens |= AUTO_PAGE_SCREEN_TIME_WEATHER;
     if (request->hasArg("auto_page_screen_flight_radar"))
       screens |= AUTO_PAGE_SCREEN_FLIGHT_RADAR;
+    if (request->hasArg("auto_page_screen_weather_radar"))
+      screens |= AUTO_PAGE_SCREEN_WEATHER_RADAR;
     if (request->hasArg("auto_page_screen_pm1"))
       screens |= AUTO_PAGE_SCREEN_PM1;
     if (request->hasArg("auto_page_screen_pm25"))
@@ -506,7 +511,7 @@ class SetupHandler : public AsyncWebHandler {
     return 10;
   }
 
-  static float parse_sen66_temperature_offset_display_c_(const std::string &value, float fallback) {
+  static float parse_positive_correction_(const std::string &value, float fallback) {
     std::string normalized = trim_copy_(value);
     if (normalized.empty())
       return fallback;

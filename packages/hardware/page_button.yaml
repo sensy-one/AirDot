@@ -36,7 +36,18 @@ script:
   - id: page_button_short_press_next_page
     mode: restart
     then:
-      - delay: 350ms
+      - delay: !lambda |-
+          const uint32_t elapsed = millis() - id(page_button_last_short_release_ms);
+          return elapsed < 350 ? 350 - elapsed : 0;
+      - lambda: "id(page_button).loop();"
+      - while:
+          condition:
+            lambda: |-
+              return id(page_button).pressed_now() && id(page_button_pressed_at_ms) == 0 &&
+                  id(page_button_last_short_release_ms) != 0;
+          then:
+            - delay: 30ms
+            - lambda: "id(page_button).loop();"
       - if:
           condition:
             lambda: |-
@@ -54,10 +65,13 @@ script:
   - id: page_button_factory_reset_hold
     mode: restart
     then:
-      - delay: 7s
+      - delay: !lambda |-
+          const uint32_t elapsed = millis() - id(page_button_pressed_at_ms);
+          return elapsed < 7000 ? 7000 - elapsed : 0;
+      - lambda: "id(page_button).loop();"
       - if:
           condition:
-            lambda: "return id(page_button_pressed_at_ms) != 0;"
+            lambda: "return id(page_button_pressed_at_ms) != 0 && id(page_button).pressed_now();"
           then:
             - lambda: |-
                 id(page_button_factory_reset_started) = 1;
@@ -106,9 +120,10 @@ script:
                 lv_obj_clear_flag(id(modal_overlay_layer), LV_OBJ_FLAG_HIDDEN);
             - component.update: display_panel
       - delay: 1s
+      - lambda: "id(page_button).loop();"
       - if:
           condition:
-            lambda: "return id(page_button_pressed_at_ms) != 0;"
+            lambda: "return id(page_button_pressed_at_ms) != 0 && id(page_button).pressed_now();"
           then:
             - lambda: |-
                 const auto ui_language = AirDot::onboarding::load_ui_language();
@@ -132,9 +147,10 @@ script:
                 lv_obj_clear_flag(id(modal_overlay_primary_button_group), LV_OBJ_FLAG_HIDDEN);
             - component.update: display_panel
       - delay: 1s
+      - lambda: "id(page_button).loop();"
       - if:
           condition:
-            lambda: "return id(page_button_pressed_at_ms) != 0;"
+            lambda: "return id(page_button_pressed_at_ms) != 0 && id(page_button).pressed_now();"
           then:
             - lambda: |-
                 const auto ui_language = AirDot::onboarding::load_ui_language();
@@ -158,9 +174,10 @@ script:
                 lv_obj_clear_flag(id(modal_overlay_primary_button_group), LV_OBJ_FLAG_HIDDEN);
             - component.update: display_panel
       - delay: 1s
+      - lambda: "id(page_button).loop();"
       - if:
           condition:
-            lambda: "return id(page_button_pressed_at_ms) != 0;"
+            lambda: "return id(page_button_pressed_at_ms) != 0 && id(page_button).pressed_now();"
           then:
             - lambda: |-
                 AirDot::onboarding::factory_reset_preferences_and_reboot();
@@ -168,32 +185,40 @@ script:
   - id: page_button_long_press_hold
     mode: restart
     then:
-      - delay: 800ms
+      - delay: !lambda |-
+          const uint32_t elapsed = millis() - id(page_button_pressed_at_ms);
+          return elapsed < 800 ? 800 - elapsed : 0;
+      - lambda: "id(page_button).loop();"
       - if:
           condition:
             lambda: |-
-              return id(page_button_pressed_at_ms) != 0 &&
+              return id(page_button_pressed_at_ms) != 0 && id(page_button).pressed_now() &&
                   id(page_button_factory_reset_started) == 0 &&
                   id(page_button_wake_only_release) == 0 &&
                   id(page_button_long_press_handled) == 0;
           then:
-            - lambda: "id(page_button_long_press_handled) = 1;"
+            - script.execute: page_button_handle_long_press
+
+  - id: page_button_handle_long_press
+    mode: single
+    then:
+      - lambda: "id(page_button_long_press_handled) = 1;"
+      - if:
+          condition:
+            lambda: "return id(ui_alert_active) != 0;"
+          then:
+            - script.execute: ui_hide_display_alert
+          else:
             - if:
                 condition:
-                  lambda: "return id(ui_alert_active) != 0;"
+                  lambda: "return id(onboarding_ui_active) != 0;"
                 then:
-                  - script.execute: ui_hide_display_alert
+                  - script.execute: onboarding_activate_selected_action
                 else:
-                  - if:
-                      condition:
-                        lambda: "return id(onboarding_ui_active) != 0;"
-                      then:
-                        - script.execute: onboarding_activate_selected_action
-                      else:
-                        - script.execute:
-                            id: ui_show_onboarding_overlay
-                            wake_backlight: true
-                            first_run: false
+                  - script.execute:
+                      id: ui_show_onboarding_overlay
+                      wake_backlight: true
+                      first_run: false
 
   - id: display_wake_from_sleep_button
     mode: restart
@@ -244,7 +269,7 @@ interval:
           }
 
 binary_sensor:
-  - platform: gpio
+  - platform: queued_button
     id: page_button
     name: Action Button
     icon: mdi:gesture-tap-button
@@ -254,13 +279,10 @@ binary_sensor:
         input: true
         pullup: true
       inverted: true
-    filters:
-      - delayed_on: 30ms
-      - delayed_off: 30ms
     on_press:
       then:
         - lambda: |-
-            id(page_button_pressed_at_ms) = millis();
+            id(page_button_pressed_at_ms) = id(page_button).event_time_ms();
             id(page_button_press_duration_ms) = 0;
             id(page_button_factory_reset_started) = 0;
             id(page_button_long_press_handled) = 0;
@@ -283,12 +305,23 @@ binary_sensor:
         - if:
             condition:
               lambda: |-
+                return id(page_button_last_short_release_ms) != 0 &&
+                    id(page_button_wake_only_release) == 0 && id(ui_alert_active) == 0 &&
+                    id(onboarding_ui_active) == 0 &&
+                    static_cast<uint32_t>(id(page_button).event_time_ms() - id(page_button_last_short_release_ms)) > 400UL;
+            then:
+              - script.stop: page_button_short_press_next_page
+              - lambda: "id(page_button_last_short_release_ms) = 0;"
+              - script.execute: ui_show_next_page
+        - if:
+            condition:
+              lambda: |-
                 const uint32_t last_release_ms = id(page_button_last_short_release_ms);
                 return last_release_ms != 0 &&
                     id(page_button_wake_only_release) == 0 &&
                     id(ui_alert_active) == 0 &&
                     id(onboarding_ui_active) == 0 &&
-                    static_cast<uint32_t>(millis() - last_release_ms) <= 400UL;
+                    static_cast<uint32_t>(id(page_button).event_time_ms() - last_release_ms) <= 400UL;
             then:
               - script.stop: page_button_short_press_next_page
               - lambda: |-
@@ -304,7 +337,16 @@ binary_sensor:
         - lambda: |-
             const uint32_t pressed_at = id(page_button_pressed_at_ms);
             id(page_button_pressed_at_ms) = 0;
-            id(page_button_press_duration_ms) = pressed_at == 0 ? 0 : millis() - pressed_at;
+            id(page_button_press_duration_ms) = pressed_at == 0 ? 0 : id(page_button).event_time_ms() - pressed_at;
+        - if:
+            condition:
+              lambda: |-
+                return id(page_button_press_duration_ms) >= 800 &&
+                    id(page_button_factory_reset_started) == 0 &&
+                    id(page_button_wake_only_release) == 0 &&
+                    id(page_button_long_press_handled) == 0;
+            then:
+              - script.execute: page_button_handle_long_press
         - script.execute: display_wake_from_sleep_button
         - if:
             condition:
@@ -387,7 +429,7 @@ binary_sensor:
                                                       id(page_button_last_short_release_ms) = 0;
                                                   - script.execute: ui_show_overview_page
                                                 else:
-                                                  - lambda: "id(page_button_last_short_release_ms) = millis();"
+                                                  - lambda: "id(page_button_last_short_release_ms) = id(page_button).event_time_ms();"
                                                   - script.execute: page_button_short_press_next_page
                                           else:
                                             - lambda: |-

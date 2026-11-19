@@ -47,8 +47,9 @@ setup_page:
   custom_threshold_unhealthy_label: Egészségtelen
 
   sensor_calibration_title: Érzékelő kalibrálása
-  sensor_calibration_note: A beépített hőmérő mérésének korrekciója.
+  sensor_calibration_note: "A belső hőmérséklet- és páratartalom-mérés beállítása."
   sen66_temperature_offset_label: SEN66 ennyivel mér feljebb
+  sen66_humidity_offset_label: "A SEN66 páratartalom-mérése ennyivel magasabb"
   sen66_co2_reference_label: CO2 bázisérték
   sen66_co2_calibration_title: CO2 bázisérték kényszerített kalibrálása
   sen66_co2_calibration_description: Helyezd az AirDot-ot friss, kültéri levegőre legalább 3 percre, majd mentsd el.
@@ -138,6 +139,8 @@ setup_page:
   dark_mode_title: Sötét mód
   dark_mode_description: Sötét kijelzőtéma használata.
 
+  radar_location_dot_title: Helyjelölő pont
+
   adaptive_brightness_title: Automatikus fényerő
   adaptive_brightness_description: A fényerő automatikus beállítása a környezeti fényviszonyok alapján.
 
@@ -150,6 +153,7 @@ setup_page:
   auto_page_screen_summary_label: Áttekintés
   auto_page_screen_time_weather_label: Idő & időjárás
   auto_page_screen_flight_radar_label: Repülőradar
+  auto_page_screen_weather_radar_label: Csapadékradar
   auto_page_screen_pm1_label: PM1
   auto_page_screen_pm25_label: PM2.5
   auto_page_screen_pm4_label: PM4

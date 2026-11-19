@@ -13,7 +13,7 @@
 #include "esphome/components/network/util.h"
 #include "esphome/components/watchdog/watchdog.h"
 #include "esphome/core/hal.h"
-#include "esphome/core/helpers.h"
+#include "esphome/core/time.h"
 
 #include "connectivity.h"
 #include "weather_client.h"
@@ -24,6 +24,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <ctime>
 
 namespace AirDot::flight_radar {
 
@@ -36,9 +37,13 @@ inline constexpr uint32_t FLIGHT_RADAR_REQUEST_INTERVAL_MS = 5000UL;
 
 struct Aircraft {
   char callsign[9]{};
+  char hex[9]{};
   float distance_km{0.0f};
   float bearing_deg{0.0f};
   float track_deg{NAN};
+  float ground_track_deg{NAN};
+  float speed_km_s{NAN};
+  float seen_pos_s{NAN};
   bool military{false};
 };
 
@@ -58,7 +63,8 @@ inline constexpr int FLIGHT_RADAR_TASK_RUNNING = 1;
 inline constexpr int FLIGHT_RADAR_TASK_SUCCESS = 2;
 inline constexpr int FLIGHT_RADAR_TASK_FAILED = 3;
 inline constexpr uint32_t FLIGHT_RADAR_HTTP_TASK_STACK_SIZE = 12288;
-inline constexpr int FLIGHT_RADAR_HTTP_TIMEOUT_MS = 3500;
+// The provider can take several seconds to complete the TLS handshake.
+inline constexpr int FLIGHT_RADAR_HTTP_TIMEOUT_MS = 10000;
 inline constexpr size_t FLIGHT_RADAR_MAX_RESPONSE_BYTES = 16384;
 inline constexpr uint16_t FLIGHT_RADAR_MAX_PARSED_AIRCRAFT_OBJECTS = 96;
 inline constexpr uint8_t FLIGHT_RADAR_LOCATION_COORDS = 0;
@@ -168,12 +174,13 @@ inline void note_flight_radar_success_() {
       AirDot::connectivity::ConnectivityError::NONE, esphome::millis());
 }
 
-inline void note_flight_radar_failure_(AirDot::connectivity::ConnectivityError error) {
+inline void note_flight_radar_failure_(AirDot::connectivity::ConnectivityError error, uint32_t minimum_delay_ms = 0) {
   const uint32_t now = esphome::millis();
   auto &retry = flight_radar_retry_state_();
-  const uint32_t delay = retry.record_failure(
+  const uint32_t delay = std::max(minimum_delay_ms, retry.record_failure(
       now, flight_radar_retry_policy_(),
-      now ^ (static_cast<uint32_t>(error) << 8U) ^ 0x46524C54U);
+      now ^ (static_cast<uint32_t>(error) << 8U) ^ 0x46524C54U));
+  retry.next_retry_ms = now + delay;
   AirDot::connectivity::set_service_status(
       AirDot::connectivity::Service::FLIGHT_RADAR,
       AirDot::connectivity::status_for_error(error), error, now, now + delay);
@@ -246,7 +253,40 @@ struct HttpResponse {
   size_t length{0};
   size_t max_length{0};
   bool overflow{false};
+  char retry_after[64]{};
 };
+
+// Retry-After is either decimal seconds or an IMF-fixdate in GMT. Compute dates
+// in UTC without changing the application's timezone. Bounded below the signed
+// millis wrap window; malformed values get a conservative one-minute pause.
+inline uint32_t retry_after_delay_ms_(const char *value, std::time_t now = std::time(nullptr)) {
+  constexpr uint32_t maximum_seconds = 86400;
+  constexpr uint32_t fallback_ms = 60000;
+  if (!value) return fallback_ms;
+  while (*value == ' ' || *value == '\t') ++value;
+  if (!*value) return fallback_ms;
+  const char *cursor = value;
+  if (*cursor >= '0' && *cursor <= '9') {
+    uint32_t seconds = 0;
+    do {
+      seconds = std::min(maximum_seconds, seconds * 10 + static_cast<uint32_t>(*cursor++ - '0'));
+    } while (*cursor >= '0' && *cursor <= '9');
+    while (*cursor == ' ' || *cursor == '\t') ++cursor;
+    return *cursor ? fallback_ms : seconds * 1000;
+  }
+  std::tm fields{};
+  char *end = strptime(value, "%a, %d %b %Y %H:%M:%S GMT", &fields);
+  if (!end || fields.tm_year < 119 || fields.tm_year > 199) return fallback_ms;
+  while (*end == ' ' || *end == '\t') ++end;
+  if (*end) return fallback_ms;
+  auto date = esphome::ESPTime::from_c_tm(&fields, 0);
+  if (!date.is_valid(false, false)) return fallback_ms;
+  date.recalc_timestamp_utc(false);
+  if (date.timestamp < 0) return fallback_ms;
+  if (now < 1577836800) return 3600000;  // No reliable clock: do not retry a dated limit every minute.
+  if (date.timestamp <= now) return 0;
+  return static_cast<uint32_t>(std::min<uint64_t>(maximum_seconds, static_cast<uint64_t>(date.timestamp - now))) * 1000;
+}
 
 class ResponseBufferGuard {
  public:
@@ -274,11 +314,26 @@ class ResponseBufferGuard {
 };
 
 inline esp_err_t http_response_event_handler_(esp_http_client_event_t *event) {
-  if (event == nullptr || event->event_id != HTTP_EVENT_ON_DATA || event->data == nullptr || event->data_len <= 0)
+  if (event == nullptr)
     return ESP_OK;
 
   auto *response = static_cast<HttpResponse *>(event->user_data);
   if (response == nullptr)
+    return ESP_OK;
+
+  if (event->event_id == HTTP_EVENT_ON_HEADER && event->header_key && event->header_value) {
+    const char *key = event->header_key;
+    constexpr const char *expected = "retry-after";
+    size_t i = 0;
+    while (key[i] && expected[i]) {
+      const char lower = key[i] >= 'A' && key[i] <= 'Z' ? key[i] + ('a' - 'A') : key[i];
+      if (lower != expected[i]) return ESP_OK;
+      ++i;
+    }
+    if (!key[i] && !expected[i]) std::snprintf(response->retry_after, sizeof(response->retry_after), "%s", event->header_value);
+    return ESP_OK;
+  }
+  if (event->event_id != HTTP_EVENT_ON_DATA || event->data == nullptr || event->data_len <= 0)
     return ESP_OK;
 
   if (response->body == nullptr || response->max_length == 0) {
@@ -297,6 +352,47 @@ inline esp_err_t http_response_event_handler_(esp_http_client_event_t *event) {
   if (to_copy < incoming)
     response->overflow = true;
   return ESP_OK;
+}
+
+// Only the single radar worker uses this handle. Retaining the completed HTTP
+// connection avoids a fresh TLS handshake for every five-second refresh.
+class PersistentRadarHttpClient {
+ public:
+  ~PersistentRadarHttpClient() { reset(); }
+  esp_http_client_handle_t prepare(const esp_http_client_config_t &config) {
+    if (client_ == nullptr) {
+      client_ = esp_http_client_init(&config);
+    } else if (esp_http_client_set_url(client_, config.url) != ESP_OK ||
+               esp_http_client_set_user_data(client_, config.user_data) != ESP_OK) {
+      reset();
+    }
+    return client_;
+  }
+  void detach_response() {
+    if (client_ && esp_http_client_set_user_data(client_, nullptr) != ESP_OK) reset();
+  }
+  void reset() {
+    if (client_) {
+      esp_http_client_set_user_data(client_, nullptr);
+      esp_http_client_cleanup(client_);
+      client_ = nullptr;
+    }
+  }
+ private:
+  esp_http_client_handle_t client_{nullptr};
+};
+
+inline PersistentRadarHttpClient &persistent_radar_http_client_() {
+  static PersistentRadarHttpClient client;
+  return client;
+}
+
+// The UI calls this after leaving radar or going offline. A running request
+// owns its response callback until perform() has returned and detached it.
+inline bool release_http_client_if_idle() {
+  if (request_running()) return false;
+  persistent_radar_http_client_().reset();
+  return true;
 }
 
 inline void skip_json_space_(const char *&cursor, const char *end) {
@@ -512,28 +608,28 @@ inline void skip_json_value_if_needed_(const char *before, const char *&cursor, 
     skip_json_value_(cursor, end);
 }
 
-inline bool read_adsb_lol_number_(const char *&cursor, const char *end, float &value) {
+inline bool read_adsb_fi_number_(const char *&cursor, const char *end, float &value) {
   const char *before = cursor;
   const bool parsed = parse_json_number_(cursor, end, value);
   skip_json_value_if_needed_(before, cursor, end);
   return parsed;
 }
 
-inline bool read_adsb_lol_uint_(const char *&cursor, const char *end, uint32_t &value) {
+inline bool read_adsb_fi_uint_(const char *&cursor, const char *end, uint32_t &value) {
   const char *before = cursor;
   const bool parsed = parse_json_uint_(cursor, end, value);
   skip_json_value_if_needed_(before, cursor, end);
   return parsed;
 }
 
-inline bool read_adsb_lol_bool_(const char *&cursor, const char *end, bool &value) {
+inline bool read_adsb_fi_bool_(const char *&cursor, const char *end, bool &value) {
   const char *before = cursor;
   const bool parsed = parse_json_bool_(cursor, end, value);
   skip_json_value_if_needed_(before, cursor, end);
   return parsed;
 }
 
-inline bool read_adsb_lol_ground_state_(const char *&cursor, const char *end, bool &on_ground) {
+inline bool read_adsb_fi_ground_state_(const char *&cursor, const char *end, bool &on_ground) {
   skip_json_space_(cursor, end);
   if (cursor < end && *cursor == '"') {
     char text[16]{};
@@ -548,7 +644,7 @@ inline bool read_adsb_lol_ground_state_(const char *&cursor, const char *end, bo
   return skip_json_value_(cursor, end);
 }
 
-inline bool parse_adsb_lol_aircraft_(const char *&cursor, const char *end, float own_latitude,
+inline bool parse_adsb_fi_aircraft_(const char *&cursor, const char *end, float own_latitude,
                                     float own_longitude, float range_km, bool military_only,
                                     Snapshot &snapshot) {
   skip_json_space_(cursor, end);
@@ -561,6 +657,8 @@ inline bool parse_adsb_lol_aircraft_(const char *&cursor, const char *end, float
   float latitude = NAN;
   float longitude = NAN;
   float track_deg = NAN;
+  float ground_speed_knots = NAN;
+  float seen_pos_s = NAN;
   float true_heading_deg = NAN;
   float magnetic_heading_deg = NAN;
   float dir_deg = NAN;
@@ -591,25 +689,29 @@ inline bool parse_adsb_lol_aircraft_(const char *&cursor, const char *end, float
       parse_json_string_(cursor, end, callsign, sizeof(callsign));
       skip_json_value_if_needed_(before, cursor, end);
     } else if (std::strcmp(key, "lat") == 0) {
-      read_adsb_lol_number_(cursor, end, latitude);
+      read_adsb_fi_number_(cursor, end, latitude);
     } else if (std::strcmp(key, "lon") == 0) {
-      read_adsb_lol_number_(cursor, end, longitude);
+      read_adsb_fi_number_(cursor, end, longitude);
     } else if (std::strcmp(key, "alt_baro") == 0) {
-      read_adsb_lol_ground_state_(cursor, end, on_ground);
+      read_adsb_fi_ground_state_(cursor, end, on_ground);
     } else if (std::strcmp(key, "track") == 0) {
-      read_adsb_lol_number_(cursor, end, track_deg);
+      read_adsb_fi_number_(cursor, end, track_deg);
+    } else if (std::strcmp(key, "gs") == 0) {
+      read_adsb_fi_number_(cursor, end, ground_speed_knots);
+    } else if (std::strcmp(key, "seen_pos") == 0) {
+      read_adsb_fi_number_(cursor, end, seen_pos_s);
     } else if (std::strcmp(key, "true_heading") == 0) {
-      read_adsb_lol_number_(cursor, end, true_heading_deg);
+      read_adsb_fi_number_(cursor, end, true_heading_deg);
     } else if (std::strcmp(key, "mag_heading") == 0) {
-      read_adsb_lol_number_(cursor, end, magnetic_heading_deg);
+      read_adsb_fi_number_(cursor, end, magnetic_heading_deg);
     } else if (std::strcmp(key, "dir") == 0) {
-      read_adsb_lol_number_(cursor, end, dir_deg);
+      read_adsb_fi_number_(cursor, end, dir_deg);
     } else if (std::strcmp(key, "dbFlags") == 0) {
-      if (read_adsb_lol_uint_(cursor, end, db_flags))
+      if (read_adsb_fi_uint_(cursor, end, db_flags))
         military = military || (db_flags & 1U) != 0;
     } else if (std::strcmp(key, "mil") == 0) {
       bool mil = false;
-      if (read_adsb_lol_bool_(cursor, end, mil))
+      if (read_adsb_fi_bool_(cursor, end, mil))
         military = military || mil;
     } else {
       skip_json_value_(cursor, end);
@@ -636,11 +738,30 @@ inline bool parse_adsb_lol_aircraft_(const char *&cursor, const char *end, float
     return true;
 
   Aircraft aircraft{};
+  const size_t hex_length = std::strlen(hex);
+  const size_t hex_start = hex[0] == '~' ? 1 : 0;
+  if (hex_length == 6 + hex_start) {
+    std::memcpy(aircraft.hex, hex, hex_length + 1);
+    for (size_t i = hex_start; i < hex_length; ++i) {
+      auto &digit = aircraft.hex[i];
+      if (digit >= 'A' && digit <= 'F') digit += 'a' - 'A';
+      if (!((digit >= '0' && digit <= '9') || (digit >= 'a' && digit <= 'f'))) {
+        aircraft.hex[0] = '\0';
+        break;
+      }
+    }
+  }
   std::snprintf(
       aircraft.callsign, sizeof(aircraft.callsign), "%s",
       callsign[0] != '\0' ? callsign : hex);
   aircraft.distance_km = distance;
   aircraft.bearing_deg = bearing_deg_(own_latitude, own_longitude, latitude, longitude);
+  if (std::isfinite(track_deg) && track_deg >= 0.0f && track_deg < 360.0f)
+    aircraft.ground_track_deg = track_deg;
+  if (std::isfinite(ground_speed_knots) && ground_speed_knots >= 0.0f && ground_speed_knots <= 1500.0f)
+    aircraft.speed_km_s = ground_speed_knots * KM_PER_NAUTICAL_MILE / 3600.0f;
+  if (std::isfinite(seen_pos_s) && seen_pos_s >= 0.0f)
+    aircraft.seen_pos_s = std::min(seen_pos_s, 60.0f);
   if (std::isfinite(track_deg)) {
     aircraft.track_deg = track_deg;
   } else if (std::isfinite(true_heading_deg)) {
@@ -655,7 +776,7 @@ inline bool parse_adsb_lol_aircraft_(const char *&cursor, const char *end, float
   return true;
 }
 
-inline bool parse_adsb_lol_response_(const char *json, size_t json_length, float latitude, float longitude,
+inline bool parse_adsb_fi_response_(const char *json, size_t json_length, float latitude, float longitude,
                                     uint8_t range_km, bool military_only, Snapshot &snapshot,
                                     bool allow_partial = false) {
   if (json == nullptr || json_length == 0)
@@ -691,7 +812,7 @@ inline bool parse_adsb_lol_response_(const char *json, size_t json_length, float
     if (cursor < end && *cursor == ']')
       break;
     if (cursor < end && *cursor == '{') {
-      if (!parse_adsb_lol_aircraft_(
+      if (!parse_adsb_fi_aircraft_(
               cursor, end, latitude, longitude, static_cast<float>(snapshot.range_km), military_only, snapshot)) {
         if (allow_partial)
           break;
@@ -716,7 +837,7 @@ inline bool parse_adsb_lol_response_(const char *json, size_t json_length, float
   return true;
 }
 
-inline bool fetch_adsb_lol_aircraft_(float latitude, float longitude, uint8_t range_km,
+inline bool fetch_adsb_fi_aircraft_(float latitude, float longitude, uint8_t range_km,
                                     bool military_only, Snapshot &snapshot) {
   if (!coordinates_are_valid_(latitude, longitude)) {
     AirDot::connectivity::set_service_status(
@@ -732,7 +853,7 @@ inline bool fetch_adsb_lol_aircraft_(float latitude, float longitude, uint8_t ra
   char url[384];
   const int written = std::snprintf(
       url, sizeof(url),
-      "https://api.adsb.lol/v2/point/%.6f/%.6f/%.1f",
+      "https://opendata.adsb.fi/api/v3/lat/%.6f/lon/%.6f/dist/%.1f",
       latitude, longitude, distance_nm);
   if (written <= 0 || static_cast<size_t>(written) >= sizeof(url)) {
     note_flight_radar_failure_(AirDot::connectivity::ConnectivityError::CONFIG_INVALID);
@@ -751,8 +872,6 @@ inline bool fetch_adsb_lol_aircraft_(float latitude, float longitude, uint8_t ra
   response.max_length = response_buffer.size();
   response.overflow = false;
   response.body[0] = '\0';
-  char mac_address[esphome::MAC_ADDRESS_BUFFER_SIZE]{};
-  esphome::get_mac_address_into_buffer(mac_address);
   esp_http_client_config_t config{};
   config.url = url;
   config.method = HTTP_METHOD_GET;
@@ -761,30 +880,41 @@ inline bool fetch_adsb_lol_aircraft_(float latitude, float longitude, uint8_t ra
   config.user_data = &response;
   config.buffer_size = 512;
   config.buffer_size_tx = 256;
-  config.user_agent = mac_address + 6;
+  config.user_agent = "AirDot (+https://github.com/sensy-one/AirDot)";
   config.addr_type = HTTP_ADDR_TYPE_INET;
+  config.keep_alive_enable = true;
 #if CONFIG_MBEDTLS_CERTIFICATE_BUNDLE
   config.crt_bundle_attach = esp_crt_bundle_attach;
 #endif
 
-  esp_http_client_handle_t client = esp_http_client_init(&config);
+  auto &persistent_client = persistent_radar_http_client_();
+  esp_http_client_handle_t client = persistent_client.prepare(config);
   if (client == nullptr) {
     note_flight_radar_failure_(AirDot::connectivity::ConnectivityError::RESOURCE_EXHAUSTED);
     return false;
   }
 
   const esp_err_t error = esp_http_client_perform(client);
-  const int status_code = esp_http_client_get_status_code(client);
-  esp_http_client_cleanup(client);
+  const int status_code = error == ESP_OK ? esp_http_client_get_status_code(client) : 0;
+  persistent_client.detach_response();
 
   if (error != ESP_OK || status_code != 200) {
-    note_flight_radar_failure_(classify_http_error_(error, status_code, response.overflow));
+    // A completed 429 is a valid HTTP exchange, so retain its healthy TLS
+    // connection while respecting the server's requested retry deadline.
+    if (error != ESP_OK || status_code != 429) persistent_client.reset();
+    if (error == ESP_OK && status_code == 429) {
+      const uint32_t delay = retry_after_delay_ms_(response.retry_after);
+      note_flight_radar_failure_(AirDot::connectivity::ConnectivityError::RATE_LIMITED, delay);
+    } else {
+      note_flight_radar_failure_(classify_http_error_(error, status_code, response.overflow));
+    }
     return false;
   }
 
   Snapshot parsed{};
-  if (!parse_adsb_lol_response_(response.body, response.length, latitude, longitude,
+  if (!parse_adsb_fi_response_(response.body, response.length, latitude, longitude,
                                 normalized_range_km, military_only, parsed, response.overflow)) {
+    persistent_client.reset();
     note_flight_radar_failure_(AirDot::connectivity::ConnectivityError::INVALID_RESPONSE);
     return false;
   }
@@ -821,7 +951,7 @@ inline void flight_radar_task_(void *) {
   }
 
   if (acquired && location_available &&
-      fetch_adsb_lol_aircraft_(latitude, longitude, range_km, military_only, snapshot)) {
+      fetch_adsb_fi_aircraft_(latitude, longitude, range_km, military_only, snapshot)) {
     SnapshotLock lock(20);
     if (lock.locked()) {
       current_snapshot_storage_() = snapshot;
@@ -839,7 +969,7 @@ inline void flight_radar_task_(void *) {
   vTaskDelete(nullptr);
 }
 
-inline bool start_adsb_lol_request(float latitude, float longitude,
+inline bool start_adsb_fi_request(float latitude, float longitude,
                                    uint8_t range_km = FLIGHT_RADAR_RADIUS_DEFAULT_KM,
                                    bool military_only = false) {
   if (!coordinates_are_valid_(latitude, longitude)) {
@@ -874,7 +1004,7 @@ inline bool start_adsb_lol_request(float latitude, float longitude,
   return false;
 }
 
-inline bool start_adsb_lol_for_current_location_request(uint8_t range_km = FLIGHT_RADAR_RADIUS_DEFAULT_KM,
+inline bool start_adsb_fi_for_current_location_request(uint8_t range_km = FLIGHT_RADAR_RADIUS_DEFAULT_KM,
                                                         bool military_only = false) {
   if (!flight_radar_start_allowed_())
     return false;
@@ -900,7 +1030,7 @@ inline bool start_adsb_lol_for_current_location_request(uint8_t range_km = FLIGH
   return false;
 }
 
-inline int consume_adsb_lol_result(Snapshot &snapshot) {
+inline int consume_adsb_fi_result(Snapshot &snapshot) {
   const int state = flight_radar_task_state_().load(std::memory_order_acquire);
   if (state == FLIGHT_RADAR_TASK_SUCCESS) {
     {
@@ -924,7 +1054,8 @@ inline int consume_adsb_lol_result(Snapshot &snapshot) {
 #else
 inline Snapshot current_snapshot() { return {}; }
 inline bool request_running() { return false; }
-inline bool start_adsb_lol_request(float latitude, float longitude,
+inline bool release_http_client_if_idle() { return true; }
+inline bool start_adsb_fi_request(float latitude, float longitude,
                                    uint8_t range_km = FLIGHT_RADAR_RADIUS_DEFAULT_KM,
                                    bool military_only = false) {
   (void) latitude;
@@ -933,13 +1064,13 @@ inline bool start_adsb_lol_request(float latitude, float longitude,
   (void) military_only;
   return false;
 }
-inline bool start_adsb_lol_for_current_location_request(uint8_t range_km = FLIGHT_RADAR_RADIUS_DEFAULT_KM,
+inline bool start_adsb_fi_for_current_location_request(uint8_t range_km = FLIGHT_RADAR_RADIUS_DEFAULT_KM,
                                                         bool military_only = false) {
   (void) range_km;
   (void) military_only;
   return false;
 }
-inline int consume_adsb_lol_result(Snapshot &snapshot) {
+inline int consume_adsb_fi_result(Snapshot &snapshot) {
   (void) snapshot;
   return -1;
 }

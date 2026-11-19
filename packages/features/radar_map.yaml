@@ -1,0 +1,48 @@
+script:
+  - id: radar_map_request_update
+    mode: single
+    then:
+      - lambda: |-
+          const bool flight = AirDot::onboarding::load_flight_radar_enabled();
+          const bool weather = AirDot::onboarding::load_weather_enabled();
+          if (!flight && !weather) return;
+          AirDot::flight_radar::configure_radar_map_location(
+              id(outdoor_latitude), id(outdoor_longitude), id(outdoor_location_valid));
+          const auto &state = AirDot::flight_radar::radar_scope_state_();
+          if (state.map_location_valid) {
+            const lv_area_t area{0, 0, 479, 479};
+            AirDot::radar_map::prepare_map(area, state.map_latitude, state.map_longitude, state.map_range_km,
+                AirDot::weather_radar::PIXELS_PER_RANGE, AirDot::weather_radar::CLIP_RADIUS,
+                AirDot::onboarding::load_dark_mode_enabled());
+          }
+          if (state.map_location_valid &&
+              AirDot::radar_map::request_map(state.map_latitude, state.map_longitude, state.map_range_km,
+                  AirDot::onboarding::online_runtime_available(
+                      id(setup_ap_active), id(setup_portal_active), id(onboarding_ui_active))))
+            if (id(flight_radar_page)->is_showing()) id(ui_refresh_flight_radar_page).execute();
+
+interval:
+  - interval: 5ms
+    then:
+      - lambda: |-
+          if (AirDot::radar_map::service_map_render()) {
+            if (id(flight_radar_page)->is_showing()) id(ui_refresh_flight_radar_page).execute();
+            if (id(weather_radar_page)->is_showing()) id(ui_refresh_weather_radar_page).execute();
+          }
+  - interval: 1s
+    then:
+      - script.execute: radar_map_request_update
+  - interval: 250ms
+    then:
+      - lambda: |-
+          if (id(flight_radar_page)->is_showing() && AirDot::flight_radar::radar_map_loading_visible_()) {
+            auto *scope = AirDot::flight_radar::radar_scope_state_().scope;
+            if (scope != nullptr) lv_obj_invalidate(scope);
+          }
+      - if:
+          condition:
+            lambda: "return AirDot::radar_map::consume_result();"
+          then:
+            - lambda: |-
+                if (id(flight_radar_page)->is_showing()) id(ui_refresh_flight_radar_page).execute();
+                if (id(weather_radar_page)->is_showing()) id(ui_refresh_weather_radar_page).execute();

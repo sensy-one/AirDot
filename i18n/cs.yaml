@@ -47,8 +47,9 @@ setup_page:
   custom_threshold_unhealthy_label: Nezdravá
 
   sensor_calibration_title: Kalibrace senzorů
-  sensor_calibration_note: Upravte údaj vestavěného teplotního senzoru.
+  sensor_calibration_note: "Upravte interní měření teploty a vlhkosti."
   sen66_temperature_offset_label: SEN66 ukazuje vyšší teplotu o
+  sen66_humidity_offset_label: "SEN66 měří vlhkost vyšší o"
   sen66_co2_reference_label: Referenční hodnota CO2
   sen66_co2_calibration_title: Vynutit kalibraci referenční hodnoty CO2
   sen66_co2_calibration_description: Umístěte AirDot alespoň na 3 minuty na čerstvý venkovní vzduch a poté nastavení uložte.
@@ -138,6 +139,8 @@ setup_page:
   dark_mode_title: Tmavý režim
   dark_mode_description: Používat tmavý motiv displeje.
 
+  radar_location_dot_title: Bod polohy
+
   adaptive_brightness_title: Automatický jas
   adaptive_brightness_description: Automaticky upravovat jas podle okolního světla.
 
@@ -150,6 +153,7 @@ setup_page:
   auto_page_screen_summary_label: Přehled
   auto_page_screen_time_weather_label: Čas & počasí
   auto_page_screen_flight_radar_label: Letecký radar
+  auto_page_screen_weather_radar_label: Srážkový radar
   auto_page_screen_pm1_label: PM1
   auto_page_screen_pm25_label: PM2.5
   auto_page_screen_pm4_label: PM4

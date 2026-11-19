@@ -103,6 +103,7 @@ class SetupPageRenderer {
     const bool time_format_12h = time_format == TIME_FORMAT_12H;
     const DisplayBrightness display_brightness = load_display_brightness();
     const bool dark_mode_enabled = load_dark_mode_enabled();
+    const bool radar_location_dot_enabled = load_radar_location_dot_enabled();
     const bool auto_dim_enabled = load_auto_dim_enabled();
     const bool auto_page_switch_enabled = load_auto_page_switch_enabled();
     const AutoPageSwitchMode auto_page_switch_mode = load_auto_page_switch_mode();
@@ -133,7 +134,9 @@ class SetupPageRenderer {
     const auto &custom_air_quality_thresholds = load_custom_air_quality_threshold_settings();
     const bool custom_air_quality_thresholds_enabled = custom_air_quality_thresholds.enabled == 1;
     const std::string sen66_temperature_offset_value =
-        temperature_offset_input_value_(sen66_temperature_offset_display_c());
+        correction_input_value_(sen66_temperature_offset_display_c());
+    const std::string sen66_humidity_offset_value =
+        correction_input_value_(sen66_humidity_offset_display_percent());
     const auto &mqtt_settings = load_mqtt_settings();
     const bool stored_mqtt_enabled = mqtt_settings.enabled == 1;
     const std::string mqtt_broker = fixed_string_(mqtt_settings.broker);
@@ -1436,6 +1439,19 @@ class SetupPageRenderer {
 
               <div class="field">
 )html";
+    html += "                <label for=\"sen66_humidity_offset_percent\" data-i18n=\"sen66_humidity_offset_label\">";
+    html += text.sen66_humidity_offset_label;
+    html += R"html(</label>
+                <div class="unit-input">
+                  <input id="sen66_humidity_offset_percent" name="sen66_humidity_offset_percent" type="text" inputmode="decimal" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false" maxlength="5" pattern="([0-4]?[0-9]([.,][0-9]{1,2})?|50([.,]0{1,2})?)" value=")html";
+    html += html_escape_(sen66_humidity_offset_value);
+    html += R"html(">
+                  <span class="unit-suffix" aria-hidden="true">%</span>
+                </div>
+              </div>
+
+              <div class="field">
+)html";
     html += "                <label for=\"sen66_co2_reference_ppm\" data-i18n=\"sen66_co2_reference_label\">";
     html += text.sen66_co2_reference_label;
     html += R"html(</label>
@@ -2188,6 +2204,27 @@ class SetupPageRenderer {
               <div class="toggle-row">
                 <div class="toggle-copy">
 )html";
+    html += "                  <p class=\"toggle-title\" data-i18n=\"radar_location_dot_title\">";
+    html += text.radar_location_dot_title;
+    html += R"html(</p>
+                </div>
+
+)html";
+    html += "                <label class=\"switch\" data-i18n-aria-label=\"radar_location_dot_title\" aria-label=\"";
+    html += text.radar_location_dot_title;
+    html += R"html(">
+)html";
+    html += "                  <input type=\"checkbox\" name=\"radar_location_dot\" value=\"1\"";
+    if (radar_location_dot_enabled)
+      html += " checked";
+    html += R"html(>
+                  <span class="slider" aria-hidden="true"></span>
+                </label>
+              </div>
+
+              <div class="toggle-row">
+                <div class="toggle-copy">
+)html";
     html += "                  <p class=\"toggle-title\" data-i18n=\"adaptive_brightness_title\">";
     html += text.adaptive_brightness_title;
     html += "</p>\n                  <p class=\"toggle-description\" data-i18n=\"adaptive_brightness_description\">";
@@ -2280,6 +2317,9 @@ class SetupPageRenderer {
     append_auto_page_screen_option("auto_page_screen_flight_radar", "auto_page_screen_flight_radar",
                                    AUTO_PAGE_SCREEN_FLIGHT_RADAR, "auto_page_screen_flight_radar_label",
                                    text.auto_page_screen_flight_radar_label);
+    append_auto_page_screen_option("auto_page_screen_weather_radar", "auto_page_screen_weather_radar",
+                                   AUTO_PAGE_SCREEN_WEATHER_RADAR, "auto_page_screen_weather_radar_label",
+                                   text.auto_page_screen_weather_radar_label);
     append_auto_page_screen_option("auto_page_screen_pm1", "auto_page_screen_pm1", AUTO_PAGE_SCREEN_PM1,
                                    "auto_page_screen_pm1_label", text.auto_page_screen_pm1_label);
     append_auto_page_screen_option("auto_page_screen_pm25", "auto_page_screen_pm25", AUTO_PAGE_SCREEN_PM25,
@@ -2400,6 +2440,10 @@ class SetupPageRenderer {
 )html";
     html += "          <p class=\"footer-note\" data-i18n=\"footer_note\">";
     html += text.footer_note;
+    html += "</p><p class=\"footer-note\"><a href=\"https://www.openstreetmap.org/copyright\" target=\"_blank\" rel=\"noopener\" style=\"color:inherit\">© OpenStreetMap contributors · ODbL</a>";
+    html += R"html( · <a href="https://adsb.fi/" target="_blank" rel="noopener" style="color:inherit">Flight data: adsb.fi</a>)html";
+    html += " · <a href=\"https://openmaptiles.org/\" target=\"_blank\" rel=\"noopener\" style=\"color:inherit\">© OpenMapTiles</a>";
+    html += R"html( · <a href="https://librewxr.net/terms.html" target="_blank" rel="noopener" style="color:inherit">Weather: LibreWXR · CC BY 4.0</a> · <a href="https://radar.protezionecivile.it/" target="_blank" rel="noopener" style="color:inherit">Radar-DPC · CC BY-SA 4.0</a>)html";
     html += R"html(</p>
           <script>
             const languageSelect = document.getElementById("ui_language");
@@ -3482,7 +3526,7 @@ class SetupPageRenderer {
     return std::string(text);
   }
 
-  static std::string temperature_offset_input_value_(float offset_celsius) {
+  static std::string correction_input_value_(float offset_celsius) {
     char text[8];
     std::snprintf(text, sizeof(text), "%.2f", static_cast<double>(std::fabs(offset_celsius)));
     return std::string(text);

@@ -1255,6 +1255,7 @@ struct SetupPageText {
   const char *sensor_calibration_title;
   const char *sensor_calibration_note;
   const char *sen66_temperature_offset_label;
+  const char *sen66_humidity_offset_label;
   const char *sen66_co2_reference_label;
   const char *sen66_co2_calibration_title;
   const char *sen66_co2_calibration_description;
@@ -1304,6 +1305,7 @@ struct SetupPageText {
   const char *brightness_high;
   const char *dark_mode_title;
   const char *dark_mode_description;
+  const char *radar_location_dot_title;
   const char *adaptive_brightness_title;
   const char *adaptive_brightness_description;
   const char *auto_page_switch_title;
@@ -1315,6 +1317,7 @@ struct SetupPageText {
   const char *auto_page_screen_summary_label;
   const char *auto_page_screen_time_weather_label;
   const char *auto_page_screen_flight_radar_label;
+  const char *auto_page_screen_weather_radar_label;
   const char *auto_page_screen_pm1_label;
   const char *auto_page_screen_pm25_label;
   const char *auto_page_screen_pm4_label;
@@ -1492,8 +1495,9 @@ inline SetupPageText setup_page_text(AirDot::UiLanguage language) {
         "Poor",
         "Unhealthy",
         "Sensor calibration",
-        "Adjust the built-in temperature reading.",
+        "Adjust the built-in temperature and humidity readings.",
         "SEN66 reads high by",
+        "SEN66 humidity reads high by",
         "CO2 baseline",
         "Force CO2 baseline calibration",
         "Place AirDot in fresh outdoor air for at least 3 minutes, then save.",
@@ -1543,6 +1547,7 @@ inline SetupPageText setup_page_text(AirDot::UiLanguage language) {
         "High",
         "Dark mode",
         "Use a dark display theme.",
+        "Location dot",
         "Automatic brightness",
         "Adjust brightness automatically based on ambient light.",
         "Automatic screen switching",
@@ -1554,6 +1559,7 @@ inline SetupPageText setup_page_text(AirDot::UiLanguage language) {
         "Overview",
         "Time & weather",
         "Flight radar",
+        "Rain radar",
         "PM1",
         "PM2.5",
         "PM4",
@@ -1629,8 +1635,9 @@ inline SetupPageText setup_page_text(AirDot::UiLanguage language) {
         "Schlecht",
         "Ungesund",
         "Sensorkalibrierung",
-        "Passe die interne Temperaturmessung an.",
+        "Passe die interne Temperatur- und Luftfeuchtigkeitsmessung an.",
         "SEN66 misst zu hoch um",
+        "SEN66-Luftfeuchtigkeit misst zu hoch um",
         "CO2-Baseline",
         "CO2-Baselinekalibrierung erzwingen",
         "Stelle AirDot mindestens 3 Minuten in frische Außenluft und speichere dann.",
@@ -1680,6 +1687,7 @@ inline SetupPageText setup_page_text(AirDot::UiLanguage language) {
         "Hoch",
         "Dunkler Modus",
         "Verwende eine dunkle Bildschirmdarstellung.",
+        "Standortpunkt",
         "Automatische Helligkeit",
         "Passe die Helligkeit automatisch an das Umgebungslicht an.",
         "Automatischer Bildschirmwechsel",
@@ -1691,6 +1699,7 @@ inline SetupPageText setup_page_text(AirDot::UiLanguage language) {
         "Übersicht",
         "Zeit & Wetter",
         "Flugradar",
+        "Regenradar",
         "PM1",
         "PM2.5",
         "PM4",
@@ -1766,8 +1775,9 @@ inline SetupPageText setup_page_text(AirDot::UiLanguage language) {
         "Slecht",
         "Ongezond",
         "Sensorkalibratie",
-        "Pas de interne temperatuurmeting aan.",
+        "Pas de interne temperatuur- en luchtvochtigheidsmeting aan.",
         "SEN66 meet te hoog met",
+        "SEN66-luchtvochtigheid meet te hoog met",
         "CO2-baseline",
         "Forceer CO2-baselinekalibratie",
         "Zet AirDot minstens 3 minuten in frisse buitenlucht en sla daarna op.",
@@ -1817,6 +1827,7 @@ inline SetupPageText setup_page_text(AirDot::UiLanguage language) {
         "Hoog",
         "Donkere modus",
         "Gebruik een donkere schermweergave.",
+        "Locatiepunt",
         "Automatische helderheid",
         "Pas de helderheid automatisch aan op basis van het omgevingslicht.",
         "Automatisch scherm wisselen",
@@ -1828,6 +1839,7 @@ inline SetupPageText setup_page_text(AirDot::UiLanguage language) {
         "Overzicht",
         "Tijd & weer",
         "Vluchtradar",
+        "Buienradar",
         "PM1",
         "PM2.5",
         "PM4",
@@ -1903,8 +1915,9 @@ inline SetupPageText setup_page_text(AirDot::UiLanguage language) {
         "Mauvais",
         "Malsain",
         "Étalonnage du capteur",
-        "Ajustez la mesure de température interne.",
+        "Ajustez les mesures internes de température et d’humidité.",
         "Le SEN66 mesure trop haut de",
+        "Le SEN66 surestime l’humidité de",
         "Référence CO2",
         "Forcer l’étalonnage de référence CO2",
         "Placez AirDot à l’air extérieur frais pendant au moins 3 minutes, puis enregistrez.",
@@ -1954,6 +1967,7 @@ inline SetupPageText setup_page_text(AirDot::UiLanguage language) {
         "Élevée",
         "Mode sombre",
         "Utilisez un affichage sombre.",
+        "Point de localisation",
         "Luminosité automatique",
         "Ajustez automatiquement la luminosité selon la lumière ambiante.",
         "Changement automatique d’écran",
@@ -1965,6 +1979,7 @@ inline SetupPageText setup_page_text(AirDot::UiLanguage language) {
         "Vue d’ensemble",
         "Heure & météo",
         "Radar aérien",
+        "Radar de pluie",
         "PM1",
         "PM2.5",
         "PM4",
@@ -2040,8 +2055,9 @@ inline SetupPageText setup_page_text(AirDot::UiLanguage language) {
         "Rossz",
         "Egészségtelen",
         "Érzékelő kalibrálása",
-        "A beépített hőmérő mérésének korrekciója.",
+        "A belső hőmérséklet- és páratartalom-mérés beállítása.",
         "SEN66 ennyivel mér feljebb",
+        "A SEN66 páratartalom-mérése ennyivel magasabb",
         "CO2 bázisérték",
         "CO2 bázisérték kényszerített kalibrálása",
         "Helyezd az AirDot-ot friss, kültéri levegőre legalább 3 percre, majd mentsd el.",
@@ -2091,6 +2107,7 @@ inline SetupPageText setup_page_text(AirDot::UiLanguage language) {
         "Magas",
         "Sötét mód",
         "Sötét kijelzőtéma használata.",
+        "Helyjelölő pont",
         "Automatikus fényerő",
         "A fényerő automatikus beállítása a környezeti fényviszonyok alapján.",
         "Automatikus képernyőváltás",
@@ -2102,6 +2119,7 @@ inline SetupPageText setup_page_text(AirDot::UiLanguage language) {
         "Áttekintés",
         "Idő & időjárás",
         "Repülőradar",
+        "Csapadékradar",
         "PM1",
         "PM2.5",
         "PM4",
@@ -2177,8 +2195,9 @@ inline SetupPageText setup_page_text(AirDot::UiLanguage language) {
         "Špatná",
         "Nezdravá",
         "Kalibrace senzorů",
-        "Upravte údaj vestavěného teplotního senzoru.",
+        "Upravte interní měření teploty a vlhkosti.",
         "SEN66 ukazuje vyšší teplotu o",
+        "SEN66 měří vlhkost vyšší o",
         "Referenční hodnota CO2",
         "Vynutit kalibraci referenční hodnoty CO2",
         "Umístěte AirDot alespoň na 3 minuty na čerstvý venkovní vzduch a poté nastavení uložte.",
@@ -2228,6 +2247,7 @@ inline SetupPageText setup_page_text(AirDot::UiLanguage language) {
         "Vysoký",
         "Tmavý režim",
         "Používat tmavý motiv displeje.",
+        "Bod polohy",
         "Automatický jas",
         "Automaticky upravovat jas podle okolního světla.",
         "Automatické přepínání obrazovek",
@@ -2239,6 +2259,7 @@ inline SetupPageText setup_page_text(AirDot::UiLanguage language) {
         "Přehled",
         "Čas & počasí",
         "Letecký radar",
+        "Srážkový radar",
         "PM1",
         "PM2.5",
         "PM4",
@@ -2314,8 +2335,9 @@ inline SetupPageText setup_page_text(AirDot::UiLanguage language) {
         "Scarsa",
         "Malsana",
         "Calibrazione del sensore",
-        "Regola la lettura della temperatura integrata.",
+        "Regola le misure interne di temperatura e umidità.",
         "Il SEN66 sovrastima di",
+        "Il SEN66 sovrastima l’umidità di",
         "Baseline CO₂",
         "Forza la calibrazione della baseline CO₂",
         "Metti AirDot all'aria aperta per almeno 3 minuti, quindi salva.",
@@ -2365,6 +2387,7 @@ inline SetupPageText setup_page_text(AirDot::UiLanguage language) {
         "Alta",
         "Modalità scura",
         "Usa un tema scuro per il display.",
+        "Punto di posizione",
         "Luminosità automatica",
         "Regola automaticamente la luminosità in base alla luce ambientale.",
         "Cambio schermata automatico",
@@ -2376,6 +2399,7 @@ inline SetupPageText setup_page_text(AirDot::UiLanguage language) {
         "Panoramica",
         "Ora & meteo",
         "Radar voli",
+        "Radar pioggia",
         "PM1",
         "PM2.5",
         "PM4",
@@ -2451,8 +2475,9 @@ inline SetupPageText setup_page_text(AirDot::UiLanguage language) {
         "Slabă",
         "Nefavorabilă",
         "Calibrare senzor",
-        "Ajustează citirea temperaturii interne.",
+        "Ajustează măsurătorile interne de temperatură și umiditate.",
         "SEN66 citește mai mult cu",
+        "SEN66 măsoară umiditatea mai mare cu",
         "Referință CO2",
         "Forțează calibrarea referinței CO2",
         "Pune AirDot în aer proaspăt de afară timp de cel puțin 3 minute, apoi salvează.",
@@ -2502,6 +2527,7 @@ inline SetupPageText setup_page_text(AirDot::UiLanguage language) {
         "Ridicată",
         "Mod întunecat",
         "Folosește o temă întunecată pentru afișaj.",
+        "Punct de localizare",
         "Luminozitate automată",
         "Ajustează automat luminozitatea în funcție de lumina ambientală.",
         "Comutare automată ecrane",
@@ -2513,6 +2539,7 @@ inline SetupPageText setup_page_text(AirDot::UiLanguage language) {
         "Prezentare",
         "Ora & vremea",
         "Radar avioane",
+        "Radar de precipitații",
         "PM1",
         "PM2.5",
         "PM4",
@@ -2634,6 +2661,7 @@ inline void append_setup_page_translation_json(std::string &html, AirDot::UiLang
   append_json_field_(html, "sensor_calibration_title", text.sensor_calibration_title, first);
   append_json_field_(html, "sensor_calibration_note", text.sensor_calibration_note, first);
   append_json_field_(html, "sen66_temperature_offset_label", text.sen66_temperature_offset_label, first);
+  append_json_field_(html, "sen66_humidity_offset_label", text.sen66_humidity_offset_label, first);
   append_json_field_(html, "sen66_co2_reference_label", text.sen66_co2_reference_label, first);
   append_json_field_(html, "sen66_co2_calibration_title", text.sen66_co2_calibration_title, first);
   append_json_field_(html, "sen66_co2_calibration_description", text.sen66_co2_calibration_description, first);
@@ -2683,6 +2711,7 @@ inline void append_setup_page_translation_json(std::string &html, AirDot::UiLang
   append_json_field_(html, "brightness_high", text.brightness_high, first);
   append_json_field_(html, "dark_mode_title", text.dark_mode_title, first);
   append_json_field_(html, "dark_mode_description", text.dark_mode_description, first);
+  append_json_field_(html, "radar_location_dot_title", text.radar_location_dot_title, first);
   append_json_field_(html, "adaptive_brightness_title", text.adaptive_brightness_title, first);
   append_json_field_(html, "adaptive_brightness_description", text.adaptive_brightness_description, first);
   append_json_field_(html, "auto_page_switch_title", text.auto_page_switch_title, first);
@@ -2694,6 +2723,7 @@ inline void append_setup_page_translation_json(std::string &html, AirDot::UiLang
   append_json_field_(html, "auto_page_screen_summary_label", text.auto_page_screen_summary_label, first);
   append_json_field_(html, "auto_page_screen_time_weather_label", text.auto_page_screen_time_weather_label, first);
   append_json_field_(html, "auto_page_screen_flight_radar_label", text.auto_page_screen_flight_radar_label, first);
+  append_json_field_(html, "auto_page_screen_weather_radar_label", text.auto_page_screen_weather_radar_label, first);
   append_json_field_(html, "auto_page_screen_pm1_label", text.auto_page_screen_pm1_label, first);
   append_json_field_(html, "auto_page_screen_pm25_label", text.auto_page_screen_pm25_label, first);
   append_json_field_(html, "auto_page_screen_pm4_label", text.auto_page_screen_pm4_label, first);

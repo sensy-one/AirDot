@@ -11,7 +11,7 @@ sensor:
       on_value:
         then:
           - lambda: |-
-                static AirDot::SensorHistoryGraph history;
+                static EXT_RAM_BSS_ATTR AirDot::SensorHistoryGraph history;
                 AirDot::update_high_bad_history(
                   history, id(pm1_current_value_label), id(pm1_history_line),
                   id(pm1_history_min_label), id(pm1_history_max_label), id(pm1_history_empty_label), x, "%.1f",
@@ -25,7 +25,7 @@ sensor:
       on_value:
         then:
           - lambda: |-
-                static AirDot::SensorHistoryGraph history;
+                static EXT_RAM_BSS_ATTR AirDot::SensorHistoryGraph history;
                 AirDot::update_high_bad_history(
                   history, id(pm25_current_value_label), id(pm25_history_line),
                   id(pm25_history_min_label), id(pm25_history_max_label), id(pm25_history_empty_label), x, "%.1f",
@@ -40,7 +40,7 @@ sensor:
       on_value:
         then:
           - lambda: |-
-                static AirDot::SensorHistoryGraph history;
+                static EXT_RAM_BSS_ATTR AirDot::SensorHistoryGraph history;
                 AirDot::update_high_bad_history(
                   history, id(pm4_current_value_label), id(pm4_history_line),
                   id(pm4_history_min_label), id(pm4_history_max_label), id(pm4_history_empty_label), x, "%.1f",
@@ -54,7 +54,7 @@ sensor:
       on_value:
         then:
           - lambda: |-
-                static AirDot::SensorHistoryGraph history;
+                static EXT_RAM_BSS_ATTR AirDot::SensorHistoryGraph history;
                 AirDot::update_high_bad_history(
                   history, id(pm10_current_value_label), id(pm10_history_line),
                   id(pm10_history_min_label), id(pm10_history_max_label), id(pm10_history_empty_label), x, "%.1f",
@@ -69,7 +69,7 @@ sensor:
       on_value:
         then:
           - lambda: |-
-              static AirDot::SensorHistoryGraph history;
+              static EXT_RAM_BSS_ATTR AirDot::SensorHistoryGraph history;
               static AirDot::onboarding::UnitSystem last_unit_system = AirDot::onboarding::UNIT_SYSTEM_METRIC;
               static bool unit_system_initialized = false;
               const auto unit_system = AirDot::onboarding::load_unit_system();
@@ -91,6 +91,11 @@ sensor:
                 id(air_quality_summary_temperature_unit_label), AirDot::onboarding::temperature_unit_text(unit_system));
           - script.execute: ui_refresh_air_quality_summary
     humidity:
+      filters:
+        - lambda: |-
+            if (!std::isfinite(x)) return NAN;
+            return std::max(0.0f, std::min(100.0f,
+                x - AirDot::onboarding::sen66_humidity_offset_display_percent()));
       id: air_humidity
       name: Humidity
       internal: true
@@ -98,7 +103,7 @@ sensor:
       on_value:
         then:
           - lambda: |-
-              static AirDot::SensorHistoryGraph history;
+              static EXT_RAM_BSS_ATTR AirDot::SensorHistoryGraph history;
               AirDot::update_plain_history(
                 history, id(hum_current_value_label), id(hum_history_line),
                 id(hum_history_min_label), id(hum_history_max_label), id(hum_history_empty_label), x, "%.1f",
@@ -113,7 +118,7 @@ sensor:
       on_value:
         then:
           - lambda: |-
-                static AirDot::SensorHistoryGraph history;
+                static EXT_RAM_BSS_ATTR AirDot::SensorHistoryGraph history;
                 AirDot::update_high_bad_history(
                   history, id(voc_current_value_label), id(voc_history_line),
                   id(voc_history_min_label), id(voc_history_max_label), id(voc_history_empty_label), x, "%.0f",
@@ -131,7 +136,7 @@ sensor:
       on_value:
         then:
           - lambda: |-
-                static AirDot::SensorHistoryGraph history;
+                static EXT_RAM_BSS_ATTR AirDot::SensorHistoryGraph history;
                 AirDot::update_high_bad_history(
                   history, id(nox_current_value_label), id(nox_history_line),
                   id(nox_history_min_label), id(nox_history_max_label), id(nox_history_empty_label), x, "%.0f",
@@ -146,7 +151,7 @@ sensor:
       on_value:
         then:
           - lambda: |-
-                static AirDot::SensorHistoryGraph history;
+                static EXT_RAM_BSS_ATTR AirDot::SensorHistoryGraph history;
                 AirDot::update_high_bad_history(
                   history, id(co2_current_value_label), id(co2_history_line),
                   id(co2_history_min_label), id(co2_history_max_label), id(co2_history_empty_label), x, "%.0f",

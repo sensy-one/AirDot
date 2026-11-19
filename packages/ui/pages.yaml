@@ -8,7 +8,7 @@ lvgl:
   displays:
     - display_panel
   byte_order: little_endian
-  buffer_size: 25%
+  buffer_size: 50%
   update_interval: 200ms
   default_font: ui_font_large
   theme:
@@ -84,3 +84,4 @@ lvgl:
         metric: lux
         title: LIGHT
         unit: lx
+    - !include ../../ui/pages/weather_radar.yaml

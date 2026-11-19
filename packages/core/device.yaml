@@ -23,6 +23,15 @@ esphome:
     - includes/airdot/network/time_client.h
     - includes/airdot/network/weather_client.h
     - includes/airdot/network/flight_radar_client.h
+    - includes/airdot/network/radar_map_projection.h
+    - includes/airdot/network/radar_map_data.h
+    - includes/airdot/network/radar_map_protocol.h
+    - includes/airdot/network/radar_map_cache.h
+    - includes/airdot/network/radar_tile_data.h
+    - includes/airdot/network/radar_tile_client.h
+    - includes/airdot/network/radar_map_client.h
+    - includes/airdot/ui/radar_map_raster.h
+    - includes/airdot/ui/radar_map_display.h
     - includes/airdot/network/time_weather_client.h
     - includes/airdot/hardware/sen66_commands.h
     - includes/airdot/setup/setup_settings.h
@@ -30,6 +39,11 @@ esphome:
     - includes/airdot/setup/setup_page_renderer.h
     - includes/airdot/setup/setup_portal.h
     - includes/airdot/ui/flight_radar_display.h
+    - includes/airdot/network/weather_radar_data.h
+    - includes/airdot/network/weather_radar_palette.h
+    - includes/airdot/network/weather_radar_png.h
+    - includes/airdot/network/weather_radar_client.h
+    - includes/airdot/ui/weather_radar_display.h
   on_boot:
     - priority: 205
       then:

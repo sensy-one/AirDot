@@ -67,6 +67,8 @@ static constexpr uint32_t AUTO_PAGE_SWITCH_MODE_PREF_KEY = 2918394854UL;
 static constexpr uint32_t AUTO_PAGE_SWITCH_SCREENS_PREF_KEY = 2918394855UL;
 static constexpr uint32_t CUSTOM_AIR_QUALITY_THRESHOLDS_PREF_KEY = 2918394856UL;
 static constexpr uint32_t ALERT_SNOOZE_DURATION_PREF_KEY = 2918394858UL;
+static constexpr uint32_t SEN66_HUMIDITY_OFFSET_CENTI_PERCENT_PREF_KEY = 2918394859UL;
+static constexpr uint32_t RADAR_LOCATION_DOT_PREF_KEY = 2918394860UL;
 static constexpr uint8_t ALERT_SNOOZE_DEFAULT_MINUTES = 15;
 static constexpr uint8_t ALERT_SNOOZE_MAX_MINUTES = 60;
 static constexpr uint8_t CUSTOM_AIR_QUALITY_THRESHOLDS_VERSION = 1;
@@ -149,11 +151,12 @@ static constexpr uint16_t AUTO_PAGE_SCREEN_TEMPERATURE = 1U << 10;
 static constexpr uint16_t AUTO_PAGE_SCREEN_HUMIDITY = 1U << 11;
 static constexpr uint16_t AUTO_PAGE_SCREEN_PRESSURE = 1U << 12;
 static constexpr uint16_t AUTO_PAGE_SCREEN_LIGHT = 1U << 13;
+static constexpr uint16_t AUTO_PAGE_SCREEN_WEATHER_RADAR = 1U << 14;
 static constexpr uint16_t AUTO_PAGE_SCREEN_ALL_MASK =
     AUTO_PAGE_SCREEN_SUMMARY | AUTO_PAGE_SCREEN_TIME_WEATHER | AUTO_PAGE_SCREEN_FLIGHT_RADAR |
     AUTO_PAGE_SCREEN_PM1 | AUTO_PAGE_SCREEN_PM25 | AUTO_PAGE_SCREEN_PM4 | AUTO_PAGE_SCREEN_PM10 |
     AUTO_PAGE_SCREEN_CO2 | AUTO_PAGE_SCREEN_VOC | AUTO_PAGE_SCREEN_NOX | AUTO_PAGE_SCREEN_TEMPERATURE |
-    AUTO_PAGE_SCREEN_HUMIDITY | AUTO_PAGE_SCREEN_PRESSURE | AUTO_PAGE_SCREEN_LIGHT;
+    AUTO_PAGE_SCREEN_HUMIDITY | AUTO_PAGE_SCREEN_PRESSURE | AUTO_PAGE_SCREEN_LIGHT | AUTO_PAGE_SCREEN_WEATHER_RADAR;
 
 struct SetupWifiBackup {
   bool valid;
@@ -988,6 +991,11 @@ inline CachedUint8Preference &dark_mode_pref_() {
   return cache;
 }
 
+inline CachedUint8Preference &radar_location_dot_pref_() {
+  static CachedUint8Preference cache{RADAR_LOCATION_DOT_PREF_KEY, 1, 1, false, false, {}};
+  return cache;
+}
+
 inline CachedUint8Preference &first_run_onboarding_complete_pref_() {
   static CachedUint8Preference cache{FIRST_RUN_ONBOARDING_COMPLETE_PREF_KEY, 0, 0, false, false, {}};
   return cache;
@@ -1080,6 +1088,11 @@ inline CachedUint8Preference &manual_time_pref_() {
 
 inline CachedUint8Preference &weather_sync_pref_() {
   static CachedUint8Preference cache{WEATHER_SYNC_PREF_KEY, 1, 1, false, false, {}};
+  return cache;
+}
+
+inline CachedInt16Preference &sen66_humidity_offset_centi_percent_pref_() {
+  static CachedInt16Preference cache{SEN66_HUMIDITY_OFFSET_CENTI_PERCENT_PREF_KEY, 0, 0, false, false, {}};
   return cache;
 }
 
@@ -1631,6 +1644,19 @@ inline void save_weather_enabled(bool enabled) {
   save_cached_uint8_preference_(weather_sync_pref_(), enabled ? 1 : 0);
 }
 
+inline float sen66_humidity_offset_display_percent() {
+  const int value = load_cached_int16_preference_(sen66_humidity_offset_centi_percent_pref_());
+  return static_cast<float>(std::max(0, std::min(5000, value))) / 100.0f;
+}
+
+inline void save_sen66_humidity_offset_display_percent(float correction_percent) {
+  if (!std::isfinite(correction_percent))
+    correction_percent = sen66_humidity_offset_display_percent();
+  const float bounded = std::max(0.0f, std::min(50.0f, std::fabs(correction_percent)));
+  save_cached_int16_preference_(sen66_humidity_offset_centi_percent_pref_(),
+      static_cast<int16_t>(std::round(bounded * 100.0f)));
+}
+
 inline int16_t load_sen66_temperature_offset_centi_c() {
   return normalize_sen66_temperature_offset_centi_c_(
       load_cached_int16_preference_(sen66_temperature_offset_centi_c_pref_()));
@@ -1883,6 +1909,14 @@ inline bool load_dark_mode_enabled() {
 
 inline void save_dark_mode_enabled(bool enabled) {
   save_cached_uint8_preference_(dark_mode_pref_(), enabled ? 1 : 0);
+}
+
+inline bool load_radar_location_dot_enabled() {
+  return load_cached_uint8_preference_(radar_location_dot_pref_()) == 1;
+}
+
+inline void save_radar_location_dot_enabled(bool enabled) {
+  save_cached_uint8_preference_(radar_location_dot_pref_(), enabled ? 1 : 0);
 }
 
 inline float display_brightness_value() {

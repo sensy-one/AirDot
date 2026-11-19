@@ -1,0 +1,37 @@
+script:
+  - id: weather_radar_request_update
+    mode: single
+    then:
+      - lambda: |-
+          if (!AirDot::onboarding::load_weather_enabled()) return;
+          AirDot::weather_radar::configure_weather_radar_location(
+              id(outdoor_latitude), id(outdoor_longitude), id(outdoor_location_valid));
+          const auto &location = AirDot::flight_radar::radar_scope_state_();
+          if (location.map_location_valid)
+            AirDot::weather_radar::request_radar(
+                location.map_latitude, location.map_longitude, location.map_range_km,
+                AirDot::weather_radar::weather_base_matches_(AirDot::radar_map::render_cache(),
+                    AirDot::weather_radar::weather_scope_state_()) &&
+                !id(flight_radar_page)->is_showing() &&
+                AirDot::onboarding::online_runtime_available(
+                    id(setup_ap_active), id(setup_portal_active), id(onboarding_ui_active)));
+
+interval:
+  - interval: 5ms
+    then:
+      - lambda: |-
+          const bool enabled = AirDot::onboarding::load_weather_enabled();
+          AirDot::weather_radar::pause_background_requests(!enabled || id(flight_radar_page)->is_showing() ||
+              !AirDot::onboarding::online_runtime_available(
+                  id(setup_ap_active), id(setup_portal_active), id(onboarding_ui_active)));
+          if (enabled) AirDot::weather_radar::service_weather_render(id(weather_radar_page)->is_showing());
+  - interval: 1s
+    then:
+      - script.execute: weather_radar_request_update
+  - interval: 250ms
+    then:
+      - lambda: |-
+          const bool changed = AirDot::weather_radar::consume_result();
+          if (id(weather_radar_page)->is_showing() &&
+              (changed || AirDot::weather_radar::weather_radar_loading_visible_()))
+            id(ui_refresh_weather_radar_page).execute();

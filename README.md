@@ -4,7 +4,7 @@ The smart indoor air-quality display that works standalone, offline, or connecte
 
 ![AirDot banner](banner.webp)
 
-AirDot combines real-time air-quality sensing, a sharp 480 x 480 color display, local setup, standalone operation, optional Homey Pro, Home Assistant and MQTT integration, time, weather, Flight Radar, alerts, and on-device history pages in one compact ESPHome-powered device.
+AirDot combines real-time air-quality sensing, a sharp 480 x 480 color display, local setup, standalone operation, optional Homey Pro, Home Assistant and MQTT integration, time, weather, Flight Radar, Rain Radar, alerts, and on-device history pages in one compact ESPHome-powered device.
 
 It is designed for users who want more than raw sensor values. AirDot shows the current room status, highlights the measurements that need attention, and gives clear actions such as monitoring, ventilating, limiting exposure, or acting immediately when air quality becomes critical.
 
@@ -34,7 +34,7 @@ AirDot includes a SPA06 barometric pressure sensor. The firmware uses this readi
 
 **480 x 480 color display**
 
-The round display shows a live air-quality summary, local time, outdoor weather, Flight Radar, and dedicated history pages for each sensor value. It supports dark mode, manual and automatic brightness, automatic page switching, and a night mode schedule that can dim or turn off the display.
+The round display shows a live air-quality summary, local time, outdoor weather, Flight Radar, Rain Radar, and dedicated history pages for each sensor value. It supports dark mode, manual and automatic brightness, automatic page switching, and a night mode schedule that can dim or turn off the display.
 
 **On-device guidance and history**
 
@@ -54,7 +54,7 @@ AirDot can show local time and outdoor weather on a dedicated display page. Weat
 
 **Flight Radar**
 
-AirDot can show nearby aircraft on a minimal radar-style page when Wi-Fi and location are configured. Live aircraft data is provided by [ADSB.lol](https://www.adsb.lol/) under the ODbL 1.0 license. Standard aircraft follow the selected display theme, while military or priority traffic is highlighted in orange.
+AirDot can show nearby aircraft on a minimal radar-style page when Wi-Fi and location are configured. Live aircraft data is provided by [adsb.fi](https://adsb.fi/). Standard aircraft follow the selected display theme, while military or priority traffic is highlighted in orange.
 
 **Audio and display alerts**
 
@@ -252,6 +252,7 @@ Available pages:
 - Air-quality summary
 - Time and weather
 - Flight Radar
+- Rain Radar
 - PM1 history
 - PM2.5 history
 - PM4 history
@@ -264,7 +265,7 @@ Available pages:
 - Pressure history
 - Light history
 
-The time and weather page appears when time is available and either time sync or weather is enabled. The Flight Radar page appears when Wi-Fi is configured and Flight Radar is enabled.
+The time and weather page appears when time is available and either time sync or weather is enabled. The Flight Radar page appears when Wi-Fi is configured and Flight Radar is enabled. Rain Radar appears when weather is enabled.
 
 You can also choose a page using **Display Page** in Home Assistant or through MQTT, including from automations. Automatic page switching continues if enabled. To keep the selected page on screen, turn off automatic page switching in setup.
 
@@ -291,6 +292,7 @@ The setup page lets you configure:
 - Units: metric or imperial
 - Brightness: low, medium, or high
 - Dark mode
+- Location dot on both radars, enabled by default
 - Automatic brightness based on ambient light
 - Automatic page switching: all pages or a custom selected set
 - Page switching interval: 5, 10, or 30 seconds
@@ -339,7 +341,7 @@ When weather is enabled, AirDot requests forecast data every 15 minutes after a 
 
 ## Flight Radar
 
-AirDot can show nearby aircraft on a dedicated radar page using live data from [ADSB.lol](https://www.adsb.lol/). The radar requests an updated local snapshot every 5 seconds while its page is visible.
+AirDot can show nearby aircraft on a dedicated radar page using live data from [adsb.fi](https://adsb.fi/). The radar requests an updated local snapshot every 5 seconds while its page is visible.
 
 Flight Radar options:
 
@@ -350,6 +352,10 @@ Flight Radar options:
 The radar uses the configured exact location when available. If exact location is not enabled, AirDot can use automatic location when Wi-Fi and internet access are available.
 
 The radar display is intentionally minimal: compass ticks, a north indicator, rotating aircraft markers, full callsigns, and connector lines. Standard aircraft use the display theme color, and military or priority aircraft are shown in orange.
+
+## Rain Radar
+
+Rain Radar shows precipitation and available forecast frames from [LibreWXR](https://librewxr.net/) over the same local map and range as Flight Radar. The time below the map follows the configured time zone and 12- or 24-hour format. The location dot can be switched off under Display settings.
 
 ## Air-Quality Guidelines and Custom Thresholds
 
@@ -401,6 +407,10 @@ To adjust:
 3. Open setup.
 4. Adjust the SEN66 temperature offset.
 5. Save settings.
+
+### Humidity Offset
+
+If humidity consistently reads high, enter the difference in percentage points under Sensor Calibration and save. The default is 0; the saved correction is subtracted from humidity readings on the display and in integrations.
 
 ### CO2 Baseline Calibration
 

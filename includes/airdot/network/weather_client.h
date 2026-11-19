@@ -124,6 +124,13 @@ inline bool weather_service_start_allowed_(AirDot::connectivity::Service service
     return false;
   }
 
+  if (http_request_active()) {
+    AirDot::connectivity::set_service_status(
+        service, AirDot::connectivity::ConnectivityStatus::RETRY_WAIT,
+        AirDot::connectivity::ConnectivityError::TIMEOUT, now, now + 5000);
+    return false;
+  }
+
   auto &retry = retry_state_for_service_(service);
   if (!retry.due(now)) {
     AirDot::connectivity::set_service_status(

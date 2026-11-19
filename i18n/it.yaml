@@ -47,8 +47,9 @@ setup_page:
   custom_threshold_unhealthy_label: Malsana
 
   sensor_calibration_title: Calibrazione del sensore
-  sensor_calibration_note: Regola la lettura della temperatura integrata.
+  sensor_calibration_note: "Regola le misure interne di temperatura e umidità."
   sen66_temperature_offset_label: Il SEN66 sovrastima di
+  sen66_humidity_offset_label: "Il SEN66 sovrastima l’umidità di"
   sen66_co2_reference_label: Baseline CO₂
   sen66_co2_calibration_title: Forza la calibrazione della baseline CO₂
   sen66_co2_calibration_description: Metti AirDot all'aria aperta per almeno 3 minuti, quindi salva.
@@ -138,6 +139,8 @@ setup_page:
   dark_mode_title: Modalità scura
   dark_mode_description: Usa un tema scuro per il display.
 
+  radar_location_dot_title: Punto di posizione
+
   adaptive_brightness_title: Luminosità automatica
   adaptive_brightness_description: Regola automaticamente la luminosità in base alla luce ambientale.
 
@@ -150,6 +153,7 @@ setup_page:
   auto_page_screen_summary_label: Panoramica
   auto_page_screen_time_weather_label: Ora & meteo
   auto_page_screen_flight_radar_label: Radar voli
+  auto_page_screen_weather_radar_label: Radar pioggia
   auto_page_screen_pm1_label: PM1
   auto_page_screen_pm25_label: PM2.5
   auto_page_screen_pm4_label: PM4

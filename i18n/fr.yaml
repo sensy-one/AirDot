@@ -47,8 +47,9 @@ setup_page:
   custom_threshold_unhealthy_label: Malsain
 
   sensor_calibration_title: Étalonnage du capteur
-  sensor_calibration_note: Ajustez la mesure de température interne.
+  sensor_calibration_note: "Ajustez les mesures internes de température et d’humidité."
   sen66_temperature_offset_label: Le SEN66 mesure trop haut de
+  sen66_humidity_offset_label: "Le SEN66 surestime l’humidité de"
   sen66_co2_reference_label: Référence CO2
   sen66_co2_calibration_title: Forcer l’étalonnage de référence CO2
   sen66_co2_calibration_description: Placez AirDot à l’air extérieur frais pendant au moins 3 minutes, puis enregistrez.
@@ -138,6 +139,8 @@ setup_page:
   dark_mode_title: Mode sombre
   dark_mode_description: Utilisez un affichage sombre.
 
+  radar_location_dot_title: Point de localisation
+
   adaptive_brightness_title: Luminosité automatique
   adaptive_brightness_description: Ajustez automatiquement la luminosité selon la lumière ambiante.
 
@@ -150,6 +153,7 @@ setup_page:
   auto_page_screen_summary_label: Vue d’ensemble
   auto_page_screen_time_weather_label: Heure & météo
   auto_page_screen_flight_radar_label: Radar aérien
+  auto_page_screen_weather_radar_label: Radar de pluie
   auto_page_screen_pm1_label: PM1
   auto_page_screen_pm25_label: PM2.5
   auto_page_screen_pm4_label: PM4
