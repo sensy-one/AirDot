@@ -355,7 +355,7 @@ The radar display is intentionally minimal: compass ticks, a north indicator, ro
 
 ## Rain Radar
 
-Rain Radar shows precipitation and available forecast frames from [LibreWXR](https://librewxr.net/) over the same local map and range as Flight Radar. The time below the map follows the configured time zone and 12- or 24-hour format. The location dot can be switched off under Display settings.
+Rain Radar shows precipitation and available forecast frames from [LibreWXR](https://librewxr.net/) over the same local map and range as Flight Radar. The time below the map follows the configured time zone and 12 or 24 hour format. The location dot can be switched off under Display settings.
 
 ## Air-Quality Guidelines and Custom Thresholds
 
