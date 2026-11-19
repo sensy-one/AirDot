@@ -2206,6 +2206,8 @@ class SetupPageRenderer {
 )html";
     html += "                  <p class=\"toggle-title\" data-i18n=\"radar_location_dot_title\">";
     html += text.radar_location_dot_title;
+    html += "</p>\n                  <p class=\"toggle-description\" data-i18n=\"radar_location_dot_description\">";
+    html += text.radar_location_dot_description;
     html += R"html(</p>
                 </div>
 

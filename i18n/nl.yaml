@@ -140,6 +140,7 @@ setup_page:
   dark_mode_description: Gebruik een donkere schermweergave.
 
   radar_location_dot_title: Locatiepunt
+  radar_location_dot_description: Toon je locatie op Flight Radar en Rain Radar.
 
   adaptive_brightness_title: Automatische helderheid
   adaptive_brightness_description: Pas de helderheid automatisch aan op basis van het omgevingslicht.

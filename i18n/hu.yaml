@@ -140,6 +140,7 @@ setup_page:
   dark_mode_description: Sötét kijelzőtéma használata.
 
   radar_location_dot_title: Helyjelölő pont
+  radar_location_dot_description: A helyzet megjelenítése a Flight Radar és a Rain Radar térképén.
 
   adaptive_brightness_title: Automatikus fényerő
   adaptive_brightness_description: A fényerő automatikus beállítása a környezeti fényviszonyok alapján.

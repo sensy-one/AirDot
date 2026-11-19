@@ -1306,6 +1306,7 @@ struct SetupPageText {
   const char *dark_mode_title;
   const char *dark_mode_description;
   const char *radar_location_dot_title;
+  const char *radar_location_dot_description;
   const char *adaptive_brightness_title;
   const char *adaptive_brightness_description;
   const char *auto_page_switch_title;
@@ -1548,6 +1549,7 @@ inline SetupPageText setup_page_text(AirDot::UiLanguage language) {
         "Dark mode",
         "Use a dark display theme.",
         "Location dot",
+        "Show your location on Flight Radar and Rain Radar.",
         "Automatic brightness",
         "Adjust brightness automatically based on ambient light.",
         "Automatic screen switching",
@@ -1688,6 +1690,7 @@ inline SetupPageText setup_page_text(AirDot::UiLanguage language) {
         "Dunkler Modus",
         "Verwende eine dunkle Bildschirmdarstellung.",
         "Standortpunkt",
+        "Zeige deinen Standort auf Flight Radar und Rain Radar.",
         "Automatische Helligkeit",
         "Passe die Helligkeit automatisch an das Umgebungslicht an.",
         "Automatischer Bildschirmwechsel",
@@ -1828,6 +1831,7 @@ inline SetupPageText setup_page_text(AirDot::UiLanguage language) {
         "Donkere modus",
         "Gebruik een donkere schermweergave.",
         "Locatiepunt",
+        "Toon je locatie op Flight Radar en Rain Radar.",
         "Automatische helderheid",
         "Pas de helderheid automatisch aan op basis van het omgevingslicht.",
         "Automatisch scherm wisselen",
@@ -1968,6 +1972,7 @@ inline SetupPageText setup_page_text(AirDot::UiLanguage language) {
         "Mode sombre",
         "Utilisez un affichage sombre.",
         "Point de localisation",
+        "Affichez votre position sur Flight Radar et Rain Radar.",
         "Luminosité automatique",
         "Ajustez automatiquement la luminosité selon la lumière ambiante.",
         "Changement automatique d’écran",
@@ -2108,6 +2113,7 @@ inline SetupPageText setup_page_text(AirDot::UiLanguage language) {
         "Sötét mód",
         "Sötét kijelzőtéma használata.",
         "Helyjelölő pont",
+        "A helyzet megjelenítése a Flight Radar és a Rain Radar térképén.",
         "Automatikus fényerő",
         "A fényerő automatikus beállítása a környezeti fényviszonyok alapján.",
         "Automatikus képernyőváltás",
@@ -2248,6 +2254,7 @@ inline SetupPageText setup_page_text(AirDot::UiLanguage language) {
         "Tmavý režim",
         "Používat tmavý motiv displeje.",
         "Bod polohy",
+        "Zobrazovat polohu na mapách Flight Radar a Rain Radar.",
         "Automatický jas",
         "Automaticky upravovat jas podle okolního světla.",
         "Automatické přepínání obrazovek",
@@ -2388,6 +2395,7 @@ inline SetupPageText setup_page_text(AirDot::UiLanguage language) {
         "Modalità scura",
         "Usa un tema scuro per il display.",
         "Punto di posizione",
+        "Mostra la tua posizione su Flight Radar e Rain Radar.",
         "Luminosità automatica",
         "Regola automaticamente la luminosità in base alla luce ambientale.",
         "Cambio schermata automatico",
@@ -2528,6 +2536,7 @@ inline SetupPageText setup_page_text(AirDot::UiLanguage language) {
         "Mod întunecat",
         "Folosește o temă întunecată pentru afișaj.",
         "Punct de localizare",
+        "Afișează locația ta pe Flight Radar și Rain Radar.",
         "Luminozitate automată",
         "Ajustează automat luminozitatea în funcție de lumina ambientală.",
         "Comutare automată ecrane",
@@ -2712,6 +2721,7 @@ inline void append_setup_page_translation_json(std::string &html, AirDot::UiLang
   append_json_field_(html, "dark_mode_title", text.dark_mode_title, first);
   append_json_field_(html, "dark_mode_description", text.dark_mode_description, first);
   append_json_field_(html, "radar_location_dot_title", text.radar_location_dot_title, first);
+  append_json_field_(html, "radar_location_dot_description", text.radar_location_dot_description, first);
   append_json_field_(html, "adaptive_brightness_title", text.adaptive_brightness_title, first);
   append_json_field_(html, "adaptive_brightness_description", text.adaptive_brightness_description, first);
   append_json_field_(html, "auto_page_switch_title", text.auto_page_switch_title, first);

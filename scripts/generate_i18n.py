@@ -196,6 +196,7 @@ SETUP_PAGE_KEYS = (
     "dark_mode_title",
     "dark_mode_description",
     "radar_location_dot_title",
+    "radar_location_dot_description",
     "adaptive_brightness_title",
     "adaptive_brightness_description",
     "auto_page_switch_title",

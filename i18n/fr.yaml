@@ -140,6 +140,7 @@ setup_page:
   dark_mode_description: Utilisez un affichage sombre.
 
   radar_location_dot_title: Point de localisation
+  radar_location_dot_description: Affichez votre position sur Flight Radar et Rain Radar.
 
   adaptive_brightness_title: Luminosité automatique
   adaptive_brightness_description: Ajustez automatiquement la luminosité selon la lumière ambiante.

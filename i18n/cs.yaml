@@ -140,6 +140,7 @@ setup_page:
   dark_mode_description: Používat tmavý motiv displeje.
 
   radar_location_dot_title: Bod polohy
+  radar_location_dot_description: Zobrazovat polohu na mapách Flight Radar a Rain Radar.
 
   adaptive_brightness_title: Automatický jas
   adaptive_brightness_description: Automaticky upravovat jas podle okolního světla.

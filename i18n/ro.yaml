@@ -140,6 +140,7 @@ setup_page:
   dark_mode_description: Folosește o temă întunecată pentru afișaj.
 
   radar_location_dot_title: Punct de localizare
+  radar_location_dot_description: Afișează locația ta pe Flight Radar și Rain Radar.
 
   adaptive_brightness_title: Luminozitate automată
   adaptive_brightness_description: Ajustează automat luminozitatea în funcție de lumina ambientală.
