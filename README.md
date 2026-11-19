@@ -141,7 +141,7 @@ You can reopen setup later and add Wi-Fi when needed.
 
 ## Homey Pro Integration
 
-Install the [SENSY-ONE app](https://homey.app/en-nl/app/com.sensy-one.airbee/SENSY-ONE/test/) on Homey Pro (version **1.1.0 or newer**).
+Install the [SENSY-ONE APP](https://homey.app/nl-nl/app/com.sensy-one/) on Homey Pro (version **1.1.0 or newer**).
 
 1. Connect AirDot and Homey Pro to the same local network.
 2. Enable **Homey Pro & Home Assistant** in AirDot setup. No Home Assistant server is needed.
