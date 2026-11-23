@@ -114,6 +114,35 @@ setup_page:
   flight_radar_traffic_all_label: Tutti gli aeromobili
   flight_radar_traffic_military_label: Solo militari
 
+  ship_radar_title: "Ship radar"
+  ship_radar_note: "Shows AIS vessels from aisstream.io around a location on a coastline map. Requires a free aisstream.io API key."
+  ship_radar_enabled_title: "Ship radar"
+  ship_radar_enabled_description: "Show nearby ships. Keeps a connection to aisstream.io open while enabled so vessel names and types can be collected."
+  ship_radar_api_key_label: "aisstream.io API key"
+  ship_radar_api_key_placeholder: "Paste your API key"
+  ship_radar_api_key_saved_placeholder: "Saved. Leave blank to keep it."
+  ship_radar_api_key_clear_label: "Remove saved key"
+  ship_radar_range_label: "Radius"
+  ship_radar_location_label: "Location"
+  ship_radar_location_device_label: "Device location"
+  ship_radar_location_custom_label: "Custom"
+  ship_radar_latitude_label: "Latitude"
+  ship_radar_longitude_label: "Longitude"
+  ship_radar_categories_label: "Vessel types"
+  ship_radar_cat_cargo_label: "Cargo"
+  ship_radar_cat_tanker_label: "Tanker"
+  ship_radar_cat_passenger_label: "Passenger"
+  ship_radar_cat_fishing_label: "Fishing"
+  ship_radar_cat_pleasure_label: "Sailing and pleasure"
+  ship_radar_cat_service_label: "Tug and service"
+  ship_radar_cat_high_speed_label: "High-speed craft"
+  ship_radar_cat_other_label: "Other and unknown"
+  ship_radar_favorites_label: "Favorite vessels (MMSI)"
+  ship_radar_favorites_help: "Up to 20 nine-digit MMSI numbers, separated by commas. Favorites are drawn in gold and are tracked only inside the radius."
+  ship_radar_favorites_invalid: "Enter nine-digit MMSI numbers separated by commas, at most 20."
+  ship_radar_alert_title: "Departure alert"
+  ship_radar_alert_description: "Switch to the ship radar and alert when a favorite vessel that was stopped or out of range starts moving."
+
   weather_title: Meteo
   weather_note: Mostra il meteo locale esterno sul display.
 
@@ -155,6 +184,7 @@ setup_page:
   auto_page_screen_time_weather_label: Ora & meteo
   auto_page_screen_flight_radar_label: Radar voli
   auto_page_screen_weather_radar_label: Radar pioggia
+  auto_page_screen_ship_radar_label: "Ship radar"
   auto_page_screen_pm1_label: PM1
   auto_page_screen_pm25_label: PM2.5
   auto_page_screen_pm4_label: PM4
@@ -220,6 +250,8 @@ weather:
 notification:
   fallback: Notifica
   dismiss: Chiudi
+  ship_departed_title: "Ship under way"
+  ship_departed_unnamed: "Favorite vessel"
 
 date:
   format: "{weekday} {day} {month}"

@@ -27,7 +27,8 @@ inline constexpr uint8_t VERSION = 1;
 inline constexpr uint32_t FORMAT_REVISION = 2;
 inline constexpr uint8_t FLAG_COARSE = 1;
 inline constexpr uint8_t FLAG_TRUNCATED = 2;
-inline constexpr uint8_t VALID_FLAGS = FLAG_COARSE | FLAG_TRUNCATED;
+inline constexpr uint8_t FLAG_MARINE = 4;  // Coastline map rather than roads.
+inline constexpr uint8_t VALID_FLAGS = FLAG_COARSE | FLAG_TRUNCATED | FLAG_MARINE;
 
 struct Metadata {
   int32_t latitude_key{0}, longitude_key{0};
@@ -87,7 +88,7 @@ inline bool valid_segment(const Segment &segment) {
          segment.y1 >= -COVERAGE_RADIUS && segment.y1 <= COVERAGE_RADIUS &&
          segment.x2 >= -COVERAGE_RADIUS && segment.x2 <= COVERAGE_RADIUS &&
          segment.y2 >= -COVERAGE_RADIUS && segment.y2 <= COVERAGE_RADIUS &&
-         static_cast<uint8_t>(segment.style) <= static_cast<uint8_t>(Style::WATER);
+         static_cast<uint8_t>(segment.style) <= static_cast<uint8_t>(Style::RIVER);
 }
 inline void put_segment(uint8_t *out, const Segment &segment) {
   put16(out, static_cast<uint16_t>(segment.x1)); put16(out + 2, static_cast<uint16_t>(segment.y1));
@@ -133,7 +134,8 @@ inline bool make_header(const MapData &map, uint64_t created_unix, uint8_t *head
   std::memset(header, 0, HEADER_SIZE);
   std::memcpy(header, "ADMP", 4);
   header[4] = VERSION; header[5] = HEADER_SIZE; header[6] = map.range_km;
-  header[7] = (map.coarse ? FLAG_COARSE : 0) | (map.truncated ? FLAG_TRUNCATED : 0);
+  header[7] = (map.coarse ? FLAG_COARSE : 0) | (map.truncated ? FLAG_TRUNCATED : 0) |
+              (map.kind == MapKind::MARINE ? FLAG_MARINE : 0);
   detail::put32(header + 8, static_cast<uint32_t>(coordinate_key(map.center_latitude)));
   detail::put32(header + 12, static_cast<uint32_t>(coordinate_key(map.center_longitude)));
   detail::put32(header + 16, map.count); detail::put32(header + 20, FORMAT_REVISION);
@@ -163,6 +165,7 @@ template<typename Writer> bool encode(const MapData &map, uint64_t created_unix,
 // The caller owns the unpublished MapData, normally allocated in PSRAM. Payload
 // bytes stream directly into its segment array. Until finish() validates the
 // entire body, map.count remains zero; partial or damaged data cannot be drawn.
+// map.kind must be set by the caller; a blob of the other kind is a key mismatch.
 class Decoder {
  public:
   Decoder(MapData &map, float latitude, float longitude, uint8_t range)
@@ -225,8 +228,10 @@ class Decoder {
   bool read_header_() {
     const DecodeError header_error = detail::parse_header(header_, metadata_);
     if (header_error != DecodeError::NONE) return fail_(header_error);
-    if (metadata_.latitude_key != latitude_key_ || metadata_.longitude_key != longitude_key_ || metadata_.range_km != range_)
+    if (metadata_.latitude_key != latitude_key_ || metadata_.longitude_key != longitude_key_ || metadata_.range_km != range_ ||
+        ((metadata_.flags & FLAG_MARINE) != 0) != (map_.kind == MapKind::MARINE))
       return fail_(DecodeError::KEY_MISMATCH);
+    if (metadata_.count > segment_capacity(map_)) return fail_(DecodeError::COUNT);
     crc_ = detail::header_crc(header_);
     return true;
   }

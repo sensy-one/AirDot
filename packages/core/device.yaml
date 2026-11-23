@@ -44,6 +44,9 @@ esphome:
     - includes/airdot/network/weather_radar_png.h
     - includes/airdot/network/weather_radar_client.h
     - includes/airdot/ui/weather_radar_display.h
+    - includes/airdot/network/ais_websocket.h
+    - includes/airdot/network/ship_radar_client.h
+    - includes/airdot/ui/ship_radar_display.h
   on_boot:
     - priority: 205
       then:

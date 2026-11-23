@@ -109,23 +109,35 @@ class Reader {
   size_t position_{0};
 };
 
-enum class Road : uint8_t { OTHER, MOTORWAY, TRUNK, PRIMARY, SECONDARY, TERTIARY, MINOR, SERVICE };
-inline Road road_class(Span value) {
-  if (equals(value, "motorway")) return Road::MOTORWAY;
-  if (equals(value, "trunk")) return Road::TRUNK;
-  if (equals(value, "primary")) return Road::PRIMARY;
-  if (equals(value, "secondary")) return Road::SECONDARY;
-  if (equals(value, "tertiary")) return Road::TERTIARY;
-  if (equals(value, "minor")) return Road::MINOR;
-  if (equals(value, "service")) return Road::SERVICE;
-  return Road::OTHER;
+// String values shared by the road, water and waterway layers. One table holds
+// every value of a layer; the key that refers to a value decides its meaning.
+enum class FeatureClass : uint8_t {
+  OTHER, MOTORWAY, TRUNK, PRIMARY, SECONDARY, TERTIARY, MINOR, SERVICE,
+  OCEAN, LAKE, RIVER, DOCK, POND, CANAL, TUNNEL
+};
+inline FeatureClass feature_class(Span value) {
+  if (equals(value, "motorway")) return FeatureClass::MOTORWAY;
+  if (equals(value, "trunk")) return FeatureClass::TRUNK;
+  if (equals(value, "primary")) return FeatureClass::PRIMARY;
+  if (equals(value, "secondary")) return FeatureClass::SECONDARY;
+  if (equals(value, "tertiary")) return FeatureClass::TERTIARY;
+  if (equals(value, "minor")) return FeatureClass::MINOR;
+  if (equals(value, "service")) return FeatureClass::SERVICE;
+  if (equals(value, "ocean")) return FeatureClass::OCEAN;
+  if (equals(value, "lake")) return FeatureClass::LAKE;
+  if (equals(value, "river")) return FeatureClass::RIVER;
+  if (equals(value, "dock")) return FeatureClass::DOCK;
+  if (equals(value, "pond")) return FeatureClass::POND;
+  if (equals(value, "canal")) return FeatureClass::CANAL;
+  if (equals(value, "tunnel")) return FeatureClass::TUNNEL;
+  return FeatureClass::OTHER;
 }
-inline bool road_value(Span message, Road &road) {
-  Reader reader(message); road = Road::OTHER;
+inline bool class_value(Span message, FeatureClass &value) {
+  Reader reader(message); value = FeatureClass::OTHER;
   uint32_t field; uint8_t wire; uint64_t integer; Span bytes;
   while (!reader.empty()) {
     if (!reader.field(field, wire, integer, bytes)) return false;
-    if (field == 1) { if (wire != 2) return false; road = road_class(bytes); }
+    if (field == 1) { if (wire != 2) return false; value = feature_class(bytes); }
   }
   return true;
 }
@@ -169,7 +181,7 @@ class Polyline {
     const Segment segment{static_cast<int16_t>(std::lround(x1)),static_cast<int16_t>(std::lround(y1)),
                           static_cast<int16_t>(std::lround(x2)),static_cast<int16_t>(std::lround(y2)),style_};
     if (segment.x1 == segment.x2 && segment.y1 == segment.y2) return true;
-    if (map_.count >= MAX_SEGMENTS) return false;
+    if (map_.count >= segment_capacity(map_)) return false;
     map_.segments[map_.count++] = segment;
     return true;
   }
@@ -226,7 +238,8 @@ class TileDecoder {
     tile_ = tile; tile_points_ = 0; tile_features_ = 0;
     detail::Reader reader(detail::Span{data,length});
     uint32_t field; uint8_t wire; uint64_t integer; detail::Span bytes;
-    bool seen_transportation = false;
+    const bool marine = map_.kind == MapKind::MARINE;
+    bool seen[3]{};
     while (!reader.empty()) {
       if (!reader.field(field,wire,integer,bytes)) return fail(Result::INVALID);
       if (field != 3) continue;
@@ -238,15 +251,20 @@ class TileDecoder {
         if (!names.field(field,wire,integer,value)) return fail(Result::INVALID);
         if (field == 1) { if (wire != 2) return fail(Result::INVALID); name = value; }
       }
-      if (!detail::equals(name,"transportation")) continue;
-      if (seen_transportation) return fail(Result::INVALID);
-      seen_transportation = true;
-      const Result value = layer(bytes);
+      Layer id;
+      if (!marine && detail::equals(name,"transportation")) id = Layer::TRANSPORTATION;
+      else if (marine && detail::equals(name,"water")) id = Layer::WATER;
+      else if (marine && detail::equals(name,"waterway")) id = Layer::WATERWAY;
+      else continue;
+      if (seen[static_cast<uint8_t>(id)]) return fail(Result::INVALID);
+      seen[static_cast<uint8_t>(id)] = true;
+      const Result value = layer(bytes,id);
       if (value != Result::OK) return fail(value);
     }
     return Result::OK;
   }
  private:
+  enum class Layer : uint8_t { TRANSPORTATION, WATER, WATERWAY };
   static constexpr size_t MAX_VALUES = 1024;
   static constexpr uint32_t MAX_TILE_POINTS = 250000;
   static constexpr uint32_t MAX_TILE_FEATURES = 40000;
@@ -258,8 +276,12 @@ class TileDecoder {
   uint16_t points_since_yield_{0};
   Result result_{Result::OK};
   Tile tile_{};
-  detail::Road values_[MAX_VALUES]{};
-  uint32_t key_count_{0}, value_count_{0}, class_key_{UINT32_MAX}, extent_{4096};
+  detail::FeatureClass values_[MAX_VALUES]{};
+  Layer layer_{Layer::TRANSPORTATION};
+  uint32_t key_count_{0}, value_count_{0}, class_key_{UINT32_MAX}, brunnel_key_{UINT32_MAX}, extent_{4096};
+  // Coastline ring state, in tile coordinates.
+  bool chain_open_{false};
+  double chain_x_{0}, chain_y_{0};
   uint32_t tile_points_{0}, tile_features_{0};
 
   Result fail(Result result) {
@@ -268,8 +290,8 @@ class TileDecoder {
     map_.count = 0; map_.truncated = false;
     line_.reset(); result_ = result; return result;
   }
-  bool allowed(detail::Road road) const {
-    using R = detail::Road;
+  bool allowed(detail::FeatureClass road) const {
+    using R = detail::FeatureClass;
     if (road == R::MOTORWAY || road == R::TRUNK || road == R::PRIMARY) return true;
     if (road == R::SECONDARY) return meters_per_pixel_ <= 250;
     if (road == R::TERTIARY) return meters_per_pixel_ <= 125;
@@ -277,8 +299,20 @@ class TileDecoder {
     if (road == R::SERVICE) return meters_per_pixel_ <= 50;
     return false;
   }
-  Result layer(detail::Span message) {
-    key_count_ = value_count_ = 0; class_key_ = UINT32_MAX; extent_ = 4096;
+  // Water areas whose outline is drawn. Tunnelled water never shows.
+  bool allowed_water(detail::FeatureClass value) const {
+    using C = detail::FeatureClass;
+    if (value == C::OCEAN || value == C::LAKE || value == C::RIVER || value == C::DOCK) return true;
+    if (value == C::POND) return meters_per_pixel_ <= 65;
+    return false;
+  }
+  bool allowed_waterway(detail::FeatureClass value) const {
+    using C = detail::FeatureClass;
+    return (value == C::RIVER || value == C::CANAL) && meters_per_pixel_ <= 125;
+  }
+  Result layer(detail::Span message, Layer id) {
+    layer_ = id;
+    key_count_ = value_count_ = 0; class_key_ = brunnel_key_ = UINT32_MAX; extent_ = 4096;
     uint32_t version = 0;
     detail::Reader reader(message);
     uint32_t field; uint8_t wire; uint64_t integer; detail::Span bytes;
@@ -289,12 +323,15 @@ class TileDecoder {
         if (detail::equals(bytes,"class")) {
           if (class_key_ != UINT32_MAX) return Result::INVALID;
           class_key_ = key_count_;
+        } else if (detail::equals(bytes,"brunnel")) {
+          if (brunnel_key_ != UINT32_MAX) return Result::INVALID;
+          brunnel_key_ = key_count_;
         }
         ++key_count_;
       } else if (field == 4) {
         if (wire != 2) return Result::INVALID;
         if (value_count_ >= MAX_VALUES) return Result::BUDGET;
-        if (!detail::road_value(bytes,values_[value_count_++])) return Result::INVALID;
+        if (!detail::class_value(bytes,values_[value_count_++])) return Result::INVALID;
       } else if (field == 5) {
         if (wire != 0 || !integer || integer > 65536) return Result::INVALID;
         extent_ = static_cast<uint32_t>(integer);
@@ -317,7 +354,8 @@ class TileDecoder {
   }
   Result feature(detail::Span message) {
     detail::Span geometry[8]{}; unsigned geometry_count = 0;
-    uint32_t type = 0; detail::Road road = detail::Road::OTHER;
+    uint32_t type = 0;
+    detail::FeatureClass road = detail::FeatureClass::OTHER, brunnel = detail::FeatureClass::OTHER;
     bool need_value = false; uint64_t key = 0;
     detail::Reader reader(message);
     uint32_t field; uint8_t wire; uint64_t integer; detail::Span bytes;
@@ -332,6 +370,7 @@ class TileDecoder {
           else {
             if (integer >= value_count_) return Result::INVALID;
             if (key == class_key_) road = values_[integer];
+            else if (key == brunnel_key_) brunnel = values_[integer];
           }
           need_value = !need_value;
         }
@@ -345,11 +384,132 @@ class TileDecoder {
       }
     }
     if (need_value) return Result::INVALID;
+    if (layer_ == Layer::WATER) {
+      if (type != 3 || brunnel == detail::FeatureClass::TUNNEL || !allowed_water(road)) return Result::OK;
+      if (!geometry_count) return Result::INVALID;
+      line_.style(Style::COAST);
+      return geometry_rings(geometry,geometry_count);
+    }
+    if (layer_ == Layer::WATERWAY) {
+      if (type != 2 || brunnel == detail::FeatureClass::TUNNEL || !allowed_waterway(road)) return Result::OK;
+      if (!geometry_count) return Result::INVALID;
+      line_.style(Style::RIVER);
+      return geometry_lines(geometry,geometry_count);
+    }
     if (type != 2 || !allowed(road)) return Result::OK;
     if (!geometry_count) return Result::INVALID;
-    line_.style(road == detail::Road::MOTORWAY || road == detail::Road::TRUNK ? Style::MOTORWAY :
-                road == detail::Road::PRIMARY || road == detail::Road::SECONDARY ? Style::MAJOR : Style::MINOR);
+    line_.style(road == detail::FeatureClass::MOTORWAY || road == detail::FeatureClass::TRUNK ? Style::MOTORWAY :
+                road == detail::FeatureClass::PRIMARY || road == detail::FeatureClass::SECONDARY ? Style::MAJOR : Style::MINOR);
     return geometry_lines(geometry,geometry_count);
+  }
+  // Converts a tile coordinate to the projected map plane. Returns false for
+  // points outside the Mercator world, which must break the current path.
+  bool tile_point_(double tile_x, double tile_y, double &x, double &y, bool &valid) {
+    const double side = double(uint32_t(1) << tile_.z);
+    const double world_x = (tile_.x + tile_x/extent_) / side;
+    const double world_y = (tile_.y + tile_y/extent_) / side;
+    valid = world_y >= 0 && world_y <= 1;
+    if (!valid) return true;
+    const double longitude = std::remainder(world_x * 360.0 - 180.0,360.0);
+    const double latitude = std::atan(std::sinh(PI*(1.0-2.0*world_y))) * 180.0 / PI;
+    return projection_.project(latitude,longitude,x,y);
+  }
+  bool count_point_() {
+    if (++tile_points_ > MAX_TILE_POINTS) return false;
+    if (yield_fn_ && ++points_since_yield_ == 1024) { points_since_yield_ = 0; yield_fn_(); }
+    return true;
+  }
+  Result break_chain_() {
+    chain_open_ = false;
+    return line_.finish() ? Result::OK : Result::BUDGET;
+  }
+  // One polygon edge. Tiles are clipped with a buffer, so a water polygon that
+  // reaches the tile edge gets an artificial outline along the clip line. Only
+  // the part inside the tile's own square is kept (the neighbour draws the
+  // rest), and edges lying on one tile border are dropped as clip seams.
+  Result ring_edge_(double x0, double y0, double x1, double y1) {
+    const double e = extent_, dx = x1 - x0, dy = y1 - y0;
+    double t0 = 0, t1 = 1;
+    const double p[4] = {-dx, dx, -dy, dy}, q[4] = {x0, e - x0, y0, e - y0};
+    for (unsigned i = 0; i < 4; ++i) {
+      if (p[i] == 0) { if (q[i] < 0) return break_chain_(); continue; }
+      const double r = q[i] / p[i];
+      if (p[i] < 0) { if (r > t1) return break_chain_(); if (r > t0) t0 = r; }
+      else { if (r < t0) return break_chain_(); if (r < t1) t1 = r; }
+    }
+    const double ax = x0 + t0 * dx, ay = y0 + t0 * dy, bx = x0 + t1 * dx, by = y0 + t1 * dy;
+    auto on = [](double value, double edge) { return std::fabs(value - edge) < 1e-6; };
+    if ((on(ax,0) && on(bx,0)) || (on(ax,e) && on(bx,e)) || (on(ay,0) && on(by,0)) || (on(ay,e) && on(by,e)))
+      return break_chain_();
+    if (chain_open_ && (!on(ax,chain_x_) || !on(ay,chain_y_))) {
+      const Result broken = break_chain_();
+      if (broken != Result::OK) return broken;
+    }
+    double x, y; bool valid;
+    if (!chain_open_) {
+      if (!tile_point_(ax,ay,x,y,valid)) return Result::INVALID;
+      if (!valid) return break_chain_();
+      if (!line_.point(x,y)) return Result::BUDGET;
+      chain_open_ = true;
+    }
+    if (!tile_point_(bx,by,x,y,valid)) return Result::INVALID;
+    if (!valid) return break_chain_();
+    if (!line_.point(x,y)) return Result::BUDGET;
+    chain_x_ = bx; chain_y_ = by;
+    return t1 < 1 ? break_chain_() : Result::OK;
+  }
+  Result geometry_rings(const detail::Span *parts, unsigned count) {
+    unsigned part = 0; detail::Reader reader(parts[0]);
+    auto read = [&](uint32_t &value) {
+      while (reader.empty() && ++part < count) reader = detail::Reader(parts[part]);
+      uint64_t integer = 0;
+      if (part >= count || !reader.varint(integer) || integer > UINT32_MAX) return false;
+      value = static_cast<uint32_t>(integer); return true;
+    };
+    auto available = [&]() {
+      if (!reader.empty()) return true;
+      for (unsigned i = part + 1; i < count; ++i) if (parts[i].size) return true;
+      return false;
+    };
+    int64_t cursor_x = 0, cursor_y = 0, start_x = 0, start_y = 0, previous_x = 0, previous_y = 0;
+    bool active = false;
+    line_.reset(); chain_open_ = false;
+    while (available()) {
+      uint32_t command;
+      if (!read(command)) return Result::INVALID;
+      const uint32_t operation = command & 7, repeats = command >> 3;
+      if (operation == 7) {
+        if (repeats != 1 || !active) return Result::INVALID;
+        const Result closed = ring_edge_(double(previous_x),double(previous_y),double(start_x),double(start_y));
+        if (closed != Result::OK) return closed;
+        const Result broken = break_chain_();
+        if (broken != Result::OK) return broken;
+        active = false;
+        continue;
+      }
+      if (!repeats || (operation != 1 && operation != 2) || (operation == 1 && repeats != 1) ||
+          (operation == 2 && !active)) return Result::INVALID;
+      for (uint32_t i = 0; i < repeats; ++i) {
+        uint32_t encoded_x, encoded_y;
+        if (!read(encoded_x) || !read(encoded_y)) return Result::INVALID;
+        cursor_x += static_cast<int64_t>(encoded_x >> 1) ^ -static_cast<int64_t>(encoded_x & 1);
+        cursor_y += static_cast<int64_t>(encoded_y >> 1) ^ -static_cast<int64_t>(encoded_y & 1);
+        if (cursor_x < INT32_MIN || cursor_x > INT32_MAX || cursor_y < INT32_MIN || cursor_y > INT32_MAX)
+          return Result::INVALID;
+        if (!count_point_()) return Result::BUDGET;
+        if (operation == 1) {
+          const Result broken = break_chain_();
+          if (broken != Result::OK) return broken;
+          start_x = previous_x = cursor_x; start_y = previous_y = cursor_y;
+          active = true;
+          continue;
+        }
+        const Result edge = ring_edge_(double(previous_x),double(previous_y),double(cursor_x),double(cursor_y));
+        if (edge != Result::OK) return edge;
+        previous_x = cursor_x; previous_y = cursor_y;
+      }
+    }
+    return break_chain_();
   }
   Result geometry_lines(const detail::Span *parts, unsigned count) {
     unsigned part = 0; detail::Reader reader(parts[0]);
@@ -385,22 +545,16 @@ class TileDecoder {
         cursor_y += static_cast<int64_t>(encoded_y >> 1) ^ -static_cast<int64_t>(encoded_y & 1);
         if (cursor_x < INT32_MIN || cursor_x > INT32_MAX || cursor_y < INT32_MIN || cursor_y > INT32_MAX)
           return Result::INVALID;
-        if (++tile_points_ > MAX_TILE_POINTS) return Result::BUDGET;
-        if (yield_fn_ && ++points_since_yield_ == 1024) { points_since_yield_ = 0; yield_fn_(); }
-        const double side = double(uint32_t(1) << tile_.z);
-        const double world_x = (tile_.x + double(cursor_x)/extent_) / side;
-        const double world_y = (tile_.y + double(cursor_y)/extent_) / side;
+        if (!count_point_()) return Result::BUDGET;
         // Buffered MVT coordinates may cross tile edges. Longitude wraps at
         // the antimeridian; coordinates outside the source's Mercator world
         // break the path rather than manufacture a line along the pole edge.
-        if (world_y < 0 || world_y > 1) {
+        double x, y; bool valid;
+        if (!tile_point_(double(cursor_x),double(cursor_y),x,y,valid)) return Result::INVALID;
+        if (!valid) {
           if (!line_.finish()) return Result::BUDGET;
           continue;
         }
-        const double longitude = std::remainder(world_x * 360.0 - 180.0,360.0);
-        const double latitude = std::atan(std::sinh(PI*(1.0-2.0*world_y))) * 180.0 / PI;
-        double x, y;
-        if (!projection_.project(latitude,longitude,x,y)) return Result::INVALID;
         if (!line_.point(x,y)) return Result::BUDGET;
       }
     }

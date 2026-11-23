@@ -1283,6 +1283,34 @@ struct SetupPageText {
   const char *flight_radar_traffic_label;
   const char *flight_radar_traffic_all_label;
   const char *flight_radar_traffic_military_label;
+  const char *ship_radar_title;
+  const char *ship_radar_note;
+  const char *ship_radar_enabled_title;
+  const char *ship_radar_enabled_description;
+  const char *ship_radar_api_key_label;
+  const char *ship_radar_api_key_placeholder;
+  const char *ship_radar_api_key_saved_placeholder;
+  const char *ship_radar_api_key_clear_label;
+  const char *ship_radar_range_label;
+  const char *ship_radar_location_label;
+  const char *ship_radar_location_device_label;
+  const char *ship_radar_location_custom_label;
+  const char *ship_radar_latitude_label;
+  const char *ship_radar_longitude_label;
+  const char *ship_radar_categories_label;
+  const char *ship_radar_cat_cargo_label;
+  const char *ship_radar_cat_tanker_label;
+  const char *ship_radar_cat_passenger_label;
+  const char *ship_radar_cat_fishing_label;
+  const char *ship_radar_cat_pleasure_label;
+  const char *ship_radar_cat_service_label;
+  const char *ship_radar_cat_high_speed_label;
+  const char *ship_radar_cat_other_label;
+  const char *ship_radar_favorites_label;
+  const char *ship_radar_favorites_help;
+  const char *ship_radar_favorites_invalid;
+  const char *ship_radar_alert_title;
+  const char *ship_radar_alert_description;
   const char *weather_title;
   const char *weather_note;
   const char *weather_sync_title;
@@ -1319,6 +1347,7 @@ struct SetupPageText {
   const char *auto_page_screen_time_weather_label;
   const char *auto_page_screen_flight_radar_label;
   const char *auto_page_screen_weather_radar_label;
+  const char *auto_page_screen_ship_radar_label;
   const char *auto_page_screen_pm1_label;
   const char *auto_page_screen_pm25_label;
   const char *auto_page_screen_pm4_label;
@@ -1526,6 +1555,34 @@ inline SetupPageText setup_page_text(AirDot::UiLanguage language) {
         "Traffic",
         "All aircraft",
         "Military only",
+        "Ship radar",
+        "Shows AIS vessels from aisstream.io around a location on a coastline map. Requires a free aisstream.io API key.",
+        "Ship radar",
+        "Show nearby ships. Keeps a connection to aisstream.io open while enabled so vessel names and types can be collected.",
+        "aisstream.io API key",
+        "Paste your API key",
+        "Saved. Leave blank to keep it.",
+        "Remove saved key",
+        "Radius",
+        "Location",
+        "Device location",
+        "Custom",
+        "Latitude",
+        "Longitude",
+        "Vessel types",
+        "Cargo",
+        "Tanker",
+        "Passenger",
+        "Fishing",
+        "Sailing and pleasure",
+        "Tug and service",
+        "High-speed craft",
+        "Other and unknown",
+        "Favorite vessels (MMSI)",
+        "Up to 20 nine-digit MMSI numbers, separated by commas. Favorites are drawn in gold and are tracked only inside the radius.",
+        "Enter nine-digit MMSI numbers separated by commas, at most 20.",
+        "Departure alert",
+        "Switch to the ship radar and alert when a favorite vessel that was stopped or out of range starts moving.",
         "Weather",
         "Show local outdoor weather on the display.",
         "Weather updates",
@@ -1562,6 +1619,7 @@ inline SetupPageText setup_page_text(AirDot::UiLanguage language) {
         "Time & weather",
         "Flight radar",
         "Rain radar",
+        "Ship radar",
         "PM1",
         "PM2.5",
         "PM4",
@@ -1667,6 +1725,34 @@ inline SetupPageText setup_page_text(AirDot::UiLanguage language) {
         "Verkehr",
         "Alle Flugzeuge",
         "Nur Militär",
+        "Ship radar",
+        "Shows AIS vessels from aisstream.io around a location on a coastline map. Requires a free aisstream.io API key.",
+        "Ship radar",
+        "Show nearby ships. Keeps a connection to aisstream.io open while enabled so vessel names and types can be collected.",
+        "aisstream.io API key",
+        "Paste your API key",
+        "Saved. Leave blank to keep it.",
+        "Remove saved key",
+        "Radius",
+        "Location",
+        "Device location",
+        "Custom",
+        "Latitude",
+        "Longitude",
+        "Vessel types",
+        "Cargo",
+        "Tanker",
+        "Passenger",
+        "Fishing",
+        "Sailing and pleasure",
+        "Tug and service",
+        "High-speed craft",
+        "Other and unknown",
+        "Favorite vessels (MMSI)",
+        "Up to 20 nine-digit MMSI numbers, separated by commas. Favorites are drawn in gold and are tracked only inside the radius.",
+        "Enter nine-digit MMSI numbers separated by commas, at most 20.",
+        "Departure alert",
+        "Switch to the ship radar and alert when a favorite vessel that was stopped or out of range starts moving.",
         "Wetter",
         "Zeige das lokale Außenwetter auf dem Bildschirm.",
         "Wetterupdates",
@@ -1703,6 +1789,7 @@ inline SetupPageText setup_page_text(AirDot::UiLanguage language) {
         "Zeit & Wetter",
         "Flugradar",
         "Regenradar",
+        "Ship radar",
         "PM1",
         "PM2.5",
         "PM4",
@@ -1808,6 +1895,34 @@ inline SetupPageText setup_page_text(AirDot::UiLanguage language) {
         "Verkeer",
         "Alle vliegtuigen",
         "Alleen militair",
+        "Ship radar",
+        "Shows AIS vessels from aisstream.io around a location on a coastline map. Requires a free aisstream.io API key.",
+        "Ship radar",
+        "Show nearby ships. Keeps a connection to aisstream.io open while enabled so vessel names and types can be collected.",
+        "aisstream.io API key",
+        "Paste your API key",
+        "Saved. Leave blank to keep it.",
+        "Remove saved key",
+        "Radius",
+        "Location",
+        "Device location",
+        "Custom",
+        "Latitude",
+        "Longitude",
+        "Vessel types",
+        "Cargo",
+        "Tanker",
+        "Passenger",
+        "Fishing",
+        "Sailing and pleasure",
+        "Tug and service",
+        "High-speed craft",
+        "Other and unknown",
+        "Favorite vessels (MMSI)",
+        "Up to 20 nine-digit MMSI numbers, separated by commas. Favorites are drawn in gold and are tracked only inside the radius.",
+        "Enter nine-digit MMSI numbers separated by commas, at most 20.",
+        "Departure alert",
+        "Switch to the ship radar and alert when a favorite vessel that was stopped or out of range starts moving.",
         "Weer",
         "Toon het lokale buitenweer op het scherm.",
         "Weerupdates",
@@ -1844,6 +1959,7 @@ inline SetupPageText setup_page_text(AirDot::UiLanguage language) {
         "Tijd & weer",
         "Vluchtradar",
         "Buienradar",
+        "Ship radar",
         "PM1",
         "PM2.5",
         "PM4",
@@ -1949,6 +2065,34 @@ inline SetupPageText setup_page_text(AirDot::UiLanguage language) {
         "Trafic",
         "Tous les avions",
         "Militaire seul",
+        "Ship radar",
+        "Shows AIS vessels from aisstream.io around a location on a coastline map. Requires a free aisstream.io API key.",
+        "Ship radar",
+        "Show nearby ships. Keeps a connection to aisstream.io open while enabled so vessel names and types can be collected.",
+        "aisstream.io API key",
+        "Paste your API key",
+        "Saved. Leave blank to keep it.",
+        "Remove saved key",
+        "Radius",
+        "Location",
+        "Device location",
+        "Custom",
+        "Latitude",
+        "Longitude",
+        "Vessel types",
+        "Cargo",
+        "Tanker",
+        "Passenger",
+        "Fishing",
+        "Sailing and pleasure",
+        "Tug and service",
+        "High-speed craft",
+        "Other and unknown",
+        "Favorite vessels (MMSI)",
+        "Up to 20 nine-digit MMSI numbers, separated by commas. Favorites are drawn in gold and are tracked only inside the radius.",
+        "Enter nine-digit MMSI numbers separated by commas, at most 20.",
+        "Departure alert",
+        "Switch to the ship radar and alert when a favorite vessel that was stopped or out of range starts moving.",
         "Météo",
         "Affichez la météo extérieure locale à l’écran.",
         "Mises à jour météo",
@@ -1985,6 +2129,7 @@ inline SetupPageText setup_page_text(AirDot::UiLanguage language) {
         "Heure & météo",
         "Radar aérien",
         "Radar de pluie",
+        "Ship radar",
         "PM1",
         "PM2.5",
         "PM4",
@@ -2090,6 +2235,34 @@ inline SetupPageText setup_page_text(AirDot::UiLanguage language) {
         "Forgalom",
         "Összes repülőgép",
         "Csak katonai",
+        "Ship radar",
+        "Shows AIS vessels from aisstream.io around a location on a coastline map. Requires a free aisstream.io API key.",
+        "Ship radar",
+        "Show nearby ships. Keeps a connection to aisstream.io open while enabled so vessel names and types can be collected.",
+        "aisstream.io API key",
+        "Paste your API key",
+        "Saved. Leave blank to keep it.",
+        "Remove saved key",
+        "Radius",
+        "Location",
+        "Device location",
+        "Custom",
+        "Latitude",
+        "Longitude",
+        "Vessel types",
+        "Cargo",
+        "Tanker",
+        "Passenger",
+        "Fishing",
+        "Sailing and pleasure",
+        "Tug and service",
+        "High-speed craft",
+        "Other and unknown",
+        "Favorite vessels (MMSI)",
+        "Up to 20 nine-digit MMSI numbers, separated by commas. Favorites are drawn in gold and are tracked only inside the radius.",
+        "Enter nine-digit MMSI numbers separated by commas, at most 20.",
+        "Departure alert",
+        "Switch to the ship radar and alert when a favorite vessel that was stopped or out of range starts moving.",
         "Időjárás",
         "A helyi kültéri időjárás megjelenítése a kijelzőn.",
         "Időjárás frissítések",
@@ -2126,6 +2299,7 @@ inline SetupPageText setup_page_text(AirDot::UiLanguage language) {
         "Idő & időjárás",
         "Repülőradar",
         "Csapadékradar",
+        "Ship radar",
         "PM1",
         "PM2.5",
         "PM4",
@@ -2231,6 +2405,34 @@ inline SetupPageText setup_page_text(AirDot::UiLanguage language) {
         "Provoz",
         "Všechna letadla",
         "Pouze vojenská",
+        "Ship radar",
+        "Shows AIS vessels from aisstream.io around a location on a coastline map. Requires a free aisstream.io API key.",
+        "Ship radar",
+        "Show nearby ships. Keeps a connection to aisstream.io open while enabled so vessel names and types can be collected.",
+        "aisstream.io API key",
+        "Paste your API key",
+        "Saved. Leave blank to keep it.",
+        "Remove saved key",
+        "Radius",
+        "Location",
+        "Device location",
+        "Custom",
+        "Latitude",
+        "Longitude",
+        "Vessel types",
+        "Cargo",
+        "Tanker",
+        "Passenger",
+        "Fishing",
+        "Sailing and pleasure",
+        "Tug and service",
+        "High-speed craft",
+        "Other and unknown",
+        "Favorite vessels (MMSI)",
+        "Up to 20 nine-digit MMSI numbers, separated by commas. Favorites are drawn in gold and are tracked only inside the radius.",
+        "Enter nine-digit MMSI numbers separated by commas, at most 20.",
+        "Departure alert",
+        "Switch to the ship radar and alert when a favorite vessel that was stopped or out of range starts moving.",
         "Počasí",
         "Zobrazovat na displeji místní venkovní počasí.",
         "Aktualizace počasí",
@@ -2267,6 +2469,7 @@ inline SetupPageText setup_page_text(AirDot::UiLanguage language) {
         "Čas & počasí",
         "Letecký radar",
         "Srážkový radar",
+        "Ship radar",
         "PM1",
         "PM2.5",
         "PM4",
@@ -2372,6 +2575,34 @@ inline SetupPageText setup_page_text(AirDot::UiLanguage language) {
         "Traffico",
         "Tutti gli aeromobili",
         "Solo militari",
+        "Ship radar",
+        "Shows AIS vessels from aisstream.io around a location on a coastline map. Requires a free aisstream.io API key.",
+        "Ship radar",
+        "Show nearby ships. Keeps a connection to aisstream.io open while enabled so vessel names and types can be collected.",
+        "aisstream.io API key",
+        "Paste your API key",
+        "Saved. Leave blank to keep it.",
+        "Remove saved key",
+        "Radius",
+        "Location",
+        "Device location",
+        "Custom",
+        "Latitude",
+        "Longitude",
+        "Vessel types",
+        "Cargo",
+        "Tanker",
+        "Passenger",
+        "Fishing",
+        "Sailing and pleasure",
+        "Tug and service",
+        "High-speed craft",
+        "Other and unknown",
+        "Favorite vessels (MMSI)",
+        "Up to 20 nine-digit MMSI numbers, separated by commas. Favorites are drawn in gold and are tracked only inside the radius.",
+        "Enter nine-digit MMSI numbers separated by commas, at most 20.",
+        "Departure alert",
+        "Switch to the ship radar and alert when a favorite vessel that was stopped or out of range starts moving.",
         "Meteo",
         "Mostra il meteo locale esterno sul display.",
         "Aggiornamenti meteo",
@@ -2408,6 +2639,7 @@ inline SetupPageText setup_page_text(AirDot::UiLanguage language) {
         "Ora & meteo",
         "Radar voli",
         "Radar pioggia",
+        "Ship radar",
         "PM1",
         "PM2.5",
         "PM4",
@@ -2513,6 +2745,34 @@ inline SetupPageText setup_page_text(AirDot::UiLanguage language) {
         "Trafic",
         "Toate aeronavele",
         "Doar militar",
+        "Ship radar",
+        "Shows AIS vessels from aisstream.io around a location on a coastline map. Requires a free aisstream.io API key.",
+        "Ship radar",
+        "Show nearby ships. Keeps a connection to aisstream.io open while enabled so vessel names and types can be collected.",
+        "aisstream.io API key",
+        "Paste your API key",
+        "Saved. Leave blank to keep it.",
+        "Remove saved key",
+        "Radius",
+        "Location",
+        "Device location",
+        "Custom",
+        "Latitude",
+        "Longitude",
+        "Vessel types",
+        "Cargo",
+        "Tanker",
+        "Passenger",
+        "Fishing",
+        "Sailing and pleasure",
+        "Tug and service",
+        "High-speed craft",
+        "Other and unknown",
+        "Favorite vessels (MMSI)",
+        "Up to 20 nine-digit MMSI numbers, separated by commas. Favorites are drawn in gold and are tracked only inside the radius.",
+        "Enter nine-digit MMSI numbers separated by commas, at most 20.",
+        "Departure alert",
+        "Switch to the ship radar and alert when a favorite vessel that was stopped or out of range starts moving.",
         "Vreme",
         "Afișează vremea locală de afară pe ecran.",
         "Actualizări meteo",
@@ -2549,6 +2809,7 @@ inline SetupPageText setup_page_text(AirDot::UiLanguage language) {
         "Ora & vremea",
         "Radar avioane",
         "Radar de precipitații",
+        "Ship radar",
         "PM1",
         "PM2.5",
         "PM4",
@@ -2698,6 +2959,34 @@ inline void append_setup_page_translation_json(std::string &html, AirDot::UiLang
   append_json_field_(html, "flight_radar_traffic_label", text.flight_radar_traffic_label, first);
   append_json_field_(html, "flight_radar_traffic_all_label", text.flight_radar_traffic_all_label, first);
   append_json_field_(html, "flight_radar_traffic_military_label", text.flight_radar_traffic_military_label, first);
+  append_json_field_(html, "ship_radar_title", text.ship_radar_title, first);
+  append_json_field_(html, "ship_radar_note", text.ship_radar_note, first);
+  append_json_field_(html, "ship_radar_enabled_title", text.ship_radar_enabled_title, first);
+  append_json_field_(html, "ship_radar_enabled_description", text.ship_radar_enabled_description, first);
+  append_json_field_(html, "ship_radar_api_key_label", text.ship_radar_api_key_label, first);
+  append_json_field_(html, "ship_radar_api_key_placeholder", text.ship_radar_api_key_placeholder, first);
+  append_json_field_(html, "ship_radar_api_key_saved_placeholder", text.ship_radar_api_key_saved_placeholder, first);
+  append_json_field_(html, "ship_radar_api_key_clear_label", text.ship_radar_api_key_clear_label, first);
+  append_json_field_(html, "ship_radar_range_label", text.ship_radar_range_label, first);
+  append_json_field_(html, "ship_radar_location_label", text.ship_radar_location_label, first);
+  append_json_field_(html, "ship_radar_location_device_label", text.ship_radar_location_device_label, first);
+  append_json_field_(html, "ship_radar_location_custom_label", text.ship_radar_location_custom_label, first);
+  append_json_field_(html, "ship_radar_latitude_label", text.ship_radar_latitude_label, first);
+  append_json_field_(html, "ship_radar_longitude_label", text.ship_radar_longitude_label, first);
+  append_json_field_(html, "ship_radar_categories_label", text.ship_radar_categories_label, first);
+  append_json_field_(html, "ship_radar_cat_cargo_label", text.ship_radar_cat_cargo_label, first);
+  append_json_field_(html, "ship_radar_cat_tanker_label", text.ship_radar_cat_tanker_label, first);
+  append_json_field_(html, "ship_radar_cat_passenger_label", text.ship_radar_cat_passenger_label, first);
+  append_json_field_(html, "ship_radar_cat_fishing_label", text.ship_radar_cat_fishing_label, first);
+  append_json_field_(html, "ship_radar_cat_pleasure_label", text.ship_radar_cat_pleasure_label, first);
+  append_json_field_(html, "ship_radar_cat_service_label", text.ship_radar_cat_service_label, first);
+  append_json_field_(html, "ship_radar_cat_high_speed_label", text.ship_radar_cat_high_speed_label, first);
+  append_json_field_(html, "ship_radar_cat_other_label", text.ship_radar_cat_other_label, first);
+  append_json_field_(html, "ship_radar_favorites_label", text.ship_radar_favorites_label, first);
+  append_json_field_(html, "ship_radar_favorites_help", text.ship_radar_favorites_help, first);
+  append_json_field_(html, "ship_radar_favorites_invalid", text.ship_radar_favorites_invalid, first);
+  append_json_field_(html, "ship_radar_alert_title", text.ship_radar_alert_title, first);
+  append_json_field_(html, "ship_radar_alert_description", text.ship_radar_alert_description, first);
   append_json_field_(html, "weather_title", text.weather_title, first);
   append_json_field_(html, "weather_note", text.weather_note, first);
   append_json_field_(html, "weather_sync_title", text.weather_sync_title, first);
@@ -2734,6 +3023,7 @@ inline void append_setup_page_translation_json(std::string &html, AirDot::UiLang
   append_json_field_(html, "auto_page_screen_time_weather_label", text.auto_page_screen_time_weather_label, first);
   append_json_field_(html, "auto_page_screen_flight_radar_label", text.auto_page_screen_flight_radar_label, first);
   append_json_field_(html, "auto_page_screen_weather_radar_label", text.auto_page_screen_weather_radar_label, first);
+  append_json_field_(html, "auto_page_screen_ship_radar_label", text.auto_page_screen_ship_radar_label, first);
   append_json_field_(html, "auto_page_screen_pm1_label", text.auto_page_screen_pm1_label, first);
   append_json_field_(html, "auto_page_screen_pm25_label", text.auto_page_screen_pm25_label, first);
   append_json_field_(html, "auto_page_screen_pm4_label", text.auto_page_screen_pm4_label, first);
@@ -3107,6 +3397,52 @@ inline const char *dismiss_button_text(AirDot::UiLanguage language) {
       return "Închide";
     default:
       return "Close";
+  }
+}
+
+inline const char *ship_departed_title_text(AirDot::UiLanguage language) {
+  switch (language) {
+    case UiLanguage::EN:
+      return "Ship under way";
+    case UiLanguage::DE:
+      return "Ship under way";
+    case UiLanguage::NL:
+      return "Ship under way";
+    case UiLanguage::FR:
+      return "Ship under way";
+    case UiLanguage::HU:
+      return "Ship under way";
+    case UiLanguage::CS:
+      return "Ship under way";
+    case UiLanguage::IT:
+      return "Ship under way";
+    case UiLanguage::RO:
+      return "Ship under way";
+    default:
+      return "Ship under way";
+  }
+}
+
+inline const char *ship_departed_unnamed_text(AirDot::UiLanguage language) {
+  switch (language) {
+    case UiLanguage::EN:
+      return "Favorite vessel";
+    case UiLanguage::DE:
+      return "Favorite vessel";
+    case UiLanguage::NL:
+      return "Favorite vessel";
+    case UiLanguage::FR:
+      return "Favorite vessel";
+    case UiLanguage::HU:
+      return "Favorite vessel";
+    case UiLanguage::CS:
+      return "Favorite vessel";
+    case UiLanguage::IT:
+      return "Favorite vessel";
+    case UiLanguage::RO:
+      return "Favorite vessel";
+    default:
+      return "Favorite vessel";
   }
 }
 

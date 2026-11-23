@@ -40,7 +40,7 @@ WEATHER_CODE_KEYS = (
     "thunderstorm_hail",
 )
 WEATHER_KEYS = WEATHER_CODE_KEYS + ("high_label", "low_label")
-NOTIFICATION_KEYS = ("fallback", "dismiss")
+NOTIFICATION_KEYS = ("fallback", "dismiss", "ship_departed_title", "ship_departed_unnamed")
 DATE_KEYS = ("format",)
 DATE_WEEKDAY_KEYS = (
     "sunday",
@@ -173,6 +173,34 @@ SETUP_PAGE_KEYS = (
     "flight_radar_traffic_label",
     "flight_radar_traffic_all_label",
     "flight_radar_traffic_military_label",
+    "ship_radar_title",
+    "ship_radar_note",
+    "ship_radar_enabled_title",
+    "ship_radar_enabled_description",
+    "ship_radar_api_key_label",
+    "ship_radar_api_key_placeholder",
+    "ship_radar_api_key_saved_placeholder",
+    "ship_radar_api_key_clear_label",
+    "ship_radar_range_label",
+    "ship_radar_location_label",
+    "ship_radar_location_device_label",
+    "ship_radar_location_custom_label",
+    "ship_radar_latitude_label",
+    "ship_radar_longitude_label",
+    "ship_radar_categories_label",
+    "ship_radar_cat_cargo_label",
+    "ship_radar_cat_tanker_label",
+    "ship_radar_cat_passenger_label",
+    "ship_radar_cat_fishing_label",
+    "ship_radar_cat_pleasure_label",
+    "ship_radar_cat_service_label",
+    "ship_radar_cat_high_speed_label",
+    "ship_radar_cat_other_label",
+    "ship_radar_favorites_label",
+    "ship_radar_favorites_help",
+    "ship_radar_favorites_invalid",
+    "ship_radar_alert_title",
+    "ship_radar_alert_description",
     "weather_title",
     "weather_note",
     "weather_sync_title",
@@ -209,6 +237,7 @@ SETUP_PAGE_KEYS = (
     "auto_page_screen_time_weather_label",
     "auto_page_screen_flight_radar_label",
     "auto_page_screen_weather_radar_label",
+    "auto_page_screen_ship_radar_label",
     "auto_page_screen_pm1_label",
     "auto_page_screen_pm25_label",
     "auto_page_screen_pm4_label",
@@ -1002,6 +1031,10 @@ def generate(languages: list[dict]) -> str:
     lines.extend(emit_language_switch(languages, "language", "notification.fallback"))
     lines.extend(["}", "", "inline const char *dismiss_button_text(AirDot::UiLanguage language) {"])
     lines.extend(emit_language_switch(languages, "language", "notification.dismiss"))
+    lines.extend(["}", "", "inline const char *ship_departed_title_text(AirDot::UiLanguage language) {"])
+    lines.extend(emit_language_switch(languages, "language", "notification.ship_departed_title"))
+    lines.extend(["}", "", "inline const char *ship_departed_unnamed_text(AirDot::UiLanguage language) {"])
+    lines.extend(emit_language_switch(languages, "language", "notification.ship_departed_unnamed"))
     lines.extend(["}", "", "}  // namespace AirDot::onboarding", ""])
 
     return "\n".join(lines)

@@ -1,0 +1,22 @@
+script:
+  - id: ui_refresh_ship_radar_page
+    mode: restart
+    then:
+      - lambda: |-
+          AirDot::ship_radar::configure_ship_radar_location(
+              id(outdoor_latitude), id(outdoor_longitude), id(outdoor_location_valid));
+          lv_obj_set_style_bg_color(
+              AirDot::lv_obj(id(ship_radar_page)),
+              AirDot::flight_radar::radar_background_color_(), LV_PART_MAIN);
+          lv_obj_set_style_bg_opa(AirDot::lv_obj(id(ship_radar_page)), LV_OPA_COVER, LV_PART_MAIN);
+          AirDot::ship_radar::refresh_ship_scope(
+              id(ship_radar_scope), id(ui_font_radar_tag), id(ui_font_small), id(ui_font_radar_progress));
+
+  - id: ui_show_ship_radar_page
+    mode: restart
+    then:
+      - lambda: |-
+          id(ship_radar_page)->get_parent()->show_page(
+              id(ship_radar_page)->index, LV_SCREEN_LOAD_ANIM_NONE, 0);
+      - script.execute: ui_refresh_ship_radar_page
+      - script.execute: ship_radar_map_request_update
