@@ -16,7 +16,7 @@ struct InitCommand {
 };
 
 static constexpr bool SPI16_IDLE_HIGH = false;
-static constexpr uint32_t LOW_BANDWIDTH_PCLK_FREQUENCY_HZ = 10 * 1000 * 1000;
+static constexpr uint32_t LOW_BANDWIDTH_PCLK_FREQUENCY_HZ = 18 * 1000 * 1000;
 
 static constexpr uint8_t D_FF_13[] = {0x77, 0x01, 0x00, 0x00, 0x13};
 static constexpr uint8_t D_EF_08[] = {0x08};
@@ -200,8 +200,10 @@ void Nhd21480480AfAsxp::set_screen_powered(bool powered) {
 
 void Nhd21480480AfAsxp::set_pclk_frequency(uint32_t pclk_frequency) {
   this->pclk_frequency_ = pclk_frequency;
-  if (this->handle_ != nullptr && !this->low_bandwidth_mode_)
-    this->apply_pclk_frequency_(this->pclk_frequency_);
+  if (this->handle_ != nullptr)
+    this->apply_pclk_frequency_(this->low_bandwidth_mode_
+                                    ? std::min(this->pclk_frequency_, LOW_BANDWIDTH_PCLK_FREQUENCY_HZ)
+                                    : this->pclk_frequency_);
 }
 
 void Nhd21480480AfAsxp::set_low_bandwidth_mode(bool enabled) {
@@ -212,7 +214,8 @@ void Nhd21480480AfAsxp::set_low_bandwidth_mode(bool enabled) {
   if (this->handle_ == nullptr)
     return;
 
-  this->apply_pclk_frequency_(enabled ? LOW_BANDWIDTH_PCLK_FREQUENCY_HZ : this->pclk_frequency_);
+  this->apply_pclk_frequency_(enabled ? std::min(this->pclk_frequency_, LOW_BANDWIDTH_PCLK_FREQUENCY_HZ)
+                                      : this->pclk_frequency_);
 }
 
 void Nhd21480480AfAsxp::apply_pclk_frequency_(uint32_t pclk_frequency) {

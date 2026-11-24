@@ -2,3 +2,6 @@
 /secrets.yaml
 /releases/
 /scripts/generate_ota_manifest.py
+.DS_Store
+__pycache__/
+*.py[cod]

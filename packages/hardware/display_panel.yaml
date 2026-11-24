@@ -3,8 +3,10 @@ display:
     id: display_panel
     pclk_frequency: ${display_panel_pclk_frequency}
     pclk_inverted: false
-    hsync_front_porch: 50
-    hsync_back_porch: 50
-    vsync_front_porch: 50
-    vsync_back_porch: 50
+    hsync_front_porch: 40
+    hsync_back_porch: 60
+    hsync_pulse_width: 20
+    vsync_front_porch: 10
+    vsync_back_porch: 10
+    vsync_pulse_width: 6
     auto_clear_enabled: false
