@@ -3,9 +3,24 @@
 #include <cmath>
 #include <cstdint>
 
+#include <esp_system.h>
+
 #include "esphome/core/hal.h"
+#include "esphome/core/log.h"
 
 namespace AirDot {
+
+template<typename Op> bool sen66_retry(const char *name, uint8_t attempts, uint32_t retry_delay_ms, Op &&op) {
+  for (uint8_t attempt = 1; attempt <= attempts; attempt++) {
+    if (op())
+      return true;
+    ESP_LOGW("sen66", "%s failed (attempt %u/%u)", name, attempt, attempts);
+    if (attempt < attempts)
+      delay(retry_delay_ms);
+  }
+  ESP_LOGE("sen66", "%s failed after %u attempts", name, attempts);
+  return false;
+}
 
 template<typename Sen66Sensor>
 void sen66_apply_temperature_offset(Sen66Sensor *sensor, float offset_celsius, float slope,
@@ -22,6 +37,70 @@ void sen66_apply_temperature_offset(Sen66Sensor *sensor, float offset_celsius, f
       slot,
   };
   sensor->write_command(static_cast<uint16_t>(0x60B2), data, 4);
+}
+
+template<typename Sen66Sensor> bool sen66_set_voc_learning_time(Sen66Sensor *sensor, uint16_t learning_time_hours) {
+  if (sensor == nullptr)
+    return false;
+
+  constexpr uint16_t VOC_TUNING_COMMAND = 0x60D0;
+  uint16_t params[6] = {0, 0, 0, 0, 0, 0};
+  if (!sensor->write_command(VOC_TUNING_COMMAND))
+    return false;
+  delay(20);
+  if (!sensor->read_data(params, 6))
+    return false;
+
+  params[1] = learning_time_hours;
+  params[2] = learning_time_hours;
+  return sensor->write_command(VOC_TUNING_COMMAND, params, 6);
+}
+
+template<typename Sen66Sensor> bool sen66_get_voc_algorithm_state(Sen66Sensor *sensor, uint16_t *state) {
+  if (sensor == nullptr || state == nullptr)
+    return false;
+
+  if (!sensor->write_command(static_cast<uint16_t>(0x6181)))
+    return false;
+  delay(20);
+  return sensor->read_data(state, 4);
+}
+
+template<typename Sen66Sensor> bool sen66_set_voc_algorithm_state(Sen66Sensor *sensor, const uint16_t *state) {
+  if (sensor == nullptr || state == nullptr)
+    return false;
+
+  return sensor->write_command(static_cast<uint16_t>(0x6181), state, 4);
+}
+
+inline bool sen66_boot_was_soft_restart() {
+  switch (esp_reset_reason()) {
+    case ESP_RST_SW:
+    case ESP_RST_PANIC:
+    case ESP_RST_INT_WDT:
+    case ESP_RST_TASK_WDT:
+    case ESP_RST_WDT:
+    case ESP_RST_EXT:
+      return true;
+    default:
+      return false;
+  }
+}
+
+inline bool sen66_voc_state_eligible(uint32_t ready_at_ms) {
+  return static_cast<int32_t>(millis() - ready_at_ms) >= 0;
+}
+
+template<typename Sen66Sensor>
+bool sen66_capture_voc_state(Sen66Sensor *sensor, uint16_t *state, bool resume_poller) {
+  if (sensor == nullptr || state == nullptr)
+    return false;
+
+  sensor->stop_poller();
+  const bool ok = sen66_retry("read VOC state", 3, 50, [&]() { return sen66_get_voc_algorithm_state(sensor, state); });
+  if (resume_poller)
+    sensor->start_poller();
+  return ok;
 }
 
 template<typename Sen66Sensor> bool sen66_stop_measurement(Sen66Sensor *sensor) {
