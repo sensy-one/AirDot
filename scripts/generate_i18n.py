@@ -40,7 +40,8 @@ WEATHER_CODE_KEYS = (
     "thunderstorm_hail",
 )
 WEATHER_KEYS = WEATHER_CODE_KEYS + ("high_label", "low_label")
-NOTIFICATION_KEYS = ("fallback", "dismiss", "ship_departed_title", "ship_departed_unnamed")
+NOTIFICATION_KEYS = ("fallback", "dismiss")
+SHIP_RADAR_STATUS_KEYS = ("key_missing", "location_missing", "offline", "connecting", "reconnecting", "key_rejected")
 DATE_KEYS = ("format",)
 DATE_WEEKDAY_KEYS = (
     "sunday",
@@ -199,6 +200,9 @@ SETUP_PAGE_KEYS = (
     "ship_radar_favorites_label",
     "ship_radar_favorites_help",
     "ship_radar_favorites_invalid",
+    "ship_radar_coordinates_help",
+    "ship_radar_coordinates_invalid",
+    "ship_radar_api_key_invalid",
     "ship_radar_alert_title",
     "ship_radar_alert_description",
     "weather_title",
@@ -383,6 +387,7 @@ def validate_language(data: dict, path: Path) -> None:
     require_section_keys(data, "connection", CONNECTION_KEYS, path)
     require_section_keys(data, "weather", WEATHER_KEYS, path)
     require_section_keys(data, "notification", NOTIFICATION_KEYS, path)
+    require_section_keys(data, "ship_radar", SHIP_RADAR_STATUS_KEYS, path)
     require_section_keys(data, "date", DATE_KEYS + ("weekdays", "months"), path)
     require_section_keys(data["date"], "weekdays", DATE_WEEKDAY_KEYS, path)
     require_section_keys(data["date"], "months", DATE_MONTH_KEYS, path)
@@ -753,10 +758,13 @@ def generate(languages: list[dict]) -> str:
     lines.extend(["  " + line for line in emit_language_switch(languages, "language", "connection.outdoor")])
     lines.extend(["  }", ""])
     lines.extend(["  " + line for line in emit_language_switch(languages, "language", "connection.indoor")])
+    lines.extend(["}", ""])
+    for status_key in SHIP_RADAR_STATUS_KEYS:
+        lines.append(f"inline const char *ship_radar_{status_key}_text(UiLanguage language) {{")
+        lines.extend(emit_language_switch(languages, "language", f"ship_radar.{status_key}"))
+        lines.extend(["}", ""])
     lines.extend(
         [
-            "}",
-            "",
             "inline const char *date_format_text(UiLanguage language) {",
         ]
     )
@@ -1031,10 +1039,6 @@ def generate(languages: list[dict]) -> str:
     lines.extend(emit_language_switch(languages, "language", "notification.fallback"))
     lines.extend(["}", "", "inline const char *dismiss_button_text(AirDot::UiLanguage language) {"])
     lines.extend(emit_language_switch(languages, "language", "notification.dismiss"))
-    lines.extend(["}", "", "inline const char *ship_departed_title_text(AirDot::UiLanguage language) {"])
-    lines.extend(emit_language_switch(languages, "language", "notification.ship_departed_title"))
-    lines.extend(["}", "", "inline const char *ship_departed_unnamed_text(AirDot::UiLanguage language) {"])
-    lines.extend(emit_language_switch(languages, "language", "notification.ship_departed_unnamed"))
     lines.extend(["}", "", "}  // namespace AirDot::onboarding", ""])
 
     return "\n".join(lines)

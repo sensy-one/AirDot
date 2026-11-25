@@ -122,12 +122,15 @@ setup_page:
   ship_radar_api_key_placeholder: "Paste your API key"
   ship_radar_api_key_saved_placeholder: "Saved. Leave blank to keep it."
   ship_radar_api_key_clear_label: "Remove saved key"
+  ship_radar_api_key_invalid: "API keys are 16 to 64 letters, digits, hyphens or underscores. Check for extra characters."
   ship_radar_range_label: "Radius"
   ship_radar_location_label: "Location"
   ship_radar_location_device_label: "Device location"
   ship_radar_location_custom_label: "Custom"
   ship_radar_latitude_label: "Latitude"
   ship_radar_longitude_label: "Longitude"
+  ship_radar_coordinates_help: "Decimal degrees, for example 42.3601 and -71.0589. Latitudes south of the equator and longitudes west of Greenwich are negative."
+  ship_radar_coordinates_invalid: "Enter decimal degrees: latitude from -90 to 90, longitude from -180 to 180, up to 7 decimals."
   ship_radar_categories_label: "Vessel types"
   ship_radar_cat_cargo_label: "Cargo"
   ship_radar_cat_tanker_label: "Tanker"
@@ -140,8 +143,8 @@ setup_page:
   ship_radar_favorites_label: "Favorite vessels (MMSI)"
   ship_radar_favorites_help: "Up to 20 nine-digit MMSI numbers, separated by commas. Favorites are drawn in gold and are tracked only inside the radius."
   ship_radar_favorites_invalid: "Enter nine-digit MMSI numbers separated by commas, at most 20."
-  ship_radar_alert_title: "Departure alert"
-  ship_radar_alert_description: "Switch to the ship radar and alert when a favorite vessel that was stopped or out of range starts moving."
+  ship_radar_alert_title: "Show radar on departure"
+  ship_radar_alert_description: "Switch the display to the ship radar when a favorite vessel that was stopped or out of range gets under way."
 
   weather_title: Weather
   weather_note: Show local outdoor weather on the display.
@@ -250,8 +253,14 @@ weather:
 notification:
   fallback: Notification
   dismiss: Close
-  ship_departed_title: "Ship under way"
-  ship_departed_unnamed: "Favorite vessel"
+
+ship_radar:
+  key_missing: "AIS API key missing"
+  location_missing: "Location missing"
+  offline: "Offline"
+  connecting: "Connecting..."
+  reconnecting: "Reconnecting..."
+  key_rejected: "AIS API key rejected"
 
 date:
   format: "{weekday} {month} {day}"

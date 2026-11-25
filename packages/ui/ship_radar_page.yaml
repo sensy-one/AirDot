@@ -9,6 +9,7 @@ script:
               AirDot::lv_obj(id(ship_radar_page)),
               AirDot::flight_radar::radar_background_color_(), LV_PART_MAIN);
           lv_obj_set_style_bg_opa(AirDot::lv_obj(id(ship_radar_page)), LV_OPA_COVER, LV_PART_MAIN);
+          AirDot::ship_radar::refresh_ship_render_list();
           AirDot::ship_radar::refresh_ship_scope(
               id(ship_radar_scope), id(ui_font_radar_tag), id(ui_font_small), id(ui_font_radar_progress));
 

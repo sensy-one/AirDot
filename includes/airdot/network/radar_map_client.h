@@ -268,7 +268,7 @@ inline bool request_map(float latitude, float longitude, uint8_t range, bool all
   }
   if (state.next_retry_ms && static_cast<int32_t>(now - state.next_retry_ms) < 0) return false;
   // Map downloads of both kinds are serialised: each holds ~1.2 MB of PSRAM.
-  if (detail::any_task_running()) return false;
+  if (detail::any_task_running()) return restored;
   if (AirDot::flight_radar::request_running() || AirDot::time_weather::http_request_active()) return false;
   if (!AirDot::time_weather::acquire_weather_http_request_slot_(AirDot::connectivity::Service::FLIGHT_RADAR)) return false;
   state.in_flight = request;

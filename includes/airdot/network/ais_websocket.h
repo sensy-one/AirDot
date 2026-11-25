@@ -39,16 +39,18 @@ inline constexpr uint32_t CONNECT_TIMEOUT_MS = 10000;
 // aisstream's upgrade response was observed to take 6-14 s.
 inline constexpr uint32_t HANDSHAKE_TIMEOUT_MS = 30000;
 inline constexpr int READ_TIMEOUT_MS = 500;
+inline constexpr uint32_t WRITE_TIMEOUT_MS = 5000;
 
 enum class Result : uint8_t {
   OK,             // A complete message is in the output.
   NONE,           // Nothing complete yet.
-  CLOSED,         // Peer closed or the connection failed.
+  CLOSED,         // Peer closed the connection (EOF or close frame).
+  ERROR,          // Socket/TLS read or write failed.
   PROTOCOL,       // Malformed frame or oversized message.
   INFLATE,        // Compressed payload could not be decoded.
 };
 
-enum class ConnectError : uint8_t { NONE, MEMORY, TLS, HANDSHAKE, REJECTED };
+enum class ConnectError : uint8_t { NONE, MEMORY, TLS, HANDSHAKE };
 
 namespace detail {
 inline void *psram_alloc(size_t bytes) {
@@ -155,7 +157,7 @@ class Socket {
       if (received == ESP_TLS_ERR_SSL_WANT_READ || received == ESP_TLS_ERR_SSL_WANT_WRITE ||
           received == ESP_TLS_ERR_SSL_TIMEOUT)
         return Result::NONE;
-      return Result::CLOSED;
+      return Result::ERROR;
     }
   }
 
@@ -177,7 +179,9 @@ class Socket {
   }
 
   bool write_all_(const uint8_t *data, size_t length) {
+    const uint32_t started = esphome::millis();
     while (length > 0) {
+      if (esphome::millis() - started > WRITE_TIMEOUT_MS) return false;  // Stalled socket.
       const ssize_t written = esp_tls_conn_write(tls_, data, length);
       if (written > 0) {
         data += written;
@@ -273,8 +277,7 @@ class Socket {
     std::memmove(rx_, rx_ + header_end, rx_length_ - header_end);
     rx_length_ -= header_end;
 
-    if (std::strncmp(headers, "HTTP/1.1 101", 12) != 0)
-      return std::strncmp(headers, "HTTP/1.1 4", 10) == 0 ? ConnectError::REJECTED : ConnectError::HANDSHAKE;
+    if (std::strncmp(headers, "HTTP/1.1 101", 12) != 0) return ConnectError::HANDSHAKE;
 
     // Sec-WebSocket-Accept is not checked: aisstream's front proxy returns a
     // value that does not match the RFC 6455 hash of our key (observed with
@@ -349,7 +352,7 @@ class Socket {
           uint8_t pong[125];
           std::memcpy(pong, body, body_length);
           consume_(header + body_length);
-          if (!send_frame_(0xA, pong, body_length)) return Result::CLOSED;
+          if (!send_frame_(0xA, pong, body_length)) return Result::ERROR;
           continue;
         }
         consume_(header + body_length);  // Pong or reserved.

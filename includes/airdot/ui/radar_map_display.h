@@ -51,6 +51,7 @@ struct Job {
   Key key;
   uint32_t generation{0}, source_revision{0};
   size_t cleared{0}, segment{0};
+  int land_row{0};
   bool line_active{false}, motorway{false};
   int x{0}, y{0}, x2{0}, y2{0}, dx{0}, dy{0}, sx{0}, sy{0}, error{0}, gray{0};
 };
@@ -102,6 +103,37 @@ inline void begin_line(Job &job,const Segment &segment) {
                     (style==Style::MOTORWAY?181:style==Style::MAJOR?202:style==Style::MINOR?221:
                      style==Style::COAST?170:style==Style::RIVER?210:229);
   job.line_active=true;
+}
+// Land is everything inside the scope that the water mask does not cover.
+// Kept close to the background so the coastline still reads first.
+inline constexpr uint8_t LAND_GRAY_DARK = 34;
+inline constexpr uint8_t LAND_GRAY_LIGHT = 238;
+inline bool fill_land_slice(Job &job,const MapData &map,uint32_t started) {
+  if(!map.has_water_mask)return true;
+  const auto &key=job.key;
+  const int cx=key.width/2,cy=key.height/2,radius=key.radius*key.radius;
+  const int fade_radius=key.radius*FADE_START_PERCENT/100,fade_start=fade_radius*fade_radius;
+  const int span=std::max(1,radius-fade_start);
+  const int base=key.dark?LAND_GRAY_DARK:LAND_GRAY_LIGHT;
+  while(job.land_row<key.height) {
+    if(expired(started))return false;
+    const int y=job.land_row++,dy=y-cy;
+    if(dy*dy>radius)continue;
+    const int cell_y=dy*MASK_PIXELS_PER_RANGE/key.scale+MASK_RADIUS;
+    uint16_t *row=job.pixels+static_cast<size_t>(y)*key.width;
+    for(int x=0;x<key.width;++x) {
+      const int dx=x-cx,distance=dx*dx+dy*dy;
+      if(distance>radius)continue;
+      if(water_at(map,dx*MASK_PIXELS_PER_RANGE/key.scale+MASK_RADIUS,cell_y))continue;
+      int gray=base;
+      if(distance>fade_start) {
+        const int weight=std::max(0,radius-distance);
+        gray=key.dark?gray*weight/span:255-(255-gray)*weight/span;
+      }
+      row[x]=map_gray_rgb565(static_cast<uint8_t>(gray),x,y);
+    }
+  }
+  return true;
 }
 inline bool draw_slice(Job &job,const MapData &map,uint32_t started) {
   const size_t count=std::min<size_t>(map.count,MAX_SEGMENTS);
@@ -174,7 +206,9 @@ inline bool service_map_render(MapKind kind=MapKind::ROADS) {
   }
   if(job.cleared<count||expired(started))return false;
   bool complete=false;
-  if(!with_map(job.key.latitude,job.key.longitude,job.key.range,[&](const MapData &map){complete=draw_slice(job,map,started);},kind))return false;
+  if(!with_map(job.key.latitude,job.key.longitude,job.key.range,[&](const MapData &map){
+        if(fill_land_slice(job,map,started))complete=draw_slice(job,map,started);
+      },kind))return false;
   if(!complete)return false;
   if(job.generation!=request.generation||job.source_revision!=map_revision(kind)) {cancel_job(kind);return false;}
   lv_image_cache_drop(&cache.image);

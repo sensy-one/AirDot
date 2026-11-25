@@ -660,6 +660,7 @@ class SetupHandler : public AsyncWebHandler {
     const bool stored_coordinates = location_e7_coordinates_are_valid(latitude_e7, longitude_e7) &&
                                     (latitude_e7 != 0 || longitude_e7 != 0);
     bool coordinates_valid = stored_coordinates;
+    bool coordinates_rejected = false;
     if (request->hasArg("ship_radar_latitude") || request->hasArg("ship_radar_longitude")) {
       int32_t parsed_latitude = 0, parsed_longitude = 0;
       if (parse_location_coordinate_e7_(bounded_arg_(request, "ship_radar_latitude", 18), LATITUDE_MIN_E7,
@@ -669,9 +670,18 @@ class SetupHandler : public AsyncWebHandler {
         latitude_e7 = parsed_latitude;
         longitude_e7 = parsed_longitude;
         coordinates_valid = true;
+      } else {
+        coordinates_rejected = true;
       }
     }
-    const bool custom_location = bounded_arg_(request, "ship_radar_location", 8) == "custom" && coordinates_valid;
+    const bool custom_requested = bounded_arg_(request, "ship_radar_location", 8) == "custom";
+    // The page validates coordinates before submitting; if invalid ones still
+    // arrive, keep the stored location mode rather than switching silently.
+    bool custom_location = custom_requested && coordinates_valid;
+    if (custom_requested && coordinates_rejected) {
+      ESP_LOGW("setup", "Ship radar: custom coordinates rejected, keeping the stored location");
+      custom_location = stored.location_mode == SHIP_RADAR_LOCATION_CUSTOM && stored_coordinates;
+    }
 
     static constexpr struct { const char *name; uint8_t bit; } CATEGORIES[] = {
         {"ship_radar_cat_cargo", SHIP_CATEGORY_CARGO},       {"ship_radar_cat_tanker", SHIP_CATEGORY_TANKER},
@@ -698,8 +708,11 @@ class SetupHandler : public AsyncWebHandler {
       save_ship_radar_api_key("");
     } else {
       const std::string key = trim_copy_(bounded_arg_(request, "ship_radar_api_key", SHIP_RADAR_API_KEY_MAX_LENGTH + 8));
-      if (ship_radar_api_key_is_valid(key))
+      if (ship_radar_api_key_is_valid(key)) {
         save_ship_radar_api_key(key);
+      } else if (!key.empty()) {
+        ESP_LOGW("setup", "Ship radar: API key rejected (expected 16-64 letters, digits, '-' or '_'), keeping the stored key");
+      }
     }
   }
 

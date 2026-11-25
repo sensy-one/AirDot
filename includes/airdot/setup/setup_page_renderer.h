@@ -435,6 +435,7 @@ class SetupPageRenderer {
       margin-top: 18px;
     }
     .coordinate-range .field { margin-top: 0; }
+    .coordinate-range .field-hint { grid-column: 1 / -1; }
     .time-range[hidden] { display: none; }
     .coordinate-range[hidden] { display: none; }
     .time-control { min-width: 0; }
@@ -2057,7 +2058,9 @@ class SetupPageRenderer {
     html += text.ship_radar_api_key_label;
     html += R"html(</label>
                   <div class="password-control">
-                    <input id="ship_radar_api_key" name="ship_radar_api_key" type="password" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false" maxlength="64" pattern="[A-Za-z0-9_\-]{16,64}" data-i18n-placeholder=")html";
+                    <input id="ship_radar_api_key" name="ship_radar_api_key" type="password" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false" maxlength="64" pattern="[A-Za-z0-9_\-]{16,64}" data-invalid-message=")html";
+    html += html_escape_(text.ship_radar_api_key_invalid);
+    html += R"html(" data-i18n-placeholder=")html";
     html += ship_radar_key_saved ? "ship_radar_api_key_saved_placeholder" : "ship_radar_api_key_placeholder";
     html += "\" placeholder=\"";
     html += html_escape_(ship_radar_key_saved ? text.ship_radar_api_key_saved_placeholder
@@ -2150,7 +2153,9 @@ class SetupPageRenderer {
     html += "                  <label for=\"ship_radar_latitude\" data-i18n=\"ship_radar_latitude_label\">";
     html += text.ship_radar_latitude_label;
     html += R"html(</label>
-                  <input id="ship_radar_latitude" name="ship_radar_latitude" type="text" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false" enterkeyhint="next" maxlength="18" pattern="-?[0-9]{1,2}([.,][0-9]{1,7})?" value=")html";
+                  <input id="ship_radar_latitude" name="ship_radar_latitude" type="text" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false" enterkeyhint="next" maxlength="18" pattern="-?[0-9]{1,2}([.,][0-9]{1,7})?" placeholder="42.3601" data-coordinate-max="90" data-invalid-message=")html";
+    html += html_escape_(text.ship_radar_coordinates_invalid);
+    html += "\" value=\"";
     html += html_escape_(ship_radar_latitude_value);
     html += "\"";
     if (!ship_radar_active || !ship_radar_custom_location)
@@ -2164,7 +2169,9 @@ class SetupPageRenderer {
     html += "                  <label for=\"ship_radar_longitude\" data-i18n=\"ship_radar_longitude_label\">";
     html += text.ship_radar_longitude_label;
     html += R"html(</label>
-                  <input id="ship_radar_longitude" name="ship_radar_longitude" type="text" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false" enterkeyhint="done" maxlength="18" pattern="-?[0-9]{1,3}([.,][0-9]{1,7})?" value=")html";
+                  <input id="ship_radar_longitude" name="ship_radar_longitude" type="text" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false" enterkeyhint="done" maxlength="18" pattern="-?[0-9]{1,3}([.,][0-9]{1,7})?" placeholder="-71.0589" data-coordinate-max="180" data-invalid-message=")html";
+    html += html_escape_(text.ship_radar_coordinates_invalid);
+    html += "\" value=\"";
     html += html_escape_(ship_radar_longitude_value);
     html += "\"";
     if (!ship_radar_active || !ship_radar_custom_location)
@@ -2173,6 +2180,9 @@ class SetupPageRenderer {
       html += " required";
     html += R"html(>
                 </div>
+                <p class="field-hint" data-i18n="ship_radar_coordinates_help">)html";
+    html += html_escape_(text.ship_radar_coordinates_help);
+    html += R"html(</p>
               </div>
 
                 <div class="field">
@@ -2900,10 +2910,12 @@ class SetupPageRenderer {
               return km + " km";
             }
             function updateFlightRadarRangeLabels() {
-              if (!flightRadarRangeInput) return;
-              Array.from(flightRadarRangeInput.options).forEach((option) => {
-                const km = Number(option.dataset.km || option.value);
-                if (Number.isFinite(km)) option.textContent = formatFlightRadarRange(km);
+              [flightRadarRangeInput, shipRadarRangeInput].forEach((select) => {
+                if (!select) return;
+                Array.from(select.options).forEach((option) => {
+                  const km = Number(option.dataset.km || option.value);
+                  if (Number.isFinite(km)) option.textContent = formatFlightRadarRange(km);
+                });
               });
             }
             function parseCoordinateInput(input, minimum, maximum) {
@@ -3036,6 +3048,27 @@ class SetupPageRenderer {
               shipRadarFavoritesInput.setCustomValidity(valid ? "" : (shipRadarFavoritesInput.dataset.invalidMessage || "Invalid MMSI list"));
               return valid;
             }
+            // Messages for fields the browser would otherwise reject with a
+            // generic "match the requested format" (or, for an out-of-range
+            // coordinate, accept and the device would ignore).
+            function validateShipRadarCoordinate(input) {
+              if (!input) return true;
+              const value = input.value.trim();
+              const max = Number(input.dataset.coordinateMax || 180);
+              const number = Number(value.replace(",", "."));
+              const valid = input.disabled || value === "" ||
+                (/^-?[0-9]{1,3}([.,][0-9]{1,7})?$/.test(value) && Number.isFinite(number) && Math.abs(number) <= max);
+              input.setCustomValidity(valid ? "" : (input.dataset.invalidMessage || "Invalid coordinate"));
+              return valid;
+            }
+            function validateShipRadarKey() {
+              if (!shipRadarKeyInput) return true;
+              const trimmed = shipRadarKeyInput.value.trim();
+              if (trimmed !== shipRadarKeyInput.value) shipRadarKeyInput.value = trimmed;
+              const valid = shipRadarKeyInput.disabled || trimmed === "" || /^[A-Za-z0-9_-]{16,64}$/.test(trimmed);
+              shipRadarKeyInput.setCustomValidity(valid ? "" : (shipRadarKeyInput.dataset.invalidMessage || "Invalid API key"));
+              return valid;
+            }
             function updateShipRadarControls() {
               const online = wifiOnlineSelected();
               const active = online && shipRadarEnabledInput ? shipRadarEnabledInput.checked : false;
@@ -3065,6 +3098,9 @@ class SetupPageRenderer {
                 });
               }
               validateShipRadarFavorites();
+              validateShipRadarCoordinate(shipRadarLatitudeInput);
+              validateShipRadarCoordinate(shipRadarLongitudeInput);
+              validateShipRadarKey();
             }
             function validateCustomThresholds() {
               let valid = true;
@@ -3466,6 +3502,17 @@ class SetupPageRenderer {
                 shipRadarFavoritesInput.dataset.invalidMessage = text.ship_radar_favorites_invalid;
                 validateShipRadarFavorites();
               }
+              if (text.ship_radar_coordinates_invalid !== undefined) {
+                [shipRadarLatitudeInput, shipRadarLongitudeInput].forEach((input) => {
+                  if (!input) return;
+                  input.dataset.invalidMessage = text.ship_radar_coordinates_invalid;
+                  validateShipRadarCoordinate(input);
+                });
+              }
+              if (shipRadarKeyInput && text.ship_radar_api_key_invalid !== undefined) {
+                shipRadarKeyInput.dataset.invalidMessage = text.ship_radar_api_key_invalid;
+                validateShipRadarKey();
+              }
               if (customThresholdsPanel && text.custom_thresholds_order_error !== undefined) {
                 customThresholdsPanel.dataset.orderError = text.custom_thresholds_order_error;
                 validateCustomThresholds();
@@ -3682,6 +3729,10 @@ class SetupPageRenderer {
               if (input) input.addEventListener("change", updateDependentControls);
             });
             if (shipRadarFavoritesInput) shipRadarFavoritesInput.addEventListener("input", validateShipRadarFavorites);
+            [shipRadarLatitudeInput, shipRadarLongitudeInput].forEach((input) => {
+              if (input) input.addEventListener("input", () => validateShipRadarCoordinate(input));
+            });
+            if (shipRadarKeyInput) shipRadarKeyInput.addEventListener("input", validateShipRadarKey);
             if (airQualityProfileSelect) {
               airQualityProfileSelect.addEventListener("change", () => {
                 const selectedOption = airQualityProfileSelect.options[airQualityProfileSelect.selectedIndex];

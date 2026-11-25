@@ -114,34 +114,37 @@ setup_page:
   flight_radar_traffic_all_label: Alle Flugzeuge
   flight_radar_traffic_military_label: Nur Militär
 
-  ship_radar_title: "Ship radar"
-  ship_radar_note: "Shows AIS vessels from aisstream.io around a location on a coastline map. Requires a free aisstream.io API key."
-  ship_radar_enabled_title: "Ship radar"
-  ship_radar_enabled_description: "Show nearby ships. Keeps a connection to aisstream.io open while enabled so vessel names and types can be collected."
-  ship_radar_api_key_label: "aisstream.io API key"
-  ship_radar_api_key_placeholder: "Paste your API key"
-  ship_radar_api_key_saved_placeholder: "Saved. Leave blank to keep it."
-  ship_radar_api_key_clear_label: "Remove saved key"
+  ship_radar_title: "Schiffsradar"
+  ship_radar_note: "Zeigt AIS-Schiffe von aisstream.io rund um einen Standort auf einer Küstenkarte. Erfordert einen kostenlosen API-Schlüssel von aisstream.io."
+  ship_radar_enabled_title: "Schiffsradar"
+  ship_radar_enabled_description: "Zeige Schiffe in der Nähe. Solange aktiviert, bleibt eine Verbindung zu aisstream.io offen, damit Schiffsnamen und -typen gesammelt werden können."
+  ship_radar_api_key_label: "aisstream.io-API-Schlüssel"
+  ship_radar_api_key_placeholder: "API-Schlüssel einfügen"
+  ship_radar_api_key_saved_placeholder: "Gespeichert. Leer lassen, um ihn zu behalten."
+  ship_radar_api_key_clear_label: "Gespeicherten Schlüssel entfernen"
+  ship_radar_api_key_invalid: "API-Schlüssel bestehen aus 16 bis 64 Buchstaben, Ziffern, Bindestrichen oder Unterstrichen. Prüfe auf überzählige Zeichen."
   ship_radar_range_label: "Radius"
-  ship_radar_location_label: "Location"
-  ship_radar_location_device_label: "Device location"
-  ship_radar_location_custom_label: "Custom"
-  ship_radar_latitude_label: "Latitude"
-  ship_radar_longitude_label: "Longitude"
-  ship_radar_categories_label: "Vessel types"
-  ship_radar_cat_cargo_label: "Cargo"
+  ship_radar_location_label: "Standort"
+  ship_radar_location_device_label: "Gerätestandort"
+  ship_radar_location_custom_label: "Benutzerdefiniert"
+  ship_radar_latitude_label: Breitengrad
+  ship_radar_longitude_label: Längengrad
+  ship_radar_coordinates_help: "Dezimalgrad, zum Beispiel 42.3601 und -71.0589. Breitengrade südlich des Äquators und Längengrade westlich von Greenwich sind negativ."
+  ship_radar_coordinates_invalid: "Gib Dezimalgrad ein: Breitengrad von -90 bis 90, Längengrad von -180 bis 180, höchstens 7 Nachkommastellen."
+  ship_radar_categories_label: "Schiffstypen"
+  ship_radar_cat_cargo_label: "Frachter"
   ship_radar_cat_tanker_label: "Tanker"
-  ship_radar_cat_passenger_label: "Passenger"
-  ship_radar_cat_fishing_label: "Fishing"
-  ship_radar_cat_pleasure_label: "Sailing and pleasure"
-  ship_radar_cat_service_label: "Tug and service"
-  ship_radar_cat_high_speed_label: "High-speed craft"
-  ship_radar_cat_other_label: "Other and unknown"
-  ship_radar_favorites_label: "Favorite vessels (MMSI)"
-  ship_radar_favorites_help: "Up to 20 nine-digit MMSI numbers, separated by commas. Favorites are drawn in gold and are tracked only inside the radius."
-  ship_radar_favorites_invalid: "Enter nine-digit MMSI numbers separated by commas, at most 20."
-  ship_radar_alert_title: "Departure alert"
-  ship_radar_alert_description: "Switch to the ship radar and alert when a favorite vessel that was stopped or out of range starts moving."
+  ship_radar_cat_passenger_label: "Passagierschiffe"
+  ship_radar_cat_fishing_label: "Fischerei"
+  ship_radar_cat_pleasure_label: "Segel- und Sportboote"
+  ship_radar_cat_service_label: "Schlepper und Dienstfahrzeuge"
+  ship_radar_cat_high_speed_label: "Hochgeschwindigkeitsfahrzeuge"
+  ship_radar_cat_other_label: "Sonstige und unbekannte"
+  ship_radar_favorites_label: "Lieblingsschiffe (MMSI)"
+  ship_radar_favorites_help: "Bis zu 20 neunstellige MMSI-Nummern, durch Kommas getrennt. Favoriten werden golden dargestellt und nur innerhalb des Radius verfolgt."
+  ship_radar_favorites_invalid: "Gib neunstellige MMSI-Nummern durch Kommas getrennt ein, höchstens 20."
+  ship_radar_alert_title: "Radar bei Abfahrt zeigen"
+  ship_radar_alert_description: "Wechsle die Anzeige zum Schiffsradar, wenn ein Lieblingsschiff, das stillstand oder außer Reichweite war, Fahrt aufnimmt."
 
   weather_title: Wetter
   weather_note: Zeige das lokale Außenwetter auf dem Bildschirm.
@@ -184,7 +187,7 @@ setup_page:
   auto_page_screen_time_weather_label: Zeit & Wetter
   auto_page_screen_flight_radar_label: Flugradar
   auto_page_screen_weather_radar_label: Regenradar
-  auto_page_screen_ship_radar_label: "Ship radar"
+  auto_page_screen_ship_radar_label: "Schiffsradar"
   auto_page_screen_pm1_label: PM1
   auto_page_screen_pm25_label: PM2.5
   auto_page_screen_pm4_label: PM4
@@ -250,8 +253,14 @@ weather:
 notification:
   fallback: Meldung
   dismiss: Schließen
-  ship_departed_title: "Ship under way"
-  ship_departed_unnamed: "Favorite vessel"
+
+ship_radar:
+  key_missing: "AIS-API-Schlüssel fehlt"
+  location_missing: "Standort fehlt"
+  offline: "Offline"
+  connecting: "Verbinde..."
+  reconnecting: "Neuverbindung..."
+  key_rejected: "AIS-API-Schlüssel abgelehnt"
 
 date:
   format: "{weekday} {day} {month}"

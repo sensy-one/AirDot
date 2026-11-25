@@ -114,34 +114,37 @@ setup_page:
   flight_radar_traffic_all_label: Toate aeronavele
   flight_radar_traffic_military_label: Doar militar
 
-  ship_radar_title: "Ship radar"
-  ship_radar_note: "Shows AIS vessels from aisstream.io around a location on a coastline map. Requires a free aisstream.io API key."
-  ship_radar_enabled_title: "Ship radar"
-  ship_radar_enabled_description: "Show nearby ships. Keeps a connection to aisstream.io open while enabled so vessel names and types can be collected."
-  ship_radar_api_key_label: "aisstream.io API key"
-  ship_radar_api_key_placeholder: "Paste your API key"
-  ship_radar_api_key_saved_placeholder: "Saved. Leave blank to keep it."
-  ship_radar_api_key_clear_label: "Remove saved key"
-  ship_radar_range_label: "Radius"
-  ship_radar_location_label: "Location"
-  ship_radar_location_device_label: "Device location"
-  ship_radar_location_custom_label: "Custom"
-  ship_radar_latitude_label: "Latitude"
-  ship_radar_longitude_label: "Longitude"
-  ship_radar_categories_label: "Vessel types"
-  ship_radar_cat_cargo_label: "Cargo"
-  ship_radar_cat_tanker_label: "Tanker"
-  ship_radar_cat_passenger_label: "Passenger"
-  ship_radar_cat_fishing_label: "Fishing"
-  ship_radar_cat_pleasure_label: "Sailing and pleasure"
-  ship_radar_cat_service_label: "Tug and service"
-  ship_radar_cat_high_speed_label: "High-speed craft"
-  ship_radar_cat_other_label: "Other and unknown"
-  ship_radar_favorites_label: "Favorite vessels (MMSI)"
-  ship_radar_favorites_help: "Up to 20 nine-digit MMSI numbers, separated by commas. Favorites are drawn in gold and are tracked only inside the radius."
-  ship_radar_favorites_invalid: "Enter nine-digit MMSI numbers separated by commas, at most 20."
-  ship_radar_alert_title: "Departure alert"
-  ship_radar_alert_description: "Switch to the ship radar and alert when a favorite vessel that was stopped or out of range starts moving."
+  ship_radar_title: "Radar naval"
+  ship_radar_note: "Afișează navele AIS de la aisstream.io în jurul unei locații, pe o hartă a coastei. Necesită o cheie API aisstream.io gratuită."
+  ship_radar_enabled_title: "Radar naval"
+  ship_radar_enabled_description: "Afișează navele din apropiere. Cât timp este activat, păstrează deschisă o conexiune la aisstream.io pentru a colecta numele și tipurile navelor."
+  ship_radar_api_key_label: "Cheie API aisstream.io"
+  ship_radar_api_key_placeholder: "Lipește cheia API"
+  ship_radar_api_key_saved_placeholder: "Salvată. Lasă gol pentru a o păstra."
+  ship_radar_api_key_clear_label: "Șterge cheia salvată"
+  ship_radar_api_key_invalid: "Cheile API au între 16 și 64 de litere, cifre, cratime sau liniuțe de subliniere. Verifică dacă există caractere în plus."
+  ship_radar_range_label: "Rază"
+  ship_radar_location_label: "Locație"
+  ship_radar_location_device_label: "Locația dispozitivului"
+  ship_radar_location_custom_label: "Personalizată"
+  ship_radar_latitude_label: Latitudine
+  ship_radar_longitude_label: Longitudine
+  ship_radar_coordinates_help: "Grade zecimale, de exemplu 42.3601 și -71.0589. Latitudinile la sud de ecuator și longitudinile la vest de Greenwich sunt negative."
+  ship_radar_coordinates_invalid: "Introdu grade zecimale: latitudine între -90 și 90, longitudine între -180 și 180, cel mult 7 zecimale."
+  ship_radar_categories_label: "Tipuri de nave"
+  ship_radar_cat_cargo_label: "Marfă"
+  ship_radar_cat_tanker_label: "Nave cisternă"
+  ship_radar_cat_passenger_label: "Pasageri"
+  ship_radar_cat_fishing_label: "Pescuit"
+  ship_radar_cat_pleasure_label: "Velier și agrement"
+  ship_radar_cat_service_label: "Remorchere și servicii"
+  ship_radar_cat_high_speed_label: "Ambarcațiuni rapide"
+  ship_radar_cat_other_label: "Altele și necunoscute"
+  ship_radar_favorites_label: "Nave favorite (MMSI)"
+  ship_radar_favorites_help: "Până la 20 de numere MMSI de nouă cifre, separate prin virgule. Favoritele sunt desenate cu auriu și sunt urmărite doar în interiorul razei."
+  ship_radar_favorites_invalid: "Introdu numere MMSI de nouă cifre separate prin virgule, cel mult 20."
+  ship_radar_alert_title: "Afișează radarul la plecare"
+  ship_radar_alert_description: "Comută ecranul pe radarul naval când o navă favorită care stătea pe loc sau era în afara razei pornește."
 
   weather_title: Vreme
   weather_note: Afișează vremea locală de afară pe ecran.
@@ -184,7 +187,7 @@ setup_page:
   auto_page_screen_time_weather_label: Ora & vremea
   auto_page_screen_flight_radar_label: Radar avioane
   auto_page_screen_weather_radar_label: Radar de precipitații
-  auto_page_screen_ship_radar_label: "Ship radar"
+  auto_page_screen_ship_radar_label: "Radar naval"
   auto_page_screen_pm1_label: PM1
   auto_page_screen_pm25_label: PM2.5
   auto_page_screen_pm4_label: PM4
@@ -250,8 +253,14 @@ weather:
 notification:
   fallback: Notificare
   dismiss: Închide
-  ship_departed_title: "Ship under way"
-  ship_departed_unnamed: "Favorite vessel"
+
+ship_radar:
+  key_missing: "Lipsește cheia API AIS"
+  location_missing: "Lipsește locația"
+  offline: "Offline"
+  connecting: "Conectare..."
+  reconnecting: "Reconectare..."
+  key_rejected: "Cheie API AIS respinsă"
 
 date:
   format: "{weekday} {day} {month}"

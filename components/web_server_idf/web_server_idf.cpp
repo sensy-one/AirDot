@@ -213,15 +213,24 @@ esp_err_t AsyncWebServer::request_post_handler(httpd_req_t *r) {
 
   std::string post_query;
   if (r->content_len > 0) {
+    // httpd_req_recv returns what has arrived so far; a body split across TCP
+    // segments needs several reads, or the tail of the form is silently lost.
     post_query.resize(r->content_len);
-    const int ret = httpd_req_recv(r, &post_query[0], r->content_len);
-    if (ret <= 0) {
-      if (ret == HTTPD_SOCK_ERR_TIMEOUT) {
-        httpd_resp_send_err(r, HTTPD_408_REQ_TIMEOUT, nullptr);
-        return ESP_ERR_TIMEOUT;
+    size_t received = 0;
+    uint8_t timeouts = 0;
+    while (received < r->content_len) {
+      const int ret = httpd_req_recv(r, &post_query[received], r->content_len - received);
+      if (ret == HTTPD_SOCK_ERR_TIMEOUT && ++timeouts <= 3)
+        continue;
+      if (ret <= 0) {
+        if (ret == HTTPD_SOCK_ERR_TIMEOUT) {
+          httpd_resp_send_err(r, HTTPD_408_REQ_TIMEOUT, nullptr);
+          return ESP_ERR_TIMEOUT;
+        }
+        httpd_resp_send_err(r, HTTPD_400_BAD_REQUEST, nullptr);
+        return ESP_FAIL;
       }
-      httpd_resp_send_err(r, HTTPD_400_BAD_REQUEST, nullptr);
-      return ESP_FAIL;
+      received += static_cast<size_t>(ret);
     }
   }
 

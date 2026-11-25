@@ -15,6 +15,8 @@ namespace AirDot::radar_map::protocol {
 // 24 created Unix u64  32 payload bytes u32 36 CRC32 u32
 // 40 reserved zero bytes (8)
 //
+// With FLAG_WATER_MASK the segments are followed by MASK_BYTES of water mask
+// (row-major, LSB first). Marine maps always carry it.
 // A segment is x1,y1,x2,y2 as signed LE16, then Style as u8. Coordinates retain
 // the firmware's projection: 10000 = configured range, x east, y south.
 // CRC32/IEEE (reflected polynomial EDB88320, initial/final XOR FFFFFFFF) covers
@@ -22,13 +24,14 @@ namespace AirDot::radar_map::protocol {
 inline constexpr size_t HEADER_SIZE = 48;
 inline constexpr size_t SEGMENT_SIZE = 9;
 inline constexpr size_t MAX_SEGMENT_COUNT = 16384;
-inline constexpr size_t MAX_ENCODED_SIZE = HEADER_SIZE + MAX_SEGMENT_COUNT * SEGMENT_SIZE;
+inline constexpr size_t MAX_ENCODED_SIZE = HEADER_SIZE + MAX_SEGMENT_COUNT * SEGMENT_SIZE + MASK_BYTES;
 inline constexpr uint8_t VERSION = 1;
 inline constexpr uint32_t FORMAT_REVISION = 2;
 inline constexpr uint8_t FLAG_COARSE = 1;
 inline constexpr uint8_t FLAG_TRUNCATED = 2;
 inline constexpr uint8_t FLAG_MARINE = 4;  // Coastline map rather than roads.
-inline constexpr uint8_t VALID_FLAGS = FLAG_COARSE | FLAG_TRUNCATED | FLAG_MARINE;
+inline constexpr uint8_t FLAG_WATER_MASK = 8;  // Water mask follows the segments.
+inline constexpr uint8_t VALID_FLAGS = FLAG_COARSE | FLAG_TRUNCATED | FLAG_MARINE | FLAG_WATER_MASK;
 
 struct Metadata {
   int32_t latitude_key{0}, longitude_key{0};
@@ -114,7 +117,8 @@ inline DecodeError parse_header(const uint8_t *header, Metadata &metadata) {
   if (!detail::valid_range(metadata.range_km)) return DecodeError::RANGE;
   if (!detail::valid_keys(metadata.latitude_key, metadata.longitude_key)) return DecodeError::COORDINATE_KEY;
   if (metadata.count > MAX_SEGMENT_COUNT || metadata.count > MAX_SEGMENTS) return DecodeError::COUNT;
-  if (metadata.payload_length != metadata.count * SEGMENT_SIZE) return DecodeError::LENGTH;
+  const size_t mask_bytes = (metadata.flags & FLAG_WATER_MASK) ? MASK_BYTES : 0;
+  if (metadata.payload_length != metadata.count * SEGMENT_SIZE + mask_bytes) return DecodeError::LENGTH;
   return DecodeError::NONE;
 }
 }  // namespace detail
@@ -135,17 +139,18 @@ inline bool make_header(const MapData &map, uint64_t created_unix, uint8_t *head
   std::memcpy(header, "ADMP", 4);
   header[4] = VERSION; header[5] = HEADER_SIZE; header[6] = map.range_km;
   header[7] = (map.coarse ? FLAG_COARSE : 0) | (map.truncated ? FLAG_TRUNCATED : 0) |
-              (map.kind == MapKind::MARINE ? FLAG_MARINE : 0);
+              (map.kind == MapKind::MARINE ? FLAG_MARINE : 0) | (map.has_water_mask ? FLAG_WATER_MASK : 0);
   detail::put32(header + 8, static_cast<uint32_t>(coordinate_key(map.center_latitude)));
   detail::put32(header + 12, static_cast<uint32_t>(coordinate_key(map.center_longitude)));
   detail::put32(header + 16, map.count); detail::put32(header + 20, FORMAT_REVISION);
   detail::put64(header + 24, created_unix);
-  detail::put32(header + 32, static_cast<uint32_t>(map.count) * SEGMENT_SIZE);
+  detail::put32(header + 32, static_cast<uint32_t>(map.count * SEGMENT_SIZE + (map.has_water_mask ? MASK_BYTES : 0)));
   uint32_t crc = detail::header_crc(header);
   uint8_t segment[SEGMENT_SIZE];
   for (size_t i = 0; i < map.count; ++i) {
     detail::put_segment(segment, map.segments[i]); crc = detail::crc_update(crc, segment, SEGMENT_SIZE);
   }
+  if (map.has_water_mask) crc = detail::crc_update(crc, map.water_mask, MASK_BYTES);
   detail::put32(header + 36, crc ^ 0xffffffffU);
   return true;
 }
@@ -159,7 +164,8 @@ template<typename Writer> bool encode(const MapData &map, uint64_t created_unix,
     detail::put_segment(chunk + used, map.segments[i]); used += SEGMENT_SIZE;
     if (used == sizeof(chunk)) { if (!writer(chunk, used)) return false; used = 0; }
   }
-  return !used || writer(chunk, used);
+  if (used && !writer(chunk, used)) return false;
+  return !map.has_water_mask || writer(map.water_mask, MASK_BYTES);
 }
 
 // The caller owns the unpublished MapData, normally allocated in PSRAM. Payload
@@ -188,6 +194,14 @@ class Decoder {
     if (length > metadata_.payload_length - payload_received_) return fail_(DecodeError::LENGTH);
     crc_ = detail::crc_update(crc_, data, length);
     while (length) {
+      if (decoded_ >= metadata_.count && !segment_received_) {
+        // Segments complete: the rest is the water mask.
+        const size_t count = std::min(length, MASK_BYTES - mask_received_);
+        if (!(metadata_.flags & FLAG_WATER_MASK) || !count) return fail_(DecodeError::LENGTH);
+        std::memcpy(map_.water_mask + mask_received_, data, count);
+        mask_received_ += count; payload_received_ += count; data += count; length -= count;
+        continue;
+      }
       const size_t count = std::min(length, SEGMENT_SIZE - segment_received_);
       std::memcpy(segment_ + segment_received_, data, count);
       segment_received_ += count; payload_received_ += count; data += count; length -= count;
@@ -207,6 +221,7 @@ class Decoder {
     if ((crc_ ^ 0xffffffffU) != metadata_.crc32) return fail_(DecodeError::CRC);
     map_.center_latitude = latitude_; map_.center_longitude = longitude_; map_.range_km = range_;
     map_.coarse = metadata_.flags & FLAG_COARSE; map_.truncated = metadata_.flags & FLAG_TRUNCATED;
+    map_.has_water_mask = metadata_.flags & FLAG_WATER_MASK;
     map_.count = static_cast<uint16_t>(decoded_); finished_ = true;
     return true;
   }
@@ -219,7 +234,7 @@ class Decoder {
   int32_t latitude_key_{0}, longitude_key_{0};
   Metadata metadata_{};
   uint8_t header_[HEADER_SIZE]{}, segment_[SEGMENT_SIZE]{};
-  size_t header_received_{0}, payload_received_{0}, segment_received_{0};
+  size_t header_received_{0}, payload_received_{0}, segment_received_{0}, mask_received_{0};
   uint32_t decoded_{0}, crc_{0xffffffffU};
   DecodeError error_{DecodeError::NONE};
   bool finished_{false};
@@ -232,6 +247,8 @@ class Decoder {
         ((metadata_.flags & FLAG_MARINE) != 0) != (map_.kind == MapKind::MARINE))
       return fail_(DecodeError::KEY_MISMATCH);
     if (metadata_.count > segment_capacity(map_)) return fail_(DecodeError::COUNT);
+    // Marine maps cached before land shading have no mask; fetch them again.
+    if (map_.kind == MapKind::MARINE && !(metadata_.flags & FLAG_WATER_MASK)) return fail_(DecodeError::KEY_MISMATCH);
     crc_ = detail::header_crc(header_);
     return true;
   }

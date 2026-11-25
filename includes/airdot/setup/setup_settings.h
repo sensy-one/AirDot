@@ -2100,9 +2100,9 @@ inline int load_sanitized_air_quality_level(float pm1, float pm25, float pm4, fl
 // Ship radar (aisstream.io AIS stream)
 // ---------------------------------------------------------------------------
 
-static constexpr uint32_t SHIP_RADAR_SETTINGS_PREF_KEY = 2918394861UL;
-static constexpr uint32_t SHIP_RADAR_FAVORITES_PREF_KEY = 2918394862UL;
-static constexpr uint32_t SHIP_RADAR_API_KEY_PREF_KEY = 2918394863UL;
+static constexpr uint32_t SHIP_RADAR_SETTINGS_PREF_KEY = 2918394901UL;
+static constexpr uint32_t SHIP_RADAR_FAVORITES_PREF_KEY = 2918394902UL;
+static constexpr uint32_t SHIP_RADAR_API_KEY_PREF_KEY = 2918394903UL;
 static constexpr uint8_t SHIP_RADAR_RANGE_DEFAULT_KM = 10;
 static constexpr uint8_t SHIP_RADAR_MAX_FAVORITES = 20;
 static constexpr size_t SHIP_RADAR_API_KEY_MIN_LENGTH = 16;
@@ -2267,9 +2267,6 @@ inline bool load_ship_radar_enabled() { return load_ship_radar_settings().enable
 inline uint8_t load_ship_radar_range_km() { return load_ship_radar_settings().range_km; }
 inline bool load_ship_radar_alert_enabled() { return load_ship_radar_settings().alert_enabled == 1; }
 inline uint8_t load_ship_radar_category_mask() { return load_ship_radar_settings().category_mask; }
-inline bool load_ship_radar_custom_location_enabled() {
-  return load_ship_radar_settings().location_mode == SHIP_RADAR_LOCATION_CUSTOM;
-}
 // The radar's own location, when one is set; otherwise the device location applies.
 inline bool load_ship_radar_custom_location(float &latitude, float &longitude) {
   const auto &settings = load_ship_radar_settings();
@@ -2297,13 +2294,6 @@ inline void save_ship_radar_settings(bool enabled, uint8_t range_km, bool custom
 inline const ShipRadarFavorites &load_ship_radar_favorites() {
   return load_ship_radar_preference_(ship_radar_favorites_pref_(), SHIP_RADAR_FAVORITES_PREF_KEY,
                                      normalize_ship_radar_favorites_);
-}
-inline bool ship_radar_is_favorite(uint32_t mmsi) {
-  const auto &favorites = load_ship_radar_favorites();
-  for (uint8_t i = 0; i < favorites.count; ++i)
-    if (favorites.mmsi[i] == mmsi)
-      return true;
-  return false;
 }
 inline void save_ship_radar_favorites(const ShipRadarFavorites &favorites) {
   ShipRadarFavorites value = favorites;

@@ -46,32 +46,60 @@ inline constexpr const char *STREAM_PATH = "/v0/stream";
 
 inline constexpr size_t MAX_VESSELS = 384;
 inline constexpr size_t MAX_RENDER = 96;
+inline constexpr uint8_t MAX_LABELS = 6;
+// Label priority after favourites: the larger of length / 200 m and speed / 20 kn.
+inline constexpr float LABEL_REFERENCE_LENGTH_M = 200.0f;
+inline constexpr float LABEL_REFERENCE_SOG_KN = 20.0f;
 inline constexpr uint8_t MAX_FAVORITES = AirDot::onboarding::SHIP_RADAR_MAX_FAVORITES;
 
-inline constexpr uint32_t DRAW_STALE_MS = 10UL * 60UL * 1000UL;       // Hide positions older than this.
+// aisstream delivers at most about one position per vessel per minute, and in
+// sparse coverage (Boston Harbor) gaps of 3-12 minutes are common, so vessels
+// last seen under way are kept longer than stationary ones.
+inline constexpr uint32_t DRAW_STALE_MS = 10UL * 60UL * 1000UL;         // Hide positions older than this...
+inline constexpr uint32_t DRAW_STALE_MOVING_MS = 20UL * 60UL * 1000UL;  // ...or this, if last reported under way.
+// A vessel that was under way stays shown through a brief stop (a ferry at a
+// dock, a boat slowing to turn) until it reports slow twice or stays slow this long.
+inline constexpr uint32_t UNDERWAY_HOLD_MS = 10UL * 60UL * 1000UL;
+inline constexpr uint8_t UNDERWAY_HOLD_SLOW_REPORTS = 2;
 inline constexpr uint32_t EVICT_MS = 30UL * 60UL * 1000UL;            // Forget vessels silent for this long.
 inline constexpr uint32_t UNKNOWN_TYPE_GRACE_MS = 12UL * 60UL * 1000UL;  // Static data may still be on its way.
-inline constexpr uint32_t EXTRAPOLATE_MAX_MS = 3UL * 60UL * 1000UL;   // Dead reckoning limit.
+inline constexpr uint32_t EXTRAPOLATE_MAX_MS = 6UL * 60UL * 1000UL;   // Dead reckoning limit.
 inline constexpr uint32_t PING_INTERVAL_MS = 30000UL;
 inline constexpr uint32_t RX_TIMEOUT_MS = 75000UL;
 inline constexpr uint32_t CONFIRM_TIMEOUT_MS = 15000UL;
 inline constexpr uint32_t RESUBSCRIBE_MIN_MS = 1500UL;                // Server allows one update per second.
 inline constexpr uint32_t AUTH_RETRY_MS = 15UL * 60UL * 1000UL;
-inline constexpr uint32_t TASK_STACK_BYTES = 8192;
+// TLS 1.3 handshakes with certificate-bundle verification peak around 6 KB;
+// the stack is in PSRAM, so leave generous headroom.
+inline constexpr uint32_t TASK_STACK_BYTES = 16384;
+inline constexpr uint32_t STABLE_CONNECTION_MS = 3UL * 60UL * 1000UL;  // Backoff resets only after this.
+inline constexpr uint32_t DEFLATE_RETRY_MS = 60UL * 60UL * 1000UL;
+inline constexpr uint8_t MESSAGES_PER_YIELD = 16;
 inline constexpr float BOUNDING_BOX_MARGIN = 1.1f;
 
 inline constexpr uint16_t SOG_UNKNOWN = 1023;
 inline constexpr uint16_t COG_UNKNOWN = 3600;
 inline constexpr uint16_t HEADING_UNKNOWN = 511;
 
+// Age of a timestamp written by another task. A timestamp taken after `now`
+// was read counts as age 0 rather than wrapping to ~49 days.
+inline uint32_t age_ms(uint32_t now, uint32_t then) {
+  const int32_t age = static_cast<int32_t>(now - then);
+  return age < 0 ? 0 : static_cast<uint32_t>(age);
+}
+
 // Favourite motion thresholds (knots) and timing.
 inline constexpr float MOVING_SOG_KN = 2.0f;
 inline constexpr float MOVING_FAST_SOG_KN = 3.0f;
 inline constexpr float STOPPED_SOG_KN = 0.5f;
 inline constexpr float DRAW_MOVING_SOG_KN = 1.0f;
+inline constexpr float UNDERWAY_STATUS_SOG_KN = 0.5f;  // With Class A status "under way".
+inline constexpr uint8_t NAV_STATUS_UNDERWAY_ENGINE = 0;
+inline constexpr uint8_t NAV_STATUS_UNDERWAY_SAILING = 8;
 inline constexpr uint32_t MOVING_CONFIRM_MS = 60000UL;
 inline constexpr uint32_t STOPPED_MIN_MS = 5UL * 60UL * 1000UL;
-inline constexpr uint32_t ABSENCE_ESTABLISH_MS = 10UL * 60UL * 1000UL;
+// Longer than the 3-12 minute gaps between reports seen in sparse coverage.
+inline constexpr uint32_t ABSENCE_ESTABLISH_MS = 20UL * 60UL * 1000UL;
 inline constexpr uint32_t STOPPED_KEEP_OFFLINE_MS = 15UL * 60UL * 1000UL;
 inline constexpr uint32_t REARM_MIN_MS = 30UL * 60UL * 1000UL;
 inline constexpr uint32_t REARM_QUIET_MS = 10UL * 60UL * 1000UL;
@@ -98,9 +126,9 @@ struct Vessel {
   uint8_t ship_type{0};
   uint8_t flags{0};
   char name[21]{};
-  char callsign[8]{};
-  char destination[21]{};
   uint32_t first_seen_ms{0}, position_ms{0}, last_seen_ms{0};
+  uint32_t underway_ms{0};    // Last position report that was under way, 0 if none.
+  uint8_t slow_reports{0};    // Position reports not under way since then.
 };
 inline constexpr uint8_t VESSEL_HAS_POSITION = 1U << 0;
 inline constexpr uint8_t VESSEL_CLASS_B = 1U << 1;
@@ -110,16 +138,13 @@ struct RenderVessel {
   float heading_deg{NAN};       // True heading, else course over ground; NAN if unknown.
   float sog_kn{NAN};
   bool favorite{false}, moving{false};
+  bool labelled{false};         // One of the MAX_LABELS vessels whose name is shown.
+  uint8_t label_rank{0};        // 0 = highest label priority (valid when labelled).
   char name[21]{};              // Empty until static data arrives. Never the MMSI.
 };
 struct RenderList {
   RenderVessel vessels[MAX_RENDER]{};
   uint8_t count{0};
-};
-
-struct FavoriteAlert {
-  char name[21]{};
-  float sog_kn{0};
 };
 
 inline uint8_t category_for_type(uint8_t type) {
@@ -179,6 +204,22 @@ inline int build_subscription(char *out, size_t size, const char *key, float lat
 
 #ifdef USE_ESP32
 
+inline bool vessel_underway(const Vessel &vessel) {
+  if (vessel.sog_dkn == SOG_UNKNOWN) return false;
+  const float sog = vessel.sog_dkn / 10.0f;
+  if (sog >= DRAW_MOVING_SOG_KN) return true;
+  const bool status_underway = !(vessel.flags & VESSEL_CLASS_B) &&
+      (vessel.nav_status == NAV_STATUS_UNDERWAY_ENGINE || vessel.nav_status == NAV_STATUS_UNDERWAY_SAILING);
+  return status_underway && sog >= UNDERWAY_STATUS_SOG_KN;
+}
+
+// Under way now, or recently enough that a brief stop shouldn't hide it.
+inline bool vessel_shown_underway(const Vessel &vessel, uint32_t now) {
+  if (vessel_underway(vessel)) return true;
+  return vessel.underway_ms != 0 && vessel.slow_reports < UNDERWAY_HOLD_SLOW_REPORTS &&
+         age_ms(now, vessel.underway_ms) < UNDERWAY_HOLD_MS;
+}
+
 namespace detail {
 
 struct Config {
@@ -195,6 +236,7 @@ struct Shared {
   SemaphoreHandle_t mutex{nullptr};
   Config config;                    // Written by the main loop.
   Vessel *vessels{nullptr};         // PSRAM table, MAX_VESSELS entries.
+  Vessel *render_scratch{nullptr};  // PSRAM copy used by the main loop outside the lock.
   size_t vessel_count{0};
   std::atomic<uint32_t> revision{0};
   std::atomic<uint8_t> status{static_cast<uint8_t>(StreamStatus::DISABLED)};
@@ -219,7 +261,7 @@ class Lock {
   bool locked_{false};
 };
 
-inline void set_status(StreamStatus status) {
+inline void set_status(StreamStatus status, uint32_t next_retry_ms = 0) {
   shared().status.store(static_cast<uint8_t>(status), std::memory_order_release);
   using AirDot::connectivity::ConnectivityError;
   using AirDot::connectivity::ConnectivityStatus;
@@ -236,7 +278,7 @@ inline void set_status(StreamStatus status) {
     case StreamStatus::RETRY_WAIT: service = ConnectivityStatus::RETRY_WAIT; error = ConnectivityError::SERVER_ERROR; break;
   }
   AirDot::connectivity::set_service_status(AirDot::connectivity::Service::SHIP_RADAR, service, error,
-                                           esphome::millis());
+                                           esphome::millis(), next_retry_ms);
 }
 
 // Cache access; callers hold the lock.
@@ -264,7 +306,7 @@ inline Vessel *upsert_locked(uint32_t mmsi, uint32_t now) {
     uint32_t oldest_age = 0;
     slot = MAX_VESSELS;
     for (size_t i = 0; i < state.vessel_count; ++i) {
-      const uint32_t age = now - state.vessels[i].last_seen_ms;
+      const uint32_t age = age_ms(now, state.vessels[i].last_seen_ms);
       if (age >= oldest_age && !is_favorite_locked(state.vessels[i].mmsi)) {
         oldest_age = age;
         slot = i;
@@ -284,7 +326,7 @@ inline void prune_locked(uint32_t now) {
   auto &state = shared();
   size_t kept = 0;
   for (size_t i = 0; i < state.vessel_count; ++i) {
-    if (now - state.vessels[i].last_seen_ms >= EVICT_MS) continue;
+    if (age_ms(now, state.vessels[i].last_seen_ms) >= EVICT_MS) continue;
     if (kept != i) state.vessels[kept] = state.vessels[i];
     ++kept;
   }
@@ -317,6 +359,12 @@ inline void merge_position_locked(Vessel &vessel, JsonObjectConst report, bool c
   }
   vessel.flags |= VESSEL_HAS_POSITION;
   vessel.position_ms = now;
+  if (vessel_underway(vessel)) {
+    vessel.underway_ms = now;
+    vessel.slow_reports = 0;
+  } else if (vessel.slow_reports < UINT8_MAX) {
+    ++vessel.slow_reports;
+  }
 }
 
 inline void merge_dimension_locked(Vessel &vessel, JsonObjectConst dimension) {
@@ -385,8 +433,6 @@ inline MessageResult handle_message(const char *data, size_t length, uint32_t no
     merge_name_locked(*vessel, body["Name"] | "");
     merge_type_locked(*vessel, body["Type"] | 0);
     merge_dimension_locked(*vessel, body["Dimension"]);
-    copy_ais_text(vessel->callsign, sizeof(vessel->callsign), body["CallSign"] | "");
-    copy_ais_text(vessel->destination, sizeof(vessel->destination), body["Destination"] | "");
   } else if (std::strcmp(type, "StaticDataReport") == 0) {
     const bool part_b = body["PartNumber"] | false;
     if (!part_b) {
@@ -397,7 +443,6 @@ inline MessageResult handle_message(const char *data, size_t length, uint32_t no
       if (part["Valid"] | false) {
         merge_type_locked(*vessel, part["ShipType"] | 0);
         merge_dimension_locked(*vessel, part["Dimension"]);
-        copy_ais_text(vessel->callsign, sizeof(vessel->callsign), part["CallSign"] | "");
       }
     }
   }
@@ -417,8 +462,9 @@ inline void stream_task(void *) {
   Config active{};
   bool deflate_disabled = false, confirmed = false;
   uint32_t connect_ms = 0, last_rx_ms = 0, last_ping_ms = 0, last_subscribe_ms = 0, last_prune_ms = 0;
-  uint32_t auth_blocked_until_ms = 0;
-  uint8_t unconfirmed_closes = 0;
+  uint32_t auth_blocked_until_ms = 0, confirmed_ms = 0, deflate_disabled_ms = 0;
+  bool auth_blocked = false;
+  uint8_t unconfirmed_closes = 0, messages_since_yield = 0;
   char auth_blocked_key[sizeof(active.key)]{};
   char connected_key[sizeof(active.key)]{};
   char subscription[512];
@@ -429,22 +475,29 @@ inline void stream_task(void *) {
     confirmed = false;
     state.subscribed_since_ms.store(0, std::memory_order_release);
   };
-  auto fail = [&](const char *reason) {
+  // server_closed: the server dropped a connection whose subscription it had
+  // not confirmed, or sent an error message before confirming it; that is
+  // how aisstream answers an invalid key. Timeouts and local errors never
+  // count towards a key rejection.
+  auto fail = [&](const char *reason, bool server_closed = false) {
     const bool was_confirmed = confirmed;
     disconnect(false);
     const uint32_t now = esphome::millis();
-    if (!was_confirmed && connect_ms != 0 && ++unconfirmed_closes >= 2) {
-      // aisstream drops the connection without a message for an invalid key.
+    if (!was_confirmed && server_closed && connect_ms != 0 && ++unconfirmed_closes >= 2) {
       ESP_LOGW(TAG, "Stream closed before confirming the subscription; check the API key");
       std::memcpy(auth_blocked_key, active.key, sizeof(auth_blocked_key));
+      auth_blocked = true;
       auth_blocked_until_ms = now + AUTH_RETRY_MS;
       unconfirmed_closes = 0;
-      set_status(StreamStatus::KEY_REJECTED);
+      set_status(StreamStatus::KEY_REJECTED, auth_blocked_until_ms);
       return;
     }
+    // Only a connection that stayed up for a while resets the backoff, so a
+    // server that confirms and then drops us does not cause a reconnect storm.
+    if (was_confirmed && age_ms(now, confirmed_ms) >= STABLE_CONNECTION_MS) retry.reset();
     const uint32_t delay = retry.record_failure(now, policy, esp_random());
     ESP_LOGW(TAG, "Stream %s; retrying in %u s", reason, static_cast<unsigned>(delay / 1000));
-    set_status(StreamStatus::RETRY_WAIT);
+    set_status(StreamStatus::RETRY_WAIT, now + delay);
   };
   auto send_subscription = [&]() {
     const int length = build_subscription(subscription, sizeof(subscription), active.key, active.latitude,
@@ -473,15 +526,20 @@ inline void stream_task(void *) {
     else if (active.key[0] == '\0') idle = StreamStatus::NO_KEY;
     else if (!active.location_valid) idle = StreamStatus::NO_LOCATION;
     else if (!active.runtime_ok || !esphome::network::is_connected()) idle = StreamStatus::OFFLINE;
-    else if (auth_blocked_until_ms != 0 && std::strcmp(auth_blocked_key, active.key) == 0 &&
-             static_cast<int32_t>(now - auth_blocked_until_ms) < 0) idle = StreamStatus::KEY_REJECTED;
+    else if (auth_blocked) {
+      if (std::strcmp(auth_blocked_key, active.key) != 0 || static_cast<int32_t>(now - auth_blocked_until_ms) >= 0)
+        auth_blocked = false;  // New key, or the block expired: try again.
+      else
+        idle = StreamStatus::KEY_REJECTED;
+    }
+    if (deflate_disabled && age_ms(now, deflate_disabled_ms) >= DEFLATE_RETRY_MS) deflate_disabled = false;
     if (idle != StreamStatus::CONNECTING) {
       if (socket.connected()) disconnect(true);
       if (idle != StreamStatus::KEY_REJECTED) {
         retry.reset();
         unconfirmed_closes = 0;
       }
-      set_status(idle);
+      set_status(idle, idle == StreamStatus::KEY_REJECTED ? auth_blocked_until_ms : 0);
       vTaskDelay(pdMS_TO_TICKS(1000));
       continue;
     }
@@ -532,23 +590,32 @@ inline void stream_task(void *) {
       const auto handled = handle_message(message, length, after);
       if (handled == MessageResult::CONFIRMED) {
         confirmed = true;
+        confirmed_ms = after;
         unconfirmed_closes = 0;
-        retry.reset();
+        auth_blocked = false;
         state.subscribed_since_ms.store(std::max<uint32_t>(1, after), std::memory_order_release);
         set_status(StreamStatus::CONNECTED);
       } else if (handled == MessageResult::ERROR) {
-        fail("reported an error");
+        fail("reported an error", !confirmed);
+      }
+      // Busy areas can deliver hundreds of messages a second; let other
+      // tasks on this core run.
+      if (++messages_since_yield >= MESSAGES_PER_YIELD) {
+        messages_since_yield = 0;
+        vTaskDelay(1);
       }
       continue;
     }
     if (result == ws::Result::INFLATE) {
       ESP_LOGW(TAG, "Compressed message could not be decoded; reconnecting without compression");
       deflate_disabled = true;
+      deflate_disabled_ms = esphome::millis();
       disconnect(false);
       continue;
     }
     if (result != ws::Result::NONE) {
-      fail(result == ws::Result::PROTOCOL ? "protocol error" : "closed");
+      fail(result == ws::Result::PROTOCOL ? "protocol error" : result == ws::Result::ERROR ? "read error" : "closed",
+           result == ws::Result::CLOSED);
       continue;
     }
     if (!confirmed && after - connect_ms >= CONFIRM_TIMEOUT_MS) {
@@ -576,11 +643,17 @@ inline bool ensure_started() {
         heap_caps_calloc(MAX_VESSELS, sizeof(Vessel), MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT));
     if (state.vessels == nullptr) return false;
   }
+  if (state.render_scratch == nullptr) {
+    state.render_scratch = static_cast<Vessel *>(
+        heap_caps_calloc(MAX_VESSELS, sizeof(Vessel), MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT));
+    if (state.render_scratch == nullptr) return false;
+  }
   // The stack can live in PSRAM: the task never writes flash.
+  // Core 0 keeps message floods away from the ESPHome loop on core 1.
   BaseType_t created = xTaskCreatePinnedToCoreWithCaps(stream_task, "ship_ais", TASK_STACK_BYTES, nullptr, 1,
-                                                       nullptr, tskNO_AFFINITY,
-                                                       MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
-  if (created != pdPASS) created = xTaskCreate(stream_task, "ship_ais", TASK_STACK_BYTES, nullptr, 1, nullptr);
+                                                       nullptr, 0, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
+  if (created != pdPASS)
+    created = xTaskCreatePinnedToCore(stream_task, "ship_ais", TASK_STACK_BYTES, nullptr, 1, nullptr, 0);
   if (created != pdPASS) return false;
   state.task_started.store(true, std::memory_order_release);
   return true;
@@ -592,10 +665,6 @@ inline StreamStatus stream_status() {
   return static_cast<StreamStatus>(detail::shared().status.load(std::memory_order_acquire));
 }
 inline uint32_t vessel_revision() { return detail::shared().revision.load(std::memory_order_relaxed); }
-inline uint32_t config_generation() {
-  detail::Lock lock(5);
-  return lock.locked() ? detail::shared().config.generation : 0;
-}
 
 // Called from the main loop about once a second. Reads the key and favourites
 // from settings; a change of key, location or range bumps the generation,
@@ -629,33 +698,54 @@ inline void configure_stream(bool enabled, bool runtime_ok, bool location_valid,
   if (changed) ++config.generation;
 }
 
+
+inline constexpr uint8_t VESSEL_FAVORITE_SNAPSHOT = 1U << 7;  // Only set in the render snapshot.
+
 // Fills the vessels to draw: fresh positions inside the configured range that
 // pass the category filter (favourites always pass). When more qualify than
 // fit, favourites come first, then named vessels, then unnamed ones, each
-// group nearest first.
+// group nearest first. Stationary vessels are hidden unless they are
+// favourites.
+// Main loop only: the lock is held just to copy fresh entries into a PSRAM
+// snapshot; projection and sorting run without it.
 inline bool copy_render_list(RenderList &out, float latitude, float longitude, uint8_t range_km, uint8_t category_mask,
                              uint32_t now) {
   out.count = 0;
   auto &state = detail::shared();
-  if (state.vessels == nullptr) return false;
+  if (state.vessels == nullptr || state.render_scratch == nullptr) return false;
+  size_t snapshot_count = 0;
+  {
+    detail::Lock lock(10);
+    if (!lock.locked()) return false;
+    for (size_t i = 0; i < state.vessel_count; ++i) {
+      const Vessel &vessel = state.vessels[i];
+      if (!(vessel.flags & VESSEL_HAS_POSITION)) continue;
+      const uint32_t stale_ms = vessel_underway(vessel) ? DRAW_STALE_MOVING_MS : DRAW_STALE_MS;
+      if (age_ms(now, vessel.position_ms) >= stale_ms) continue;
+      Vessel &copy = state.render_scratch[snapshot_count++];
+      copy = vessel;
+      if (detail::is_favorite_locked(vessel.mmsi)) copy.flags |= VESSEL_FAVORITE_SNAPSHOT;
+    }
+  }
+
   radar_map::Projection projection(latitude, longitude, range_km);
   struct Candidate { uint16_t index; uint8_t group; float distance; float x, y; };
-  static Candidate candidates[MAX_VESSELS];
+  static Candidate *candidates = static_cast<Candidate *>(
+      heap_caps_malloc(MAX_VESSELS * sizeof(Candidate), MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT));
+  if (candidates == nullptr) return false;
   size_t count = 0;
-  detail::Lock lock(10);
-  if (!lock.locked()) return false;
-  for (size_t i = 0; i < state.vessel_count; ++i) {
-    const Vessel &vessel = state.vessels[i];
-    if (!(vessel.flags & VESSEL_HAS_POSITION) || now - vessel.position_ms >= DRAW_STALE_MS) continue;
-    const bool favorite = detail::is_favorite_locked(vessel.mmsi);
+  for (size_t i = 0; i < snapshot_count; ++i) {
+    const Vessel &vessel = state.render_scratch[i];
+    const bool favorite = vessel.flags & VESSEL_FAVORITE_SNAPSHOT;
     if (!favorite) {
-      const bool type_pending = vessel.ship_type == 0 && now - vessel.first_seen_ms < UNKNOWN_TYPE_GRACE_MS;
+      const bool type_pending = vessel.ship_type == 0 && age_ms(now, vessel.first_seen_ms) < UNKNOWN_TYPE_GRACE_MS;
       if (!type_pending && !(category_for_type(vessel.ship_type) & category_mask)) continue;
+      if (!vessel_shown_underway(vessel, now)) continue;  // Only favourites are shown when stationary.
     }
     double vessel_latitude = vessel.lat_e7 / 1e7, vessel_longitude = vessel.lon_e7 / 1e7;
     // Dead reckoning between reports, so moving vessels advance smoothly.
     if (vessel.sog_dkn != SOG_UNKNOWN && vessel.cog_ddeg != COG_UNKNOWN && vessel.sog_dkn >= 10) {
-      const double seconds = std::min<uint32_t>(now - vessel.position_ms, EXTRAPOLATE_MAX_MS) / 1000.0;
+      const double seconds = std::min<uint32_t>(age_ms(now, vessel.position_ms), EXTRAPOLATE_MAX_MS) / 1000.0;
       const double meters = vessel.sog_dkn / 10.0 * 1852.0 / 3600.0 * seconds;
       const double course = vessel.cog_ddeg / 10.0 * radar_map::PI / 180.0;
       vessel_latitude += meters * std::cos(course) / 111320.0;
@@ -666,15 +756,21 @@ inline bool copy_render_list(RenderList &out, float latitude, float longitude, u
     if (!projection.project(vessel_latitude, vessel_longitude, x, y)) continue;
     const double distance = std::sqrt(x * x + y * y);
     if (distance > radar_map::NORMALIZED_RADIUS) continue;
-    candidates[count++] = Candidate{static_cast<uint16_t>(i), static_cast<uint8_t>(favorite ? 0 : vessel.name[0] ? 1 : 2),
+    const uint8_t group = favorite ? 0 : vessel.name[0] ? 1 : 2;
+    candidates[count++] = Candidate{static_cast<uint16_t>(i), group,
                                     static_cast<float>(distance), static_cast<float>(x), static_cast<float>(y)};
   }
   const size_t keep = std::min(count, MAX_RENDER);
   std::partial_sort(candidates, candidates + keep, candidates + count, [](const Candidate &a, const Candidate &b) {
     return a.group != b.group ? a.group < b.group : a.distance < b.distance;
   });
+  // Label priority among named vessels: favourites, then the largest or
+  // fastest, nearest first on ties.
+  float scores[MAX_RENDER];
+  uint8_t label_order[MAX_RENDER];
+  uint8_t label_candidates = 0;
   for (size_t i = 0; i < keep; ++i) {
-    const Vessel &vessel = state.vessels[candidates[i].index];
+    const Vessel &vessel = state.render_scratch[candidates[i].index];
     RenderVessel &render = out.vessels[out.count++];
     render = RenderVessel{};
     render.x = candidates[i].x;
@@ -685,6 +781,20 @@ inline bool copy_render_list(RenderList &out, float latitude, float longitude, u
     if (vessel.heading != HEADING_UNKNOWN) render.heading_deg = vessel.heading;
     else if (vessel.cog_ddeg != COG_UNKNOWN && render.moving) render.heading_deg = vessel.cog_ddeg / 10.0f;
     std::memcpy(render.name, vessel.name, sizeof(render.name));
+    if (render.name[0] == '\0') continue;
+    const float speed = std::isfinite(render.sog_kn) ? render.sog_kn : 0.0f;
+    scores[i] = (render.favorite ? 1000.0f : 0.0f) +
+                std::max(vessel.length_m / LABEL_REFERENCE_LENGTH_M, speed / LABEL_REFERENCE_SOG_KN);
+    label_order[label_candidates++] = static_cast<uint8_t>(i);
+  }
+  const uint8_t labels = std::min<uint8_t>(label_candidates, MAX_LABELS);
+  std::partial_sort(label_order, label_order + labels, label_order + label_candidates, [&](uint8_t a, uint8_t b) {
+    return scores[a] != scores[b] ? scores[a] > scores[b] : candidates[a].distance < candidates[b].distance;
+  });
+  for (uint8_t n = 0; n < labels; ++n) {
+    RenderVessel &render = out.vessels[label_order[n]];
+    render.labelled = true;
+    render.label_rank = n;
   }
   return true;
 }
@@ -694,6 +804,7 @@ enum class Motion : uint8_t { UNKNOWN, ABSENT, STOPPED, MOVING };
 struct FavoriteState {
   uint32_t mmsi{0};
   Motion motion{Motion::UNKNOWN};
+  Motion before_absent{Motion::UNKNOWN};  // State it was in when it went ABSENT.
   uint32_t since_ms{0};           // When the current state began.
   uint32_t candidate_ms{0};       // First report at >= MOVING_SOG_KN, 0 if none.
   uint32_t last_position_ms{0};   // Last report seen for this favourite.
@@ -711,6 +822,7 @@ inline FavoriteTracker &tracker() {
 }
 inline void set_motion(FavoriteState &favorite, Motion motion, uint32_t now) {
   if (favorite.motion == motion) return;
+  if (motion == Motion::ABSENT) favorite.before_absent = favorite.motion;
   favorite.motion = motion;
   favorite.since_ms = now;
 }
@@ -718,10 +830,10 @@ inline void set_motion(FavoriteState &favorite, Motion motion, uint32_t now) {
 
 // Runs the favourite state machine; call once a second from the main loop.
 // Returns true when a favourite went from stopped (for at least 5 minutes) or
-// not detected (with the stream healthy for 10+ minutes) to moving, and
+// not detected (with the stream healthy for 20+ minutes) to moving, and
 // alerts are allowed. A vessel first seen moving (after a boot, reconnect or
 // settings change) never alerts.
-inline bool poll_favorite_alert(uint32_t now, bool allowed, FavoriteAlert &alert) {
+inline bool poll_favorite_alert(uint32_t now, bool allowed) {
   using detail::Motion;
   auto &state = detail::shared();
   auto &tracker = detail::tracker();
@@ -746,14 +858,14 @@ inline bool poll_favorite_alert(uint32_t now, bool allowed, FavoriteAlert &alert
   const uint32_t subscribed_since = state.subscribed_since_ms.load(std::memory_order_acquire);
   const bool connected = stream_status() == StreamStatus::CONNECTED && subscribed_since != 0 &&
                          state.subscribed_generation.load(std::memory_order_acquire) == config.generation;
-  const bool established = connected && now - subscribed_since >= ABSENCE_ESTABLISH_MS;
+  const bool established = connected && age_ms(now, subscribed_since) >= ABSENCE_ESTABLISH_MS;
   bool fired = false;
 
   for (uint8_t i = 0; i < tracker.count; ++i) {
     auto &favorite = tracker.states[i];
     const Vessel *vessel = detail::find_locked(favorite.mmsi);
     const bool has_position = vessel != nullptr && (vessel->flags & VESSEL_HAS_POSITION);
-    const bool fresh = has_position && now - vessel->position_ms < ABSENCE_ESTABLISH_MS;
+    const bool fresh = has_position && age_ms(now, vessel->position_ms) < ABSENCE_ESTABLISH_MS;
     const Motion previous = favorite.motion;
     const uint32_t previous_since = favorite.since_ms;
 
@@ -765,7 +877,7 @@ inline bool poll_favorite_alert(uint32_t now, bool allowed, FavoriteAlert &alert
           detail::set_motion(favorite, Motion::MOVING, now);
         } else if (sog >= MOVING_SOG_KN) {
           if (favorite.candidate_ms == 0) favorite.candidate_ms = vessel->position_ms;
-          else if (vessel->position_ms - favorite.candidate_ms >= MOVING_CONFIRM_MS)
+          else if (age_ms(vessel->position_ms, favorite.candidate_ms) >= MOVING_CONFIRM_MS)
             detail::set_motion(favorite, Motion::MOVING, now);
         } else {
           favorite.candidate_ms = 0;
@@ -782,24 +894,24 @@ inline bool poll_favorite_alert(uint32_t now, bool allowed, FavoriteAlert &alert
       } else if (!connected) {
         if (favorite.motion == Motion::ABSENT ||
             (favorite.motion == Motion::STOPPED &&
-             (!has_position || now - vessel->position_ms >= STOPPED_KEEP_OFFLINE_MS)))
+             (!has_position || age_ms(now, vessel->position_ms) >= STOPPED_KEEP_OFFLINE_MS)))
           detail::set_motion(favorite, Motion::UNKNOWN, now);
       }
     }
 
     // Re-arm after a quiet period stopped or absent.
     if (!favorite.armed && (favorite.motion == Motion::STOPPED || favorite.motion == Motion::ABSENT) &&
-        now - favorite.since_ms >= REARM_QUIET_MS && now - favorite.alerted_ms >= REARM_MIN_MS)
+        age_ms(now, favorite.since_ms) >= REARM_QUIET_MS && age_ms(now, favorite.alerted_ms) >= REARM_MIN_MS)
       favorite.armed = true;
 
+    // Back from ABSENT only counts if it wasn't already moving before the gap
+    // (an AIS coverage gap on a vessel under way is not a departure).
     const bool departed = favorite.motion == Motion::MOVING && previous != Motion::MOVING &&
-                          (previous == Motion::ABSENT ||
-                           (previous == Motion::STOPPED && now - previous_since >= STOPPED_MIN_MS));
+                          ((previous == Motion::ABSENT && favorite.before_absent != Motion::MOVING) ||
+                           (previous == Motion::STOPPED && age_ms(now, previous_since) >= STOPPED_MIN_MS));
     if (departed && favorite.armed && allowed && !fired) {
       favorite.armed = false;
       favorite.alerted_ms = now;
-      std::memcpy(alert.name, vessel->name, sizeof(alert.name));
-      alert.sog_kn = vessel->sog_dkn != SOG_UNKNOWN ? vessel->sog_dkn / 10.0f : 0.0f;
       fired = true;
     }
   }
@@ -809,10 +921,9 @@ inline bool poll_favorite_alert(uint32_t now, bool allowed, FavoriteAlert &alert
 #else  // !USE_ESP32
 inline StreamStatus stream_status() { return StreamStatus::DISABLED; }
 inline uint32_t vessel_revision() { return 0; }
-inline uint32_t config_generation() { return 0; }
 inline void configure_stream(bool, bool, bool, float, float, uint8_t) {}
 inline bool copy_render_list(RenderList &out, float, float, uint8_t, uint8_t, uint32_t) { out.count = 0; return false; }
-inline bool poll_favorite_alert(uint32_t, bool, FavoriteAlert &) { return false; }
+inline bool poll_favorite_alert(uint32_t, bool) { return false; }
 #endif
 
 }  // namespace AirDot::ship_radar

@@ -108,7 +108,8 @@ template<typename Storage>
 Result save_to(Storage &storage, const MapData &map, uint64_t created_unix) {
   uint8_t desired_header[protocol::HEADER_SIZE];
   if (!protocol::make_header(map, created_unix, desired_header)) return Result::INVALID_MAP;
-  const size_t length = protocol::HEADER_SIZE + static_cast<size_t>(map.count) * protocol::SEGMENT_SIZE;
+  const size_t length = protocol::HEADER_SIZE + static_cast<size_t>(map.count) * protocol::SEGMENT_SIZE +
+                       (map.has_water_mask ? MASK_BYTES : 0);
   size_t old_length = 0;
   const IoResult old_result = storage.blob_length(old_length);
   if (old_result != IoResult::OK && old_result != IoResult::NOT_FOUND) return io_result(old_result);

@@ -3,7 +3,11 @@
 #include "radar_map_data.h"
 #include "radar_map_projection.h"
 #include <algorithm>
+#include <cstdlib>
 #include <cstring>
+#ifdef USE_ESP32
+#include <esp_heap_caps.h>
+#endif
 
 namespace AirDot::radar_map::tiles {
 
@@ -226,10 +230,28 @@ class TileDecoder {
   explicit TileDecoder(MapData &map, void (*yield_fn)() = nullptr)
       : map_(map), projection_(map.center_latitude,map.center_longitude,map.range_km), line_(map),
         meters_per_pixel_(map.range_km*1000.0/PIXELS_PER_RANGE), yield_fn_(yield_fn) {
-    map_.count = 0; map_.truncated = false;
+    map_.count = 0; map_.truncated = false; map_.has_water_mask = false;
     if (!valid_coordinates(map.center_latitude,map.center_longitude) || map.range_km < 5 ||
         map.range_km > 50 || map.range_km % 5) result_ = Result::INVALID;
+    if (map_.kind == MapKind::MARINE) {
+      std::memset(map_.water_mask, 0, MASK_BYTES);
+#ifdef USE_ESP32
+      fill_scratch_ = static_cast<uint8_t *>(heap_caps_calloc(1, MASK_BYTES, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT));
+#else
+      fill_scratch_ = static_cast<uint8_t *>(std::calloc(1, MASK_BYTES));
+#endif
+      map_.has_water_mask = fill_scratch_ != nullptr;
+    }
   }
+  ~TileDecoder() {
+#ifdef USE_ESP32
+    heap_caps_free(fill_scratch_);
+#else
+    std::free(fill_scratch_);
+#endif
+  }
+  TileDecoder(const TileDecoder &) = delete;
+  TileDecoder &operator=(const TileDecoder &) = delete;
   Result decode_tile(const uint8_t *data, size_t length, const Tile &tile) {
     if (result_ != Result::OK) return result_;
     if ((length && !data) || tile.z > MAX_ZOOM || tile.x >= (uint32_t(1)<<tile.z) || tile.y >= (uint32_t(1)<<tile.z))
@@ -279,6 +301,10 @@ class TileDecoder {
   detail::FeatureClass values_[MAX_VALUES]{};
   Layer layer_{Layer::TRANSPORTATION};
   uint32_t key_count_{0}, value_count_{0}, class_key_{UINT32_MAX}, brunnel_key_{UINT32_MAX}, extent_{4096};
+  // Water fill: crossings are toggled into fill_scratch_ per feature, then
+  // each touched row is prefix-XORed (even-odd rule) and ORed into the mask.
+  uint8_t *fill_scratch_{nullptr};
+  int fill_row_min_{MASK_SIZE}, fill_row_max_{-1};
   // Coastline ring state, in tile coordinates.
   bool chain_open_{false};
   double chain_x_{0}, chain_y_{0};
@@ -388,7 +414,9 @@ class TileDecoder {
       if (type != 3 || brunnel == detail::FeatureClass::TUNNEL || !allowed_water(road)) return Result::OK;
       if (!geometry_count) return Result::INVALID;
       line_.style(Style::COAST);
-      return geometry_rings(geometry,geometry_count);
+      const Result rings = geometry_rings(geometry,geometry_count);
+      commit_fill_();
+      return rings;
     }
     if (layer_ == Layer::WATERWAY) {
       if (type != 2 || brunnel == detail::FeatureClass::TUNNEL || !allowed_waterway(road)) return Result::OK;
@@ -458,6 +486,51 @@ class TileDecoder {
     chain_x_ = bx; chain_y_ = by;
     return t1 < 1 ? break_chain_() : Result::OK;
   }
+  // Tile coordinate -> water mask cell coordinate.
+  bool cell_point_(double tile_x, double tile_y, double &x, double &y, bool &valid) {
+    if (!tile_point_(tile_x, tile_y, x, y, valid)) return false;
+    x = x * MASK_PIXELS_PER_RANGE / NORMALIZED_RADIUS + MASK_RADIUS;
+    y = y * MASK_PIXELS_PER_RANGE / NORMALIZED_RADIUS + MASK_RADIUS;
+    return true;
+  }
+  void fill_edge_(double x0, double y0, double x1, double y1) {
+    if (fill_scratch_ == nullptr || y0 == y1) return;
+    const double low = std::min(y0, y1), high = std::max(y0, y1);
+    // Rows whose centre (r + 0.5) lies in [low, high).
+    const int first = std::max(0, static_cast<int>(std::ceil(low - 0.5)));
+    const int last = std::min(MASK_SIZE - 1, static_cast<int>(std::ceil(high - 0.5)) - 1);
+    for (int row = first; row <= last; ++row) {
+      const double x = x0 + (row + 0.5 - y0) * (x1 - x0) / (y1 - y0);
+      int column = static_cast<int>(std::ceil(x - 0.5));  // First cell whose centre is right of x.
+      if (column >= MASK_SIZE) continue;
+      if (column < 0) column = 0;
+      fill_scratch_[static_cast<size_t>(row) * MASK_STRIDE + (column >> 3)] ^= static_cast<uint8_t>(1U << (column & 7));
+    }
+    if (first <= last) {
+      fill_row_min_ = std::min(fill_row_min_, first);
+      fill_row_max_ = std::max(fill_row_max_, last);
+    }
+  }
+  void commit_fill_() {
+    if (fill_scratch_ == nullptr) return;
+    for (int row = fill_row_min_; row <= fill_row_max_; ++row) {
+      uint8_t *scratch = fill_scratch_ + static_cast<size_t>(row) * MASK_STRIDE;
+      uint8_t *mask = map_.water_mask + static_cast<size_t>(row) * MASK_STRIDE;
+      uint8_t carry = 0;
+      for (int i = 0; i < MASK_STRIDE; ++i) {
+        uint8_t inside = scratch[i];
+        inside ^= static_cast<uint8_t>(inside << 1);  // LSB-first prefix XOR within the byte.
+        inside ^= static_cast<uint8_t>(inside << 2);
+        inside ^= static_cast<uint8_t>(inside << 4);
+        if (carry) inside = static_cast<uint8_t>(~inside);
+        carry = inside >> 7;
+        mask[i] |= inside;
+        scratch[i] = 0;
+      }
+    }
+    fill_row_min_ = MASK_SIZE;
+    fill_row_max_ = -1;
+  }
   Result geometry_rings(const detail::Span *parts, unsigned count) {
     unsigned part = 0; detail::Reader reader(parts[0]);
     auto read = [&](uint32_t &value) {
@@ -472,7 +545,8 @@ class TileDecoder {
       return false;
     };
     int64_t cursor_x = 0, cursor_y = 0, start_x = 0, start_y = 0, previous_x = 0, previous_y = 0;
-    bool active = false;
+    double start_cx = 0, start_cy = 0, previous_cx = 0, previous_cy = 0;
+    bool active = false, start_valid = false, previous_valid = false;
     line_.reset(); chain_open_ = false;
     while (available()) {
       uint32_t command;
@@ -480,6 +554,7 @@ class TileDecoder {
       const uint32_t operation = command & 7, repeats = command >> 3;
       if (operation == 7) {
         if (repeats != 1 || !active) return Result::INVALID;
+        if (previous_valid && start_valid) fill_edge_(previous_cx, previous_cy, start_cx, start_cy);
         const Result closed = ring_edge_(double(previous_x),double(previous_y),double(start_x),double(start_y));
         if (closed != Result::OK) return closed;
         const Result broken = break_chain_();
@@ -497,13 +572,20 @@ class TileDecoder {
         if (cursor_x < INT32_MIN || cursor_x > INT32_MAX || cursor_y < INT32_MIN || cursor_y > INT32_MAX)
           return Result::INVALID;
         if (!count_point_()) return Result::BUDGET;
+        double cx = 0, cy = 0; bool valid = false;
+        if (fill_scratch_ != nullptr && !cell_point_(double(cursor_x), double(cursor_y), cx, cy, valid))
+          return Result::INVALID;
         if (operation == 1) {
           const Result broken = break_chain_();
           if (broken != Result::OK) return broken;
           start_x = previous_x = cursor_x; start_y = previous_y = cursor_y;
+          start_cx = previous_cx = cx; start_cy = previous_cy = cy;
+          start_valid = previous_valid = valid;
           active = true;
           continue;
         }
+        if (previous_valid && valid) fill_edge_(previous_cx, previous_cy, cx, cy);
+        previous_cx = cx; previous_cy = cy; previous_valid = valid;
         const Result edge = ring_edge_(double(previous_x),double(previous_y),double(cursor_x),double(cursor_y));
         if (edge != Result::OK) return edge;
         previous_x = cursor_x; previous_y = cursor_y;

@@ -7,6 +7,7 @@
 #include <cmath>
 #include <cstdint>
 #include <cstdio>
+#include <new>
 
 #include <lvgl.h>
 
@@ -28,10 +29,8 @@ inline constexpr int SHIP_SHOULDER_PX = 2;
 inline constexpr int SHIP_STERN_PX = 6;
 inline constexpr int SHIP_BEAM_PX = 4;
 inline constexpr int SHIP_DIAMOND_PX = 4;
-inline constexpr int SHIP_VECTOR_MIN_PX = 4;
-inline constexpr int SHIP_VECTOR_MAX_PX = 40;
-inline constexpr float SHIP_VECTOR_MINUTES = 6.0f;
-inline constexpr int SHIP_MAX_LABELS = 10;
+inline constexpr int SHIP_MAX_LABELS = MAX_LABELS;
+inline constexpr int SHIP_LABEL_GAP_PX = 3;  // Minimum clear space between two labels.
 inline constexpr size_t SHIP_LABEL_CHARS = 14;
 inline constexpr radar_map::MapKind MAP_KIND = radar_map::MapKind::MARINE;
 
@@ -64,7 +63,8 @@ inline RadarMapLoadingPhase ship_map_loading_phase_(const ShipScopeState &state)
                ? RadarMapLoadingPhase::HIDDEN
                : RadarMapLoadingPhase::LOADING;
   }
-  if (!state.map_location_valid) return RadarMapLoadingPhase::LOADING;
+  // No location: show the scope with its "Location missing" status instead of a loading screen.
+  if (!state.map_location_valid) return RadarMapLoadingPhase::HIDDEN;
   const auto status = radar_map::status_for(state.map_latitude, state.map_longitude, state.map_range_km, MAP_KIND);
   if (status == radar_map::Status::OFFLINE || status == radar_map::Status::UNAVAILABLE)
     return RadarMapLoadingPhase::HIDDEN;
@@ -128,8 +128,7 @@ inline lv_point_t ship_point_(int cx, int cy, float sin_h, float cos_h, float fo
   };
 }
 
-inline void draw_ship_marker_(lv_layer_t *layer, const RenderVessel &vessel, int x, int y, lv_color_t color,
-                              uint8_t range_km, int traffic_radius) {
+inline void draw_ship_marker_(lv_layer_t *layer, const RenderVessel &vessel, int x, int y, lv_color_t color) {
   if (!vessel.moving || !std::isfinite(vessel.heading_deg)) {
     const lv_point_t top{static_cast<lv_coord_t>(x), static_cast<lv_coord_t>(y - SHIP_DIAMOND_PX)};
     const lv_point_t bottom{static_cast<lv_coord_t>(x), static_cast<lv_coord_t>(y + SHIP_DIAMOND_PX)};
@@ -149,28 +148,50 @@ inline void draw_ship_marker_(lv_layer_t *layer, const RenderVessel &vessel, int
   draw_filled_triangle_(layer, color, RadarTriangle{{bow, port, starboard}});
   draw_filled_triangle_(layer, color, RadarTriangle{{port, starboard, stern_starboard}});
   draw_filled_triangle_(layer, color, RadarTriangle{{port, stern_starboard, stern_port}});
+}
 
-  // Course vector: where the vessel will be in about six minutes.
-  if (std::isfinite(vessel.sog_kn) && range_km > 0) {
-    const float km = vessel.sog_kn * 1.852f * SHIP_VECTOR_MINUTES / 60.0f;
-    const int length = std::clamp(static_cast<int>(std::round(km / range_km * traffic_radius)), SHIP_VECTOR_MIN_PX,
-                                  SHIP_VECTOR_MAX_PX);
-    const lv_point_t tip = ship_point_(x, y, sin_h, cos_h, SHIP_BOW_PX + length, 0);
-    draw_pixel_line_(layer, color, bow.x, bow.y, tip.x, tip.y, 1);
+// Draw scratch, all in PSRAM: the LVGL draw callback runs deep in the main
+// loop's stack, and LVGL draws the scope in several strips per refresh.
+struct ShipDrawBuffers {
+  RenderList list;
+  RadarAircraftRender markers[MAX_RENDER];
+  int pixel_x[MAX_RENDER], pixel_y[MAX_RENDER], order[MAX_RENDER];
+  RadarLabelPlacement placed[SHIP_MAX_LABELS];
+  char texts[SHIP_MAX_LABELS][SHIP_LABEL_CHARS + 1];
+};
+inline ShipDrawBuffers *ship_draw_buffers_() {
+  static ShipDrawBuffers *buffers = [] {
+    void *memory = heap_caps_calloc(1, sizeof(ShipDrawBuffers), MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
+    return memory != nullptr ? new (memory) ShipDrawBuffers{} : nullptr;
+  }();
+  return buffers;
+}
+
+// Rebuilds the vessel list from the cache. Called from the 1 s interval (and
+// on page refresh), never from the draw callback, so every strip of a frame
+// shows the same list and the cache lock is not taken while drawing.
+inline void refresh_ship_render_list() {
+  auto *buffers = ship_draw_buffers_();
+  const auto &state = ship_scope_state_();
+  if (buffers == nullptr) return;
+  if (!state.map_location_valid) {
+    buffers->list.count = 0;
+    return;
   }
+  RenderList &list = buffers->list;
+  if (!copy_render_list(list, state.map_latitude, state.map_longitude, state.map_range_km,
+                        AirDot::onboarding::load_ship_radar_category_mask(), esphome::millis()))
+    list.count = 0;
 }
 
 inline void draw_ships_(lv_layer_t *layer, const lv_area_t &scope_area, const lv_font_t *font, int center_x,
-                        int center_y, int traffic_radius, const ShipScopeState &state) {
-  static RenderList list;
-  const uint32_t now = esphome::millis();
-  if (!copy_render_list(list, state.map_latitude, state.map_longitude, state.map_range_km,
-                        AirDot::onboarding::load_ship_radar_category_mask(), now) || list.count == 0)
-    return;
-
-  static RadarAircraftRender markers[MAX_RENDER];
+                        int center_y, int traffic_radius) {
+  auto *buffers = ship_draw_buffers_();
+  if (buffers == nullptr || buffers->list.count == 0) return;
+  const RenderList &list = buffers->list;
+  RadarAircraftRender *markers = buffers->markers;
+  int *pixel_x = buffers->pixel_x, *pixel_y = buffers->pixel_y;
   int marker_count = 0;
-  int pixel_x[MAX_RENDER], pixel_y[MAX_RENDER];
   for (int i = 0; i < list.count; ++i) {
     const auto &vessel = list.vessels[i];
     pixel_x[i] = center_x + static_cast<int>(std::lround(vessel.x * traffic_radius / radar_map::NORMALIZED_RADIUS));
@@ -183,51 +204,53 @@ inline void draw_ships_(lv_layer_t *layer, const lv_area_t &scope_area, const lv
   for (int pass = 0; pass < 2; ++pass)
     for (int i = 0; i < list.count; ++i)
       if (list.vessels[i].favorite == (pass == 1))
-        draw_ship_marker_(layer, list.vessels[i], pixel_x[i], pixel_y[i], ship_color_(list.vessels[i]),
-                          state.map_range_km, traffic_radius);
+        draw_ship_marker_(layer, list.vessels[i], pixel_x[i], pixel_y[i], ship_color_(list.vessels[i]));
 
-  // Only named vessels get a label (the MMSI is never shown): named
-  // favourites, then moving vessels, then stationary ones, nearest first.
-  int order[MAX_RENDER];
+  // Names for the labelled vessels, in priority order (favourites, then the
+  // largest or fastest). The MMSI is never shown. A label that would still
+  // touch an already placed one after placement is dropped.
+  int *order = buffers->order;
   int labelled = 0;
   for (int i = 0; i < list.count; ++i)
-    if (list.vessels[i].name[0] != '\0') order[labelled++] = i;
-  std::sort(order, order + labelled, [&](int a, int b) {
-    const auto &va = list.vessels[a], &vb = list.vessels[b];
-    const int ga = va.favorite ? 0 : va.moving ? 1 : 2, gb = vb.favorite ? 0 : vb.moving ? 1 : 2;
-    if (ga != gb) return ga < gb;
-    return va.x * va.x + va.y * va.y < vb.x * vb.x + vb.y * vb.y;
-  });
+    if (list.vessels[i].labelled) order[labelled++] = i;
+  std::sort(order, order + labelled,
+            [&](int a, int b) { return list.vessels[a].label_rank < list.vessels[b].label_rank; });
   labelled = std::min(labelled, SHIP_MAX_LABELS);
 
-  RadarLabelPlacement placed[SHIP_MAX_LABELS]{};
-  char texts[SHIP_MAX_LABELS][SHIP_LABEL_CHARS + 1]{};
+  RadarLabelPlacement *placed = buffers->placed;
+  auto &texts = buffers->texts;
+  int placed_count = 0;
   for (int n = 0; n < labelled; ++n) {
     const int i = order[n];
     const auto &vessel = list.vessels[i];
-    std::snprintf(texts[n], sizeof(texts[n]), "%.*s", static_cast<int>(SHIP_LABEL_CHARS), vessel.name);
+    std::snprintf(texts[placed_count], sizeof(texts[placed_count]), "%.*s", static_cast<int>(SHIP_LABEL_CHARS),
+                  vessel.name);
     const float bearing = std::atan2(vessel.x, -vessel.y);
     const lv_color_t color = ship_color_(vessel);
     RadarLabelPlacement label = place_aircraft_label_(scope_area, font, color, center_x, pixel_x[i], center_y,
-                                                      pixel_y[i], bearing, vessel.heading_deg, texts[n], placed, n,
-                                                      markers, marker_count);
+                                                      pixel_y[i], bearing, vessel.heading_deg, texts[placed_count],
+                                                      placed, placed_count, markers, marker_count);
+    const lv_area_t padded = expand_area_(label.area, SHIP_LABEL_GAP_PX);
+    bool collides = false;
+    for (int p = 0; p < placed_count && !collides; ++p) collides = areas_intersect_(padded, placed[p].area);
+    if (collides) continue;
     draw_pixel_line_(layer, color, label.connector_kink.x, label.connector_kink.y, label.connector_end.x,
                      label.connector_end.y, 1);
     draw_pixel_line_(layer, color, label.connector_kink.x, label.connector_kink.y, label.connector_start.x,
                      label.connector_start.y, 1);
     draw_label_in_area_(layer, label);
-    placed[n] = label;
+    placed[placed_count++] = label;
   }
 }
 
-inline const char *stream_status_text_(StreamStatus status) {
+inline const char *stream_status_text_(StreamStatus status, UiLanguage language) {
   switch (status) {
-    case StreamStatus::NO_KEY: return "AIS API key missing";
-    case StreamStatus::NO_LOCATION: return "Location missing";
-    case StreamStatus::OFFLINE: return "Offline";
-    case StreamStatus::CONNECTING: return "Connecting...";
-    case StreamStatus::RETRY_WAIT: return "Reconnecting...";
-    case StreamStatus::KEY_REJECTED: return "AIS API key rejected";
+    case StreamStatus::NO_KEY: return AirDot::ship_radar_key_missing_text(language);
+    case StreamStatus::NO_LOCATION: return AirDot::ship_radar_location_missing_text(language);
+    case StreamStatus::OFFLINE: return AirDot::ship_radar_offline_text(language);
+    case StreamStatus::CONNECTING: return AirDot::ship_radar_connecting_text(language);
+    case StreamStatus::RETRY_WAIT: return AirDot::ship_radar_reconnecting_text(language);
+    case StreamStatus::KEY_REJECTED: return AirDot::ship_radar_key_rejected_text(language);
     default: return nullptr;
   }
 }
@@ -272,17 +295,8 @@ inline void draw_ship_scope_(lv_event_t *event) {
     radar_map::draw_map(layer, area, state->map_latitude, state->map_longitude, state->map_range_km, traffic_radius,
                         radius, AirDot::onboarding::load_dark_mode_enabled(), MAP_KIND);
   draw_compass_(layer, area, state->bearing_font, center_x, center_y, radius);
-  if (state->map_location_valid && AirDot::onboarding::load_radar_location_dot_enabled()) {
-    lv_draw_rect_dsc_t dot;
-    lv_draw_rect_dsc_init(&dot);
-    dot.bg_color = AirDot::color(0xFF, 0xFF, 0xFF);
-    dot.bg_opa = LV_OPA_COVER;
-    dot.radius = LV_RADIUS_CIRCLE;
-    lv_area_t location{center_x - 3, center_y - 3, center_x + 3, center_y + 3};
-    lv_draw_rect(layer, &dot, &location);
-  }
   const auto *font = state->label_font != nullptr ? state->label_font : lv_font_get_default();
-  if (state->map_location_valid) draw_ships_(layer, area, font, center_x, center_y, traffic_radius, *state);
+  if (state->map_location_valid) draw_ships_(layer, area, font, center_x, center_y, traffic_radius);
 
   const bool imperial = AirDot::onboarding::load_unit_system() == AirDot::onboarding::UNIT_SYSTEM_IMPERIAL;
   const unsigned range =
@@ -294,7 +308,10 @@ inline void draw_ship_scope_(lv_event_t *event) {
   draw_label_(layer, area, font, text_color, area.x1 + (width - text_size.x) / 2, area.y1 + 425 - text_size.y / 2,
               range_text, LV_TEXT_ALIGN_CENTER);
 
-  if (const char *status = stream_status_text_(stream_status())) {
+  const auto language = AirDot::onboarding::load_ui_language();
+  const char *status = state->map_location_valid ? stream_status_text_(stream_status(), language)
+                                                 : AirDot::ship_radar_location_missing_text(language);
+  if (status != nullptr) {
     const lv_font_t *status_font = state->bearing_font != nullptr ? state->bearing_font : font;
     lv_text_get_size(&text_size, status, status_font, 0, 0, LV_COORD_MAX, LV_TEXT_FLAG_NONE);
     draw_label_(layer, area, status_font, text_color, area.x1 + (width - text_size.x) / 2,

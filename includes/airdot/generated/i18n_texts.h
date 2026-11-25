@@ -644,6 +644,144 @@ inline const char *connection_location_text(bool outdoor, UiLanguage language) {
     }
 }
 
+inline const char *ship_radar_key_missing_text(UiLanguage language) {
+  switch (language) {
+    case UiLanguage::EN:
+      return "AIS API key missing";
+    case UiLanguage::DE:
+      return "AIS-API-Schlüssel fehlt";
+    case UiLanguage::NL:
+      return "AIS API-sleutel ontbreekt";
+    case UiLanguage::FR:
+      return "Clé API AIS manquante";
+    case UiLanguage::HU:
+      return "Hiányzó AIS API-kulcs";
+    case UiLanguage::CS:
+      return "Chybí klíč API AIS";
+    case UiLanguage::IT:
+      return "Chiave API AIS mancante";
+    case UiLanguage::RO:
+      return "Lipsește cheia API AIS";
+    default:
+      return "AIS API key missing";
+  }
+}
+
+inline const char *ship_radar_location_missing_text(UiLanguage language) {
+  switch (language) {
+    case UiLanguage::EN:
+      return "Location missing";
+    case UiLanguage::DE:
+      return "Standort fehlt";
+    case UiLanguage::NL:
+      return "Locatie ontbreekt";
+    case UiLanguage::FR:
+      return "Position manquante";
+    case UiLanguage::HU:
+      return "Hiányzó helyadat";
+    case UiLanguage::CS:
+      return "Chybí poloha";
+    case UiLanguage::IT:
+      return "Posizione mancante";
+    case UiLanguage::RO:
+      return "Lipsește locația";
+    default:
+      return "Location missing";
+  }
+}
+
+inline const char *ship_radar_offline_text(UiLanguage language) {
+  switch (language) {
+    case UiLanguage::EN:
+      return "Offline";
+    case UiLanguage::DE:
+      return "Offline";
+    case UiLanguage::NL:
+      return "Offline";
+    case UiLanguage::FR:
+      return "Hors ligne";
+    case UiLanguage::HU:
+      return "Offline";
+    case UiLanguage::CS:
+      return "Offline";
+    case UiLanguage::IT:
+      return "Offline";
+    case UiLanguage::RO:
+      return "Offline";
+    default:
+      return "Offline";
+  }
+}
+
+inline const char *ship_radar_connecting_text(UiLanguage language) {
+  switch (language) {
+    case UiLanguage::EN:
+      return "Connecting...";
+    case UiLanguage::DE:
+      return "Verbinde...";
+    case UiLanguage::NL:
+      return "Verbinden...";
+    case UiLanguage::FR:
+      return "Connexion...";
+    case UiLanguage::HU:
+      return "Csatlakozás...";
+    case UiLanguage::CS:
+      return "Připojování...";
+    case UiLanguage::IT:
+      return "Connessione...";
+    case UiLanguage::RO:
+      return "Conectare...";
+    default:
+      return "Connecting...";
+  }
+}
+
+inline const char *ship_radar_reconnecting_text(UiLanguage language) {
+  switch (language) {
+    case UiLanguage::EN:
+      return "Reconnecting...";
+    case UiLanguage::DE:
+      return "Neuverbindung...";
+    case UiLanguage::NL:
+      return "Opnieuw verbinden...";
+    case UiLanguage::FR:
+      return "Reconnexion...";
+    case UiLanguage::HU:
+      return "Újracsatlakozás...";
+    case UiLanguage::CS:
+      return "Opětovné připojování...";
+    case UiLanguage::IT:
+      return "Riconnessione...";
+    case UiLanguage::RO:
+      return "Reconectare...";
+    default:
+      return "Reconnecting...";
+  }
+}
+
+inline const char *ship_radar_key_rejected_text(UiLanguage language) {
+  switch (language) {
+    case UiLanguage::EN:
+      return "AIS API key rejected";
+    case UiLanguage::DE:
+      return "AIS-API-Schlüssel abgelehnt";
+    case UiLanguage::NL:
+      return "AIS API-sleutel geweigerd";
+    case UiLanguage::FR:
+      return "Clé API AIS refusée";
+    case UiLanguage::HU:
+      return "AIS API-kulcs elutasítva";
+    case UiLanguage::CS:
+      return "Klíč API AIS odmítnut";
+    case UiLanguage::IT:
+      return "Chiave API AIS rifiutata";
+    case UiLanguage::RO:
+      return "Cheie API AIS respinsă";
+    default:
+      return "AIS API key rejected";
+  }
+}
+
 inline const char *date_format_text(UiLanguage language) {
   switch (language) {
     case UiLanguage::EN:
@@ -1309,6 +1447,9 @@ struct SetupPageText {
   const char *ship_radar_favorites_label;
   const char *ship_radar_favorites_help;
   const char *ship_radar_favorites_invalid;
+  const char *ship_radar_coordinates_help;
+  const char *ship_radar_coordinates_invalid;
+  const char *ship_radar_api_key_invalid;
   const char *ship_radar_alert_title;
   const char *ship_radar_alert_description;
   const char *weather_title;
@@ -1581,8 +1722,11 @@ inline SetupPageText setup_page_text(AirDot::UiLanguage language) {
         "Favorite vessels (MMSI)",
         "Up to 20 nine-digit MMSI numbers, separated by commas. Favorites are drawn in gold and are tracked only inside the radius.",
         "Enter nine-digit MMSI numbers separated by commas, at most 20.",
-        "Departure alert",
-        "Switch to the ship radar and alert when a favorite vessel that was stopped or out of range starts moving.",
+        "Decimal degrees, for example 42.3601 and -71.0589. Latitudes south of the equator and longitudes west of Greenwich are negative.",
+        "Enter decimal degrees: latitude from -90 to 90, longitude from -180 to 180, up to 7 decimals.",
+        "API keys are 16 to 64 letters, digits, hyphens or underscores. Check for extra characters.",
+        "Show radar on departure",
+        "Switch the display to the ship radar when a favorite vessel that was stopped or out of range gets under way.",
         "Weather",
         "Show local outdoor weather on the display.",
         "Weather updates",
@@ -1725,34 +1869,37 @@ inline SetupPageText setup_page_text(AirDot::UiLanguage language) {
         "Verkehr",
         "Alle Flugzeuge",
         "Nur Militär",
-        "Ship radar",
-        "Shows AIS vessels from aisstream.io around a location on a coastline map. Requires a free aisstream.io API key.",
-        "Ship radar",
-        "Show nearby ships. Keeps a connection to aisstream.io open while enabled so vessel names and types can be collected.",
-        "aisstream.io API key",
-        "Paste your API key",
-        "Saved. Leave blank to keep it.",
-        "Remove saved key",
+        "Schiffsradar",
+        "Zeigt AIS-Schiffe von aisstream.io rund um einen Standort auf einer Küstenkarte. Erfordert einen kostenlosen API-Schlüssel von aisstream.io.",
+        "Schiffsradar",
+        "Zeige Schiffe in der Nähe. Solange aktiviert, bleibt eine Verbindung zu aisstream.io offen, damit Schiffsnamen und -typen gesammelt werden können.",
+        "aisstream.io-API-Schlüssel",
+        "API-Schlüssel einfügen",
+        "Gespeichert. Leer lassen, um ihn zu behalten.",
+        "Gespeicherten Schlüssel entfernen",
         "Radius",
-        "Location",
-        "Device location",
-        "Custom",
-        "Latitude",
-        "Longitude",
-        "Vessel types",
-        "Cargo",
+        "Standort",
+        "Gerätestandort",
+        "Benutzerdefiniert",
+        "Breitengrad",
+        "Längengrad",
+        "Schiffstypen",
+        "Frachter",
         "Tanker",
-        "Passenger",
-        "Fishing",
-        "Sailing and pleasure",
-        "Tug and service",
-        "High-speed craft",
-        "Other and unknown",
-        "Favorite vessels (MMSI)",
-        "Up to 20 nine-digit MMSI numbers, separated by commas. Favorites are drawn in gold and are tracked only inside the radius.",
-        "Enter nine-digit MMSI numbers separated by commas, at most 20.",
-        "Departure alert",
-        "Switch to the ship radar and alert when a favorite vessel that was stopped or out of range starts moving.",
+        "Passagierschiffe",
+        "Fischerei",
+        "Segel- und Sportboote",
+        "Schlepper und Dienstfahrzeuge",
+        "Hochgeschwindigkeitsfahrzeuge",
+        "Sonstige und unbekannte",
+        "Lieblingsschiffe (MMSI)",
+        "Bis zu 20 neunstellige MMSI-Nummern, durch Kommas getrennt. Favoriten werden golden dargestellt und nur innerhalb des Radius verfolgt.",
+        "Gib neunstellige MMSI-Nummern durch Kommas getrennt ein, höchstens 20.",
+        "Dezimalgrad, zum Beispiel 42.3601 und -71.0589. Breitengrade südlich des Äquators und Längengrade westlich von Greenwich sind negativ.",
+        "Gib Dezimalgrad ein: Breitengrad von -90 bis 90, Längengrad von -180 bis 180, höchstens 7 Nachkommastellen.",
+        "API-Schlüssel bestehen aus 16 bis 64 Buchstaben, Ziffern, Bindestrichen oder Unterstrichen. Prüfe auf überzählige Zeichen.",
+        "Radar bei Abfahrt zeigen",
+        "Wechsle die Anzeige zum Schiffsradar, wenn ein Lieblingsschiff, das stillstand oder außer Reichweite war, Fahrt aufnimmt.",
         "Wetter",
         "Zeige das lokale Außenwetter auf dem Bildschirm.",
         "Wetterupdates",
@@ -1789,7 +1936,7 @@ inline SetupPageText setup_page_text(AirDot::UiLanguage language) {
         "Zeit & Wetter",
         "Flugradar",
         "Regenradar",
-        "Ship radar",
+        "Schiffsradar",
         "PM1",
         "PM2.5",
         "PM4",
@@ -1895,34 +2042,37 @@ inline SetupPageText setup_page_text(AirDot::UiLanguage language) {
         "Verkeer",
         "Alle vliegtuigen",
         "Alleen militair",
-        "Ship radar",
-        "Shows AIS vessels from aisstream.io around a location on a coastline map. Requires a free aisstream.io API key.",
-        "Ship radar",
-        "Show nearby ships. Keeps a connection to aisstream.io open while enabled so vessel names and types can be collected.",
-        "aisstream.io API key",
-        "Paste your API key",
-        "Saved. Leave blank to keep it.",
-        "Remove saved key",
-        "Radius",
-        "Location",
-        "Device location",
-        "Custom",
-        "Latitude",
-        "Longitude",
-        "Vessel types",
-        "Cargo",
-        "Tanker",
-        "Passenger",
-        "Fishing",
-        "Sailing and pleasure",
-        "Tug and service",
-        "High-speed craft",
-        "Other and unknown",
-        "Favorite vessels (MMSI)",
-        "Up to 20 nine-digit MMSI numbers, separated by commas. Favorites are drawn in gold and are tracked only inside the radius.",
-        "Enter nine-digit MMSI numbers separated by commas, at most 20.",
-        "Departure alert",
-        "Switch to the ship radar and alert when a favorite vessel that was stopped or out of range starts moving.",
+        "Scheepsradar",
+        "Toont AIS-schepen van aisstream.io rond een locatie op een kustkaart. Vereist een gratis API-sleutel van aisstream.io.",
+        "Scheepsradar",
+        "Toon schepen in de buurt. Zolang dit aan staat, blijft er een verbinding met aisstream.io open zodat scheepsnamen en -types verzameld kunnen worden.",
+        "aisstream.io API-sleutel",
+        "Plak je API-sleutel",
+        "Opgeslagen. Laat leeg om hem te behouden.",
+        "Opgeslagen sleutel verwijderen",
+        "Straal",
+        "Locatie",
+        "Apparaatlocatie",
+        "Aangepast",
+        "Breedtegraad",
+        "Lengtegraad",
+        "Scheepstypes",
+        "Vracht",
+        "Tankers",
+        "Passagiers",
+        "Visserij",
+        "Zeil- en pleziervaart",
+        "Sleep- en dienstvaartuigen",
+        "Snelle vaartuigen",
+        "Overig en onbekend",
+        "Favoriete schepen (MMSI)",
+        "Maximaal 20 negencijferige MMSI-nummers, gescheiden door komma's. Favorieten worden in goud getekend en alleen binnen de straal gevolgd.",
+        "Vul negencijferige MMSI-nummers in, gescheiden door komma's, maximaal 20.",
+        "Decimale graden, bijvoorbeeld 42.3601 en -71.0589. Breedtegraden ten zuiden van de evenaar en lengtegraden ten westen van Greenwich zijn negatief.",
+        "Vul decimale graden in: breedtegraad van -90 tot 90, lengtegraad van -180 tot 180, maximaal 7 decimalen.",
+        "API-sleutels bestaan uit 16 tot 64 letters, cijfers, koppeltekens of underscores. Controleer op extra tekens.",
+        "Radar tonen bij vertrek",
+        "Schakel het scherm naar de scheepsradar wanneer een favoriet schip dat stillag of buiten bereik was, gaat varen.",
         "Weer",
         "Toon het lokale buitenweer op het scherm.",
         "Weerupdates",
@@ -1959,7 +2109,7 @@ inline SetupPageText setup_page_text(AirDot::UiLanguage language) {
         "Tijd & weer",
         "Vluchtradar",
         "Buienradar",
-        "Ship radar",
+        "Scheepsradar",
         "PM1",
         "PM2.5",
         "PM4",
@@ -2065,34 +2215,37 @@ inline SetupPageText setup_page_text(AirDot::UiLanguage language) {
         "Trafic",
         "Tous les avions",
         "Militaire seul",
-        "Ship radar",
-        "Shows AIS vessels from aisstream.io around a location on a coastline map. Requires a free aisstream.io API key.",
-        "Ship radar",
-        "Show nearby ships. Keeps a connection to aisstream.io open while enabled so vessel names and types can be collected.",
-        "aisstream.io API key",
-        "Paste your API key",
-        "Saved. Leave blank to keep it.",
-        "Remove saved key",
-        "Radius",
-        "Location",
-        "Device location",
-        "Custom",
+        "Radar maritime",
+        "Affiche les navires AIS d'aisstream.io autour d'une position sur une carte du littoral. Nécessite une clé API aisstream.io gratuite.",
+        "Radar maritime",
+        "Affichez les navires à proximité. Une connexion à aisstream.io reste ouverte tant que l'option est activée, afin de recueillir les noms et types des navires.",
+        "Clé API aisstream.io",
+        "Collez votre clé API",
+        "Enregistrée. Laissez vide pour la conserver.",
+        "Supprimer la clé enregistrée",
+        "Rayon",
+        "Position",
+        "Position de l'appareil",
+        "Personnalisée",
         "Latitude",
         "Longitude",
-        "Vessel types",
+        "Types de navires",
         "Cargo",
-        "Tanker",
-        "Passenger",
-        "Fishing",
-        "Sailing and pleasure",
-        "Tug and service",
-        "High-speed craft",
-        "Other and unknown",
-        "Favorite vessels (MMSI)",
-        "Up to 20 nine-digit MMSI numbers, separated by commas. Favorites are drawn in gold and are tracked only inside the radius.",
-        "Enter nine-digit MMSI numbers separated by commas, at most 20.",
-        "Departure alert",
-        "Switch to the ship radar and alert when a favorite vessel that was stopped or out of range starts moving.",
+        "Navire-citerne",
+        "Passagers",
+        "Pêche",
+        "Voile et plaisance",
+        "Remorqueurs et servitude",
+        "Engins à grande vitesse",
+        "Autres et inconnus",
+        "Navires favoris (MMSI)",
+        "Jusqu'à 20 numéros MMSI à neuf chiffres, séparés par des virgules. Les favoris sont affichés en doré et ne sont suivis qu'à l'intérieur du rayon.",
+        "Saisissez des numéros MMSI à neuf chiffres séparés par des virgules, 20 au maximum.",
+        "Degrés décimaux, par exemple 42.3601 et -71.0589. Les latitudes au sud de l'équateur et les longitudes à l'ouest de Greenwich sont négatives.",
+        "Saisissez des degrés décimaux : latitude de -90 à 90, longitude de -180 à 180, 7 décimales au maximum.",
+        "Une clé API comporte de 16 à 64 lettres, chiffres, tirets ou tirets bas. Vérifiez qu'il n'y a pas de caractères en trop.",
+        "Afficher le radar au départ",
+        "Basculez l'écran sur le radar maritime lorsqu'un navire favori qui était à l'arrêt ou hors de portée se met en route.",
         "Météo",
         "Affichez la météo extérieure locale à l’écran.",
         "Mises à jour météo",
@@ -2129,7 +2282,7 @@ inline SetupPageText setup_page_text(AirDot::UiLanguage language) {
         "Heure & météo",
         "Radar aérien",
         "Radar de pluie",
-        "Ship radar",
+        "Radar maritime",
         "PM1",
         "PM2.5",
         "PM4",
@@ -2235,34 +2388,37 @@ inline SetupPageText setup_page_text(AirDot::UiLanguage language) {
         "Forgalom",
         "Összes repülőgép",
         "Csak katonai",
-        "Ship radar",
-        "Shows AIS vessels from aisstream.io around a location on a coastline map. Requires a free aisstream.io API key.",
-        "Ship radar",
-        "Show nearby ships. Keeps a connection to aisstream.io open while enabled so vessel names and types can be collected.",
-        "aisstream.io API key",
-        "Paste your API key",
-        "Saved. Leave blank to keep it.",
-        "Remove saved key",
-        "Radius",
-        "Location",
-        "Device location",
-        "Custom",
-        "Latitude",
-        "Longitude",
-        "Vessel types",
-        "Cargo",
-        "Tanker",
-        "Passenger",
-        "Fishing",
-        "Sailing and pleasure",
-        "Tug and service",
-        "High-speed craft",
-        "Other and unknown",
-        "Favorite vessels (MMSI)",
-        "Up to 20 nine-digit MMSI numbers, separated by commas. Favorites are drawn in gold and are tracked only inside the radius.",
-        "Enter nine-digit MMSI numbers separated by commas, at most 20.",
-        "Departure alert",
-        "Switch to the ship radar and alert when a favorite vessel that was stopped or out of range starts moving.",
+        "Hajóradar",
+        "Az aisstream.io AIS-adatai alapján hajókat mutat egy helyszín körül, partvonaltérképen. Ingyenes aisstream.io API-kulcs szükséges.",
+        "Hajóradar",
+        "Közeli hajók megjelenítése. Bekapcsolt állapotban nyitva marad a kapcsolat az aisstream.io-val, hogy a hajók neve és típusa összegyűjthető legyen.",
+        "aisstream.io API-kulcs",
+        "Illeszd be az API-kulcsot",
+        "Elmentve. Hagyd üresen a megtartáshoz.",
+        "Mentett kulcs törlése",
+        "Sugár",
+        "Helyszín",
+        "Eszköz helye",
+        "Egyéni",
+        "Szélesség (Latitude)",
+        "Hosszúság (Longitude)",
+        "Hajótípusok",
+        "Teherhajó",
+        "Tartályhajó",
+        "Utasszállító",
+        "Halászhajó",
+        "Vitorlás és kedvtelési",
+        "Vontató és szolgálati",
+        "Nagysebességű vízi jármű",
+        "Egyéb és ismeretlen",
+        "Kedvenc hajók (MMSI)",
+        "Legfeljebb 20 kilencjegyű MMSI-szám, vesszővel elválasztva. A kedvencek arany színnel jelennek meg, és csak a sugáron belül követi őket az eszköz.",
+        "Kilencjegyű MMSI-számokat adj meg vesszővel elválasztva, legfeljebb 20-at.",
+        "Tizedes fok, például 42.3601 és -71.0589. Az Egyenlítőtől délre eső szélességek és a Greenwichtől nyugatra eső hosszúságok negatívak.",
+        "Tizedes fokot adj meg: szélesség -90 és 90, hosszúság -180 és 180 között, legfeljebb 7 tizedesjeggyel.",
+        "Az API-kulcs 16-64 betűből, számjegyből, kötőjelből vagy aláhúzásjelből áll. Ellenőrizd, nincs-e benne felesleges karakter.",
+        "Radar megjelenítése induláskor",
+        "A kijelző a hajóradarra vált, amikor egy kedvenc hajó, amely állt vagy hatótávon kívül volt, elindul.",
         "Időjárás",
         "A helyi kültéri időjárás megjelenítése a kijelzőn.",
         "Időjárás frissítések",
@@ -2299,7 +2455,7 @@ inline SetupPageText setup_page_text(AirDot::UiLanguage language) {
         "Idő & időjárás",
         "Repülőradar",
         "Csapadékradar",
-        "Ship radar",
+        "Hajóradar",
         "PM1",
         "PM2.5",
         "PM4",
@@ -2405,34 +2561,37 @@ inline SetupPageText setup_page_text(AirDot::UiLanguage language) {
         "Provoz",
         "Všechna letadla",
         "Pouze vojenská",
-        "Ship radar",
-        "Shows AIS vessels from aisstream.io around a location on a coastline map. Requires a free aisstream.io API key.",
-        "Ship radar",
-        "Show nearby ships. Keeps a connection to aisstream.io open while enabled so vessel names and types can be collected.",
-        "aisstream.io API key",
-        "Paste your API key",
-        "Saved. Leave blank to keep it.",
-        "Remove saved key",
-        "Radius",
-        "Location",
-        "Device location",
-        "Custom",
-        "Latitude",
-        "Longitude",
-        "Vessel types",
-        "Cargo",
-        "Tanker",
-        "Passenger",
-        "Fishing",
-        "Sailing and pleasure",
-        "Tug and service",
-        "High-speed craft",
-        "Other and unknown",
-        "Favorite vessels (MMSI)",
-        "Up to 20 nine-digit MMSI numbers, separated by commas. Favorites are drawn in gold and are tracked only inside the radius.",
-        "Enter nine-digit MMSI numbers separated by commas, at most 20.",
-        "Departure alert",
-        "Switch to the ship radar and alert when a favorite vessel that was stopped or out of range starts moving.",
+        "Lodní radar",
+        "Zobrazuje plavidla AIS ze služby aisstream.io v okolí zvoleného místa na mapě pobřeží. Vyžaduje bezplatný klíč API aisstream.io.",
+        "Lodní radar",
+        "Zobrazovat lodě v okolí. Dokud je funkce zapnutá, zůstává otevřené spojení s aisstream.io, aby bylo možné zjišťovat názvy a typy plavidel.",
+        "Klíč API aisstream.io",
+        "Vložte klíč API",
+        "Uloženo. Ponechte prázdné, chcete-li klíč zachovat.",
+        "Odstranit uložený klíč",
+        "Poloměr",
+        "Poloha",
+        "Poloha zařízení",
+        "Vlastní",
+        "Zeměpisná šířka",
+        "Zeměpisná délka",
+        "Typy plavidel",
+        "Nákladní",
+        "Tankery",
+        "Osobní",
+        "Rybářská",
+        "Plachetnice a rekreační",
+        "Remorkéry a servisní",
+        "Rychlá plavidla",
+        "Ostatní a neznámá",
+        "Oblíbená plavidla (MMSI)",
+        "Až 20 devítimístných čísel MMSI oddělených čárkami. Oblíbená plavidla se zobrazují zlatě a sledují se jen uvnitř poloměru.",
+        "Zadejte devítimístná čísla MMSI oddělená čárkami, nejvýše 20.",
+        "Desetinné stupně, například 42.3601 a -71.0589. Zeměpisné šířky jižně od rovníku a délky západně od Greenwiche jsou záporné.",
+        "Zadejte desetinné stupně: šířku od -90 do 90, délku od -180 do 180, nejvýše 7 desetinných míst.",
+        "Klíč API má 16 až 64 znaků: písmena, číslice, pomlčky nebo podtržítka. Zkontrolujte, zda neobsahuje nadbytečné znaky.",
+        "Zobrazit radar při vyplutí",
+        "Přepnout displej na lodní radar, když se oblíbené plavidlo, které stálo nebo bylo mimo dosah, dá do pohybu.",
         "Počasí",
         "Zobrazovat na displeji místní venkovní počasí.",
         "Aktualizace počasí",
@@ -2469,7 +2628,7 @@ inline SetupPageText setup_page_text(AirDot::UiLanguage language) {
         "Čas & počasí",
         "Letecký radar",
         "Srážkový radar",
-        "Ship radar",
+        "Lodní radar",
         "PM1",
         "PM2.5",
         "PM4",
@@ -2575,34 +2734,37 @@ inline SetupPageText setup_page_text(AirDot::UiLanguage language) {
         "Traffico",
         "Tutti gli aeromobili",
         "Solo militari",
-        "Ship radar",
-        "Shows AIS vessels from aisstream.io around a location on a coastline map. Requires a free aisstream.io API key.",
-        "Ship radar",
-        "Show nearby ships. Keeps a connection to aisstream.io open while enabled so vessel names and types can be collected.",
-        "aisstream.io API key",
-        "Paste your API key",
-        "Saved. Leave blank to keep it.",
-        "Remove saved key",
-        "Radius",
-        "Location",
-        "Device location",
-        "Custom",
-        "Latitude",
-        "Longitude",
-        "Vessel types",
-        "Cargo",
-        "Tanker",
-        "Passenger",
-        "Fishing",
-        "Sailing and pleasure",
-        "Tug and service",
-        "High-speed craft",
-        "Other and unknown",
-        "Favorite vessels (MMSI)",
-        "Up to 20 nine-digit MMSI numbers, separated by commas. Favorites are drawn in gold and are tracked only inside the radius.",
-        "Enter nine-digit MMSI numbers separated by commas, at most 20.",
-        "Departure alert",
-        "Switch to the ship radar and alert when a favorite vessel that was stopped or out of range starts moving.",
+        "Radar navale",
+        "Mostra le imbarcazioni AIS di aisstream.io intorno a una posizione su una mappa costiera. Richiede una chiave API gratuita di aisstream.io.",
+        "Radar navale",
+        "Mostra le navi nelle vicinanze. Finché è attivo, mantiene aperta una connessione ad aisstream.io per raccogliere nomi e tipi delle imbarcazioni.",
+        "Chiave API aisstream.io",
+        "Incolla la tua chiave API",
+        "Salvata. Lascia vuoto per mantenerla.",
+        "Rimuovi la chiave salvata",
+        "Raggio",
+        "Posizione",
+        "Posizione del dispositivo",
+        "Personalizzata",
+        "Latitudine",
+        "Longitudine",
+        "Tipi di imbarcazione",
+        "Mercantili",
+        "Cisterne",
+        "Passeggeri",
+        "Pesca",
+        "Vela e diporto",
+        "Rimorchiatori e servizio",
+        "Unità veloci",
+        "Altro e sconosciuto",
+        "Imbarcazioni preferite (MMSI)",
+        "Fino a 20 numeri MMSI di nove cifre, separati da virgole. Le preferite sono disegnate in oro e vengono seguite solo all'interno del raggio.",
+        "Inserisci numeri MMSI di nove cifre separati da virgole, al massimo 20.",
+        "Gradi decimali, per esempio 42.3601 e -71.0589. Le latitudini a sud dell'equatore e le longitudini a ovest di Greenwich sono negative.",
+        "Inserisci gradi decimali: latitudine da -90 a 90, longitudine da -180 a 180, al massimo 7 decimali.",
+        "Le chiavi API sono composte da 16 a 64 lettere, cifre, trattini o trattini bassi. Controlla che non ci siano caratteri in più.",
+        "Mostra il radar alla partenza",
+        "Passa al radar navale quando un'imbarcazione preferita che era ferma o fuori portata si mette in moto.",
         "Meteo",
         "Mostra il meteo locale esterno sul display.",
         "Aggiornamenti meteo",
@@ -2639,7 +2801,7 @@ inline SetupPageText setup_page_text(AirDot::UiLanguage language) {
         "Ora & meteo",
         "Radar voli",
         "Radar pioggia",
-        "Ship radar",
+        "Radar navale",
         "PM1",
         "PM2.5",
         "PM4",
@@ -2745,34 +2907,37 @@ inline SetupPageText setup_page_text(AirDot::UiLanguage language) {
         "Trafic",
         "Toate aeronavele",
         "Doar militar",
-        "Ship radar",
-        "Shows AIS vessels from aisstream.io around a location on a coastline map. Requires a free aisstream.io API key.",
-        "Ship radar",
-        "Show nearby ships. Keeps a connection to aisstream.io open while enabled so vessel names and types can be collected.",
-        "aisstream.io API key",
-        "Paste your API key",
-        "Saved. Leave blank to keep it.",
-        "Remove saved key",
-        "Radius",
-        "Location",
-        "Device location",
-        "Custom",
-        "Latitude",
-        "Longitude",
-        "Vessel types",
-        "Cargo",
-        "Tanker",
-        "Passenger",
-        "Fishing",
-        "Sailing and pleasure",
-        "Tug and service",
-        "High-speed craft",
-        "Other and unknown",
-        "Favorite vessels (MMSI)",
-        "Up to 20 nine-digit MMSI numbers, separated by commas. Favorites are drawn in gold and are tracked only inside the radius.",
-        "Enter nine-digit MMSI numbers separated by commas, at most 20.",
-        "Departure alert",
-        "Switch to the ship radar and alert when a favorite vessel that was stopped or out of range starts moving.",
+        "Radar naval",
+        "Afișează navele AIS de la aisstream.io în jurul unei locații, pe o hartă a coastei. Necesită o cheie API aisstream.io gratuită.",
+        "Radar naval",
+        "Afișează navele din apropiere. Cât timp este activat, păstrează deschisă o conexiune la aisstream.io pentru a colecta numele și tipurile navelor.",
+        "Cheie API aisstream.io",
+        "Lipește cheia API",
+        "Salvată. Lasă gol pentru a o păstra.",
+        "Șterge cheia salvată",
+        "Rază",
+        "Locație",
+        "Locația dispozitivului",
+        "Personalizată",
+        "Latitudine",
+        "Longitudine",
+        "Tipuri de nave",
+        "Marfă",
+        "Nave cisternă",
+        "Pasageri",
+        "Pescuit",
+        "Velier și agrement",
+        "Remorchere și servicii",
+        "Ambarcațiuni rapide",
+        "Altele și necunoscute",
+        "Nave favorite (MMSI)",
+        "Până la 20 de numere MMSI de nouă cifre, separate prin virgule. Favoritele sunt desenate cu auriu și sunt urmărite doar în interiorul razei.",
+        "Introdu numere MMSI de nouă cifre separate prin virgule, cel mult 20.",
+        "Grade zecimale, de exemplu 42.3601 și -71.0589. Latitudinile la sud de ecuator și longitudinile la vest de Greenwich sunt negative.",
+        "Introdu grade zecimale: latitudine între -90 și 90, longitudine între -180 și 180, cel mult 7 zecimale.",
+        "Cheile API au între 16 și 64 de litere, cifre, cratime sau liniuțe de subliniere. Verifică dacă există caractere în plus.",
+        "Afișează radarul la plecare",
+        "Comută ecranul pe radarul naval când o navă favorită care stătea pe loc sau era în afara razei pornește.",
         "Vreme",
         "Afișează vremea locală de afară pe ecran.",
         "Actualizări meteo",
@@ -2809,7 +2974,7 @@ inline SetupPageText setup_page_text(AirDot::UiLanguage language) {
         "Ora & vremea",
         "Radar avioane",
         "Radar de precipitații",
-        "Ship radar",
+        "Radar naval",
         "PM1",
         "PM2.5",
         "PM4",
@@ -2985,6 +3150,9 @@ inline void append_setup_page_translation_json(std::string &html, AirDot::UiLang
   append_json_field_(html, "ship_radar_favorites_label", text.ship_radar_favorites_label, first);
   append_json_field_(html, "ship_radar_favorites_help", text.ship_radar_favorites_help, first);
   append_json_field_(html, "ship_radar_favorites_invalid", text.ship_radar_favorites_invalid, first);
+  append_json_field_(html, "ship_radar_coordinates_help", text.ship_radar_coordinates_help, first);
+  append_json_field_(html, "ship_radar_coordinates_invalid", text.ship_radar_coordinates_invalid, first);
+  append_json_field_(html, "ship_radar_api_key_invalid", text.ship_radar_api_key_invalid, first);
   append_json_field_(html, "ship_radar_alert_title", text.ship_radar_alert_title, first);
   append_json_field_(html, "ship_radar_alert_description", text.ship_radar_alert_description, first);
   append_json_field_(html, "weather_title", text.weather_title, first);
@@ -3397,52 +3565,6 @@ inline const char *dismiss_button_text(AirDot::UiLanguage language) {
       return "Închide";
     default:
       return "Close";
-  }
-}
-
-inline const char *ship_departed_title_text(AirDot::UiLanguage language) {
-  switch (language) {
-    case UiLanguage::EN:
-      return "Ship under way";
-    case UiLanguage::DE:
-      return "Ship under way";
-    case UiLanguage::NL:
-      return "Ship under way";
-    case UiLanguage::FR:
-      return "Ship under way";
-    case UiLanguage::HU:
-      return "Ship under way";
-    case UiLanguage::CS:
-      return "Ship under way";
-    case UiLanguage::IT:
-      return "Ship under way";
-    case UiLanguage::RO:
-      return "Ship under way";
-    default:
-      return "Ship under way";
-  }
-}
-
-inline const char *ship_departed_unnamed_text(AirDot::UiLanguage language) {
-  switch (language) {
-    case UiLanguage::EN:
-      return "Favorite vessel";
-    case UiLanguage::DE:
-      return "Favorite vessel";
-    case UiLanguage::NL:
-      return "Favorite vessel";
-    case UiLanguage::FR:
-      return "Favorite vessel";
-    case UiLanguage::HU:
-      return "Favorite vessel";
-    case UiLanguage::CS:
-      return "Favorite vessel";
-    case UiLanguage::IT:
-      return "Favorite vessel";
-    case UiLanguage::RO:
-      return "Favorite vessel";
-    default:
-      return "Favorite vessel";
   }
 }
 

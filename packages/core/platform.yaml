@@ -15,6 +15,10 @@ esp32:
       CONFIG_LCD_RGB_ISR_IRAM_SAFE: "y"
       CONFIG_ESP32S3_DATA_CACHE_LINE_64B: "y"
       CONFIG_MBEDTLS_HARDWARE_AES: "n"
+      # The AIS stream keeps one socket open permanently, on top of the API,
+      # the setup web server (up to 9) and map/weather downloads. lwIP only
+      # allocates memory for sockets in use, so a larger pool is nearly free.
+      CONFIG_LWIP_MAX_SOCKETS: "16"
     components:
       - name: esp_jpeg
         ref: ">=1.0.2"
