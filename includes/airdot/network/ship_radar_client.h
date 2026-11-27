@@ -63,7 +63,6 @@ inline constexpr uint32_t UNDERWAY_HOLD_MS = 10UL * 60UL * 1000UL;
 inline constexpr uint8_t UNDERWAY_HOLD_SLOW_REPORTS = 2;
 inline constexpr uint32_t EVICT_MS = 30UL * 60UL * 1000UL;            // Forget vessels silent for this long.
 inline constexpr uint32_t UNKNOWN_TYPE_GRACE_MS = 12UL * 60UL * 1000UL;  // Static data may still be on its way.
-inline constexpr uint32_t EXTRAPOLATE_MAX_MS = 6UL * 60UL * 1000UL;   // Dead reckoning limit.
 inline constexpr uint32_t PING_INTERVAL_MS = 30000UL;
 inline constexpr uint32_t RX_TIMEOUT_MS = 75000UL;
 inline constexpr uint32_t CONFIRM_TIMEOUT_MS = 15000UL;
@@ -742,16 +741,9 @@ inline bool copy_render_list(RenderList &out, float latitude, float longitude, u
       if (!type_pending && !(category_for_type(vessel.ship_type) & category_mask)) continue;
       if (!vessel_shown_underway(vessel, now)) continue;  // Only favourites are shown when stationary.
     }
-    double vessel_latitude = vessel.lat_e7 / 1e7, vessel_longitude = vessel.lon_e7 / 1e7;
-    // Dead reckoning between reports, so moving vessels advance smoothly.
-    if (vessel.sog_dkn != SOG_UNKNOWN && vessel.cog_ddeg != COG_UNKNOWN && vessel.sog_dkn >= 10) {
-      const double seconds = std::min<uint32_t>(age_ms(now, vessel.position_ms), EXTRAPOLATE_MAX_MS) / 1000.0;
-      const double meters = vessel.sog_dkn / 10.0 * 1852.0 / 3600.0 * seconds;
-      const double course = vessel.cog_ddeg / 10.0 * radar_map::PI / 180.0;
-      vessel_latitude += meters * std::cos(course) / 111320.0;
-      vessel_longitude += meters * std::sin(course) /
-                          (111320.0 * std::max(0.01, std::cos(vessel_latitude * radar_map::PI / 180.0)));
-    }
+    // Drawn at the last reported position: reports can be ~15 min apart and
+    // coastal traffic turns often, so extrapolating along COG drifts badly.
+    const double vessel_latitude = vessel.lat_e7 / 1e7, vessel_longitude = vessel.lon_e7 / 1e7;
     double x = 0, y = 0;
     if (!projection.project(vessel_latitude, vessel_longitude, x, y)) continue;
     const double distance = std::sqrt(x * x + y * y);

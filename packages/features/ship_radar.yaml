@@ -66,8 +66,8 @@ interval:
           AirDot::ship_radar::configure_stream(enabled, online, state.map_location_valid,
               state.map_latitude, state.map_longitude, state.map_range_km);
 
-          // Redraw when vessels moved (at most every 2 s) and every 10 s for
-          // dead reckoning and stale vessels. Free the map image when hidden.
+          // Redraw when vessels moved (at most every 2 s) and every 10 s to
+          // drop stale vessels. Free the map image when hidden.
           static uint32_t last_revision = 0, last_redraw_ms = 0, hidden_since_ms = 0;
           const bool showing = id(ship_radar_page)->is_showing();
           if (showing) {
