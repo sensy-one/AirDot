@@ -4,6 +4,8 @@
 #include <cmath>
 #include <cstdio>
 #include <cstdint>
+#include <cctype>
+#include <cstdlib>
 #include <cstring>
 #include <string>
 #include <vector>
@@ -157,11 +159,14 @@ static constexpr uint16_t AUTO_PAGE_SCREEN_HUMIDITY = 1U << 11;
 static constexpr uint16_t AUTO_PAGE_SCREEN_PRESSURE = 1U << 12;
 static constexpr uint16_t AUTO_PAGE_SCREEN_LIGHT = 1U << 13;
 static constexpr uint16_t AUTO_PAGE_SCREEN_WEATHER_RADAR = 1U << 14;
+// Last free bit of the uint16 mask; another page needs a wider preference.
+static constexpr uint16_t AUTO_PAGE_SCREEN_SHIP_RADAR = 1U << 15;
 static constexpr uint16_t AUTO_PAGE_SCREEN_ALL_MASK =
     AUTO_PAGE_SCREEN_SUMMARY | AUTO_PAGE_SCREEN_TIME_WEATHER | AUTO_PAGE_SCREEN_FLIGHT_RADAR |
     AUTO_PAGE_SCREEN_PM1 | AUTO_PAGE_SCREEN_PM25 | AUTO_PAGE_SCREEN_PM4 | AUTO_PAGE_SCREEN_PM10 |
     AUTO_PAGE_SCREEN_CO2 | AUTO_PAGE_SCREEN_VOC | AUTO_PAGE_SCREEN_NOX | AUTO_PAGE_SCREEN_TEMPERATURE |
-    AUTO_PAGE_SCREEN_HUMIDITY | AUTO_PAGE_SCREEN_PRESSURE | AUTO_PAGE_SCREEN_LIGHT | AUTO_PAGE_SCREEN_WEATHER_RADAR;
+    AUTO_PAGE_SCREEN_HUMIDITY | AUTO_PAGE_SCREEN_PRESSURE | AUTO_PAGE_SCREEN_LIGHT | AUTO_PAGE_SCREEN_WEATHER_RADAR |
+    AUTO_PAGE_SCREEN_SHIP_RADAR;
 
 struct SetupWifiBackup {
   bool valid;
@@ -2163,6 +2168,277 @@ inline int load_sanitized_air_quality_level(float pm1, float pm25, float pm4, fl
   add_metric(AirDot::AirQualityMetric::NOX, nox);
   add_metric(AirDot::AirQualityMetric::CO2, co2);
   return level;
+}
+
+// ---------------------------------------------------------------------------
+// Ship radar (aisstream.io AIS stream)
+// ---------------------------------------------------------------------------
+
+static constexpr uint32_t SHIP_RADAR_SETTINGS_PREF_KEY = 2918394901UL;
+static constexpr uint32_t SHIP_RADAR_FAVORITES_PREF_KEY = 2918394902UL;
+static constexpr uint32_t SHIP_RADAR_API_KEY_PREF_KEY = 2918394903UL;
+static constexpr uint8_t SHIP_RADAR_RANGE_DEFAULT_KM = 10;
+static constexpr uint8_t SHIP_RADAR_MAX_FAVORITES = 20;
+static constexpr size_t SHIP_RADAR_API_KEY_MIN_LENGTH = 16;
+static constexpr size_t SHIP_RADAR_API_KEY_MAX_LENGTH = 64;
+
+enum ShipRadarLocationMode : uint8_t {
+  SHIP_RADAR_LOCATION_DEVICE = 0,
+  SHIP_RADAR_LOCATION_CUSTOM = 1,
+};
+
+// Broad vessel categories, derived from the AIS ship type.
+static constexpr uint8_t SHIP_CATEGORY_CARGO = 1U << 0;      // 70-79
+static constexpr uint8_t SHIP_CATEGORY_TANKER = 1U << 1;     // 80-89
+static constexpr uint8_t SHIP_CATEGORY_PASSENGER = 1U << 2;  // 60-69
+static constexpr uint8_t SHIP_CATEGORY_FISHING = 1U << 3;    // 30
+static constexpr uint8_t SHIP_CATEGORY_PLEASURE = 1U << 4;   // 36-37 (sailing, pleasure craft)
+static constexpr uint8_t SHIP_CATEGORY_SERVICE = 1U << 5;    // 31-35, 50-59 (tugs, pilots, SAR...)
+static constexpr uint8_t SHIP_CATEGORY_HIGH_SPEED = 1U << 6; // 40-49
+static constexpr uint8_t SHIP_CATEGORY_OTHER = 1U << 7;      // unknown and everything else
+static constexpr uint8_t SHIP_CATEGORY_ALL = 0xFF;
+
+struct ShipRadarSettings {
+  uint8_t enabled{0};
+  uint8_t range_km{SHIP_RADAR_RANGE_DEFAULT_KM};
+  uint8_t location_mode{SHIP_RADAR_LOCATION_DEVICE};
+  uint8_t alert_enabled{0};
+  int32_t latitude_e7{0};
+  int32_t longitude_e7{0};
+  uint8_t category_mask{SHIP_CATEGORY_ALL};
+  uint8_t reserved[7]{};
+};
+
+struct ShipRadarFavorites {
+  uint8_t count{0};
+  uint8_t reserved[3]{};
+  uint32_t mmsi[SHIP_RADAR_MAX_FAVORITES]{};
+};
+
+struct ShipRadarApiKey {
+  char key[SHIP_RADAR_API_KEY_MAX_LENGTH + 1]{};
+  uint8_t reserved[3]{};
+};
+
+template<typename T> struct CachedShipRadarPreference {
+  T value{};
+  bool loaded{false};
+  bool preference_ready{false};
+  esphome::ESPPreferenceObject preference{};
+};
+
+inline CachedShipRadarPreference<ShipRadarSettings> &ship_radar_settings_pref_() {
+  static CachedShipRadarPreference<ShipRadarSettings> cache{};
+  return cache;
+}
+inline CachedShipRadarPreference<ShipRadarFavorites> &ship_radar_favorites_pref_() {
+  static CachedShipRadarPreference<ShipRadarFavorites> cache{};
+  return cache;
+}
+inline CachedShipRadarPreference<ShipRadarApiKey> &ship_radar_api_key_pref_() {
+  static CachedShipRadarPreference<ShipRadarApiKey> cache{};
+  return cache;
+}
+
+template<typename T>
+inline bool prepare_ship_radar_preference_(CachedShipRadarPreference<T> &cache, uint32_t key) {
+  if (cache.preference_ready)
+    return true;
+  if (esphome::global_preferences == nullptr)
+    return false;
+  cache.preference = esphome::global_preferences->make_preference<T>(key, true);
+  cache.preference_ready = true;
+  return true;
+}
+
+template<typename T, typename Normalize>
+inline const T &load_ship_radar_preference_(CachedShipRadarPreference<T> &cache, uint32_t key, Normalize normalize) {
+  if (cache.loaded || !prepare_ship_radar_preference_(cache, key))
+    return cache.value;
+  T value{};
+  cache.value = cache.preference.load(&value) ? value : T{};
+  normalize(cache.value);
+  cache.loaded = true;
+  return cache.value;
+}
+
+template<typename T>
+inline void save_ship_radar_preference_(CachedShipRadarPreference<T> &cache, uint32_t key, const T &value) {
+  cache.value = value;
+  cache.loaded = true;
+  if (!prepare_ship_radar_preference_(cache, key))
+    return;
+  cache.preference.save(&cache.value);
+  esphome::global_preferences->sync();
+}
+
+inline uint8_t normalize_ship_radar_range_km(int value) {
+  if (value < FLIGHT_RADAR_RANGE_MIN_KM || value > FLIGHT_RADAR_RANGE_MAX_KM)
+    return SHIP_RADAR_RANGE_DEFAULT_KM;
+  return normalize_flight_radar_range_km(value);
+}
+
+inline void normalize_ship_radar_settings_(ShipRadarSettings &settings) {
+  settings.enabled = settings.enabled == 1 ? 1 : 0;
+  settings.range_km = normalize_ship_radar_range_km(settings.range_km);
+  if (!location_e7_coordinates_are_valid(settings.latitude_e7, settings.longitude_e7)) {
+    settings.latitude_e7 = 0;
+    settings.longitude_e7 = 0;
+    settings.location_mode = SHIP_RADAR_LOCATION_DEVICE;
+  }
+  settings.location_mode =
+      settings.location_mode == SHIP_RADAR_LOCATION_CUSTOM ? SHIP_RADAR_LOCATION_CUSTOM : SHIP_RADAR_LOCATION_DEVICE;
+  settings.alert_enabled = settings.alert_enabled == 1 ? 1 : 0;
+  if (settings.category_mask == 0)
+    settings.category_mask = SHIP_CATEGORY_ALL;
+  std::memset(settings.reserved, 0, sizeof(settings.reserved));
+}
+
+inline bool ship_radar_mmsi_is_valid(uint32_t mmsi) { return mmsi >= 100000000UL && mmsi <= 999999999UL; }
+
+inline void normalize_ship_radar_favorites_(ShipRadarFavorites &favorites) {
+  ShipRadarFavorites clean{};
+  const uint8_t count = std::min<uint8_t>(favorites.count, SHIP_RADAR_MAX_FAVORITES);
+  for (uint8_t i = 0; i < count; ++i) {
+    const uint32_t mmsi = favorites.mmsi[i];
+    if (!ship_radar_mmsi_is_valid(mmsi))
+      continue;
+    bool duplicate = false;
+    for (uint8_t j = 0; j < clean.count; ++j)
+      duplicate = duplicate || clean.mmsi[j] == mmsi;
+    if (!duplicate)
+      clean.mmsi[clean.count++] = mmsi;
+  }
+  favorites = clean;
+}
+
+inline bool ship_radar_api_key_is_valid(const char *key, size_t length) {
+  if (key == nullptr || length < SHIP_RADAR_API_KEY_MIN_LENGTH || length > SHIP_RADAR_API_KEY_MAX_LENGTH)
+    return false;
+  for (size_t i = 0; i < length; ++i) {
+    const char c = key[i];
+    const bool ok = (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '-' || c == '_';
+    if (!ok)
+      return false;
+  }
+  return true;
+}
+inline bool ship_radar_api_key_is_valid(const std::string &key) {
+  return ship_radar_api_key_is_valid(key.c_str(), key.size());
+}
+
+inline void normalize_ship_radar_api_key_(ShipRadarApiKey &value) {
+  value.key[SHIP_RADAR_API_KEY_MAX_LENGTH] = '\0';
+  if (!ship_radar_api_key_is_valid(value.key, std::strlen(value.key)))
+    value = ShipRadarApiKey{};
+}
+
+inline const ShipRadarSettings &load_ship_radar_settings() {
+  return load_ship_radar_preference_(ship_radar_settings_pref_(), SHIP_RADAR_SETTINGS_PREF_KEY,
+                                     normalize_ship_radar_settings_);
+}
+inline bool load_ship_radar_enabled() { return load_ship_radar_settings().enabled == 1; }
+inline uint8_t load_ship_radar_range_km() { return load_ship_radar_settings().range_km; }
+inline bool load_ship_radar_alert_enabled() { return load_ship_radar_settings().alert_enabled == 1; }
+inline uint8_t load_ship_radar_category_mask() { return load_ship_radar_settings().category_mask; }
+// The radar's own location, when one is set; otherwise the device location applies.
+inline bool load_ship_radar_custom_location(float &latitude, float &longitude) {
+  const auto &settings = load_ship_radar_settings();
+  if (settings.location_mode != SHIP_RADAR_LOCATION_CUSTOM)
+    return false;
+  latitude = coordinate_from_e7_(settings.latitude_e7);
+  longitude = coordinate_from_e7_(settings.longitude_e7);
+  return location_coordinates_are_valid(latitude, longitude);
+}
+
+inline void save_ship_radar_settings(bool enabled, uint8_t range_km, bool custom_location, int32_t latitude_e7,
+                                     int32_t longitude_e7, uint8_t category_mask, bool alert_enabled) {
+  ShipRadarSettings value{};
+  value.enabled = enabled ? 1 : 0;
+  value.range_km = range_km;
+  value.location_mode = custom_location ? SHIP_RADAR_LOCATION_CUSTOM : SHIP_RADAR_LOCATION_DEVICE;
+  value.latitude_e7 = latitude_e7;
+  value.longitude_e7 = longitude_e7;
+  value.category_mask = category_mask;
+  value.alert_enabled = alert_enabled ? 1 : 0;
+  normalize_ship_radar_settings_(value);
+  save_ship_radar_preference_(ship_radar_settings_pref_(), SHIP_RADAR_SETTINGS_PREF_KEY, value);
+}
+
+inline const ShipRadarFavorites &load_ship_radar_favorites() {
+  return load_ship_radar_preference_(ship_radar_favorites_pref_(), SHIP_RADAR_FAVORITES_PREF_KEY,
+                                     normalize_ship_radar_favorites_);
+}
+inline void save_ship_radar_favorites(const ShipRadarFavorites &favorites) {
+  ShipRadarFavorites value = favorites;
+  normalize_ship_radar_favorites_(value);
+  save_ship_radar_preference_(ship_radar_favorites_pref_(), SHIP_RADAR_FAVORITES_PREF_KEY, value);
+}
+
+// Accepts MMSIs separated by commas, spaces, semicolons or new lines. Returns
+// false when any token is not a 9-digit MMSI (valid tokens are still kept), or
+// when more than SHIP_RADAR_MAX_FAVORITES distinct values were given.
+inline bool parse_ship_radar_mmsi_list(const std::string &text, ShipRadarFavorites &out) {
+  out = ShipRadarFavorites{};
+  bool all_valid = true;
+  size_t position = 0;
+  while (position < text.size()) {
+    while (position < text.size() && (text[position] == ',' || text[position] == ';' ||
+                                      std::isspace(static_cast<unsigned char>(text[position]))))
+      ++position;
+    const size_t start = position;
+    while (position < text.size() && text[position] != ',' && text[position] != ';' &&
+           !std::isspace(static_cast<unsigned char>(text[position])))
+      ++position;
+    if (position == start)
+      continue;
+    const std::string token = text.substr(start, position - start);
+    bool digits = token.size() == 9;
+    for (const char c : token)
+      digits = digits && c >= '0' && c <= '9';
+    const uint32_t mmsi = digits ? static_cast<uint32_t>(std::strtoul(token.c_str(), nullptr, 10)) : 0;
+    if (!ship_radar_mmsi_is_valid(mmsi)) {
+      all_valid = false;
+      continue;
+    }
+    bool duplicate = false;
+    for (uint8_t i = 0; i < out.count; ++i)
+      duplicate = duplicate || out.mmsi[i] == mmsi;
+    if (duplicate)
+      continue;
+    if (out.count >= SHIP_RADAR_MAX_FAVORITES) {
+      all_valid = false;
+      continue;
+    }
+    out.mmsi[out.count++] = mmsi;
+  }
+  return all_valid;
+}
+
+inline std::string ship_radar_favorites_text() {
+  const auto &favorites = load_ship_radar_favorites();
+  std::string text;
+  char buffer[12];
+  for (uint8_t i = 0; i < favorites.count; ++i) {
+    std::snprintf(buffer, sizeof(buffer), "%09lu", static_cast<unsigned long>(favorites.mmsi[i]));
+    if (!text.empty())
+      text += ", ";
+    text += buffer;
+  }
+  return text;
+}
+
+// The API key is write-only from the setup page: it is never rendered back.
+inline const char *load_ship_radar_api_key() {
+  return load_ship_radar_preference_(ship_radar_api_key_pref_(), SHIP_RADAR_API_KEY_PREF_KEY,
+                                     normalize_ship_radar_api_key_).key;
+}
+inline bool has_ship_radar_api_key() { return load_ship_radar_api_key()[0] != '\0'; }
+inline void save_ship_radar_api_key(const std::string &key) {
+  ShipRadarApiKey value{};
+  if (ship_radar_api_key_is_valid(key))
+    std::memcpy(value.key, key.data(), key.size());
+  save_ship_radar_preference_(ship_radar_api_key_pref_(), SHIP_RADAR_API_KEY_PREF_KEY, value);
 }
 
 }  // namespace AirDot::onboarding

@@ -204,6 +204,7 @@ class SetupHandler : public AsyncWebHandler {
     if (wifi_enabled)
       save_weather_enabled(weather_enabled);
     save_flight_radar_settings(flight_radar_enabled, flight_radar_range_km, flight_radar_military_only);
+    save_ship_radar_(request, wifi_enabled);
     save_home_assistant_discovery_enabled(ha_discovery_enabled);
     save_unit_system(request->hasArg("units") && request->arg("units") == "imperial" ? UNIT_SYSTEM_IMPERIAL
                                                                                        : UNIT_SYSTEM_METRIC);
@@ -446,6 +447,8 @@ class SetupHandler : public AsyncWebHandler {
       screens |= AUTO_PAGE_SCREEN_FLIGHT_RADAR;
     if (request->hasArg("auto_page_screen_weather_radar"))
       screens |= AUTO_PAGE_SCREEN_WEATHER_RADAR;
+    if (request->hasArg("auto_page_screen_ship_radar"))
+      screens |= AUTO_PAGE_SCREEN_SHIP_RADAR;
     if (request->hasArg("auto_page_screen_pm1"))
       screens |= AUTO_PAGE_SCREEN_PM1;
     if (request->hasArg("auto_page_screen_pm25"))
@@ -639,6 +642,81 @@ class SetupHandler : public AsyncWebHandler {
 
     coordinate_e7 = static_cast<int32_t>(e7);
     return true;
+  }
+
+  // Disabled form fields are not submitted, so the stored values are kept
+  // unless the ship radar is enabled in this submission.
+  static void save_ship_radar_(AsyncWebServerRequest *request, bool wifi_enabled) {
+    const ShipRadarSettings stored = load_ship_radar_settings();
+    const bool enabled = wifi_enabled && request->hasArg("ship_radar_enabled");
+    if (!enabled) {
+      save_ship_radar_settings(false, stored.range_km, stored.location_mode == SHIP_RADAR_LOCATION_CUSTOM,
+                               stored.latitude_e7, stored.longitude_e7, stored.category_mask,
+                               stored.alert_enabled == 1);
+      return;
+    }
+    const uint8_t range_km =
+        request->hasArg("ship_radar_range_km")
+            ? parse_flight_radar_range_km_(bounded_arg_(request, "ship_radar_range_km", 3), stored.range_km)
+            : stored.range_km;
+    int32_t latitude_e7 = stored.latitude_e7, longitude_e7 = stored.longitude_e7;
+    const bool stored_coordinates = location_e7_coordinates_are_valid(latitude_e7, longitude_e7) &&
+                                    (latitude_e7 != 0 || longitude_e7 != 0);
+    bool coordinates_valid = stored_coordinates;
+    bool coordinates_rejected = false;
+    if (request->hasArg("ship_radar_latitude") || request->hasArg("ship_radar_longitude")) {
+      int32_t parsed_latitude = 0, parsed_longitude = 0;
+      if (parse_location_coordinate_e7_(bounded_arg_(request, "ship_radar_latitude", 18), LATITUDE_MIN_E7,
+                                        LATITUDE_MAX_E7, parsed_latitude) &&
+          parse_location_coordinate_e7_(bounded_arg_(request, "ship_radar_longitude", 18), LONGITUDE_MIN_E7,
+                                        LONGITUDE_MAX_E7, parsed_longitude)) {
+        latitude_e7 = parsed_latitude;
+        longitude_e7 = parsed_longitude;
+        coordinates_valid = true;
+      } else {
+        coordinates_rejected = true;
+      }
+    }
+    const bool custom_requested = bounded_arg_(request, "ship_radar_location", 8) == "custom";
+    // The page validates coordinates before submitting; if invalid ones still
+    // arrive, keep the stored location mode rather than switching silently.
+    bool custom_location = custom_requested && coordinates_valid;
+    if (custom_requested && coordinates_rejected) {
+      ESP_LOGW("setup", "Ship radar: custom coordinates rejected, keeping the stored location");
+      custom_location = stored.location_mode == SHIP_RADAR_LOCATION_CUSTOM && stored_coordinates;
+    }
+
+    static constexpr struct { const char *name; uint8_t bit; } CATEGORIES[] = {
+        {"ship_radar_cat_cargo", SHIP_CATEGORY_CARGO},       {"ship_radar_cat_tanker", SHIP_CATEGORY_TANKER},
+        {"ship_radar_cat_passenger", SHIP_CATEGORY_PASSENGER}, {"ship_radar_cat_fishing", SHIP_CATEGORY_FISHING},
+        {"ship_radar_cat_pleasure", SHIP_CATEGORY_PLEASURE}, {"ship_radar_cat_service", SHIP_CATEGORY_SERVICE},
+        {"ship_radar_cat_high_speed", SHIP_CATEGORY_HIGH_SPEED}, {"ship_radar_cat_other", SHIP_CATEGORY_OTHER},
+    };
+    uint8_t category_mask = 0;
+    for (const auto &category : CATEGORIES)
+      if (request->hasArg(category.name))
+        category_mask |= category.bit;
+    if (category_mask == 0)
+      category_mask = SHIP_CATEGORY_ALL;
+
+    save_ship_radar_settings(true, range_km, custom_location, latitude_e7, longitude_e7, category_mask,
+                             request->hasArg("ship_radar_alert"));
+
+    if (request->hasArg("ship_radar_favorites")) {
+      ShipRadarFavorites favorites{};
+      parse_ship_radar_mmsi_list(bounded_arg_(request, "ship_radar_favorites", 320), favorites);
+      save_ship_radar_favorites(favorites);
+    }
+    if (request->hasArg("ship_radar_api_key_clear")) {
+      save_ship_radar_api_key("");
+    } else {
+      const std::string key = trim_copy_(bounded_arg_(request, "ship_radar_api_key", SHIP_RADAR_API_KEY_MAX_LENGTH + 8));
+      if (ship_radar_api_key_is_valid(key)) {
+        save_ship_radar_api_key(key);
+      } else if (!key.empty()) {
+        ESP_LOGW("setup", "Ship radar: API key rejected (expected 16-64 letters, digits, '-' or '_'), keeping the stored key");
+      }
+    }
   }
 
   static uint8_t parse_flight_radar_range_km_(const std::string &value, uint8_t fallback) {

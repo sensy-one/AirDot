@@ -41,6 +41,7 @@ WEATHER_CODE_KEYS = (
 )
 WEATHER_KEYS = WEATHER_CODE_KEYS + ("high_label", "low_label")
 NOTIFICATION_KEYS = ("fallback", "dismiss")
+SHIP_RADAR_STATUS_KEYS = ("key_missing", "location_missing", "offline", "connecting", "reconnecting", "key_rejected")
 DATE_KEYS = ("format",)
 DATE_WEEKDAY_KEYS = (
     "sunday",
@@ -175,6 +176,37 @@ SETUP_PAGE_KEYS = (
     "flight_radar_traffic_label",
     "flight_radar_traffic_all_label",
     "flight_radar_traffic_military_label",
+    "ship_radar_title",
+    "ship_radar_note",
+    "ship_radar_enabled_title",
+    "ship_radar_enabled_description",
+    "ship_radar_api_key_label",
+    "ship_radar_api_key_placeholder",
+    "ship_radar_api_key_saved_placeholder",
+    "ship_radar_api_key_clear_label",
+    "ship_radar_range_label",
+    "ship_radar_location_label",
+    "ship_radar_location_device_label",
+    "ship_radar_location_custom_label",
+    "ship_radar_latitude_label",
+    "ship_radar_longitude_label",
+    "ship_radar_categories_label",
+    "ship_radar_cat_cargo_label",
+    "ship_radar_cat_tanker_label",
+    "ship_radar_cat_passenger_label",
+    "ship_radar_cat_fishing_label",
+    "ship_radar_cat_pleasure_label",
+    "ship_radar_cat_service_label",
+    "ship_radar_cat_high_speed_label",
+    "ship_radar_cat_other_label",
+    "ship_radar_favorites_label",
+    "ship_radar_favorites_help",
+    "ship_radar_favorites_invalid",
+    "ship_radar_coordinates_help",
+    "ship_radar_coordinates_invalid",
+    "ship_radar_api_key_invalid",
+    "ship_radar_alert_title",
+    "ship_radar_alert_description",
     "weather_title",
     "weather_note",
     "weather_sync_title",
@@ -211,6 +243,7 @@ SETUP_PAGE_KEYS = (
     "auto_page_screen_time_weather_label",
     "auto_page_screen_flight_radar_label",
     "auto_page_screen_weather_radar_label",
+    "auto_page_screen_ship_radar_label",
     "auto_page_screen_pm1_label",
     "auto_page_screen_pm25_label",
     "auto_page_screen_pm4_label",
@@ -356,6 +389,7 @@ def validate_language(data: dict, path: Path) -> None:
     require_section_keys(data, "connection", CONNECTION_KEYS, path)
     require_section_keys(data, "weather", WEATHER_KEYS, path)
     require_section_keys(data, "notification", NOTIFICATION_KEYS, path)
+    require_section_keys(data, "ship_radar", SHIP_RADAR_STATUS_KEYS, path)
     require_section_keys(data, "date", DATE_KEYS + ("weekdays", "months"), path)
     require_section_keys(data["date"], "weekdays", DATE_WEEKDAY_KEYS, path)
     require_section_keys(data["date"], "months", DATE_MONTH_KEYS, path)
@@ -726,10 +760,13 @@ def generate(languages: list[dict]) -> str:
     lines.extend(["  " + line for line in emit_language_switch(languages, "language", "connection.outdoor")])
     lines.extend(["  }", ""])
     lines.extend(["  " + line for line in emit_language_switch(languages, "language", "connection.indoor")])
+    lines.extend(["}", ""])
+    for status_key in SHIP_RADAR_STATUS_KEYS:
+        lines.append(f"inline const char *ship_radar_{status_key}_text(UiLanguage language) {{")
+        lines.extend(emit_language_switch(languages, "language", f"ship_radar.{status_key}"))
+        lines.extend(["}", ""])
     lines.extend(
         [
-            "}",
-            "",
             "inline const char *date_format_text(UiLanguage language) {",
         ]
     )

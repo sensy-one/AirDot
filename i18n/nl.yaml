@@ -116,6 +116,38 @@ setup_page:
   flight_radar_traffic_all_label: Alle vliegtuigen
   flight_radar_traffic_military_label: Alleen militair
 
+  ship_radar_title: "Scheepsradar"
+  ship_radar_note: "Toont AIS-schepen van aisstream.io rond een locatie op een kustkaart. Vereist een gratis API-sleutel van aisstream.io."
+  ship_radar_enabled_title: "Scheepsradar"
+  ship_radar_enabled_description: "Toon schepen in de buurt. Zolang dit aan staat, blijft er een verbinding met aisstream.io open zodat scheepsnamen en -types verzameld kunnen worden."
+  ship_radar_api_key_label: "aisstream.io API-sleutel"
+  ship_radar_api_key_placeholder: "Plak je API-sleutel"
+  ship_radar_api_key_saved_placeholder: "Opgeslagen. Laat leeg om hem te behouden."
+  ship_radar_api_key_clear_label: "Opgeslagen sleutel verwijderen"
+  ship_radar_api_key_invalid: "API-sleutels bestaan uit 16 tot 64 letters, cijfers, koppeltekens of underscores. Controleer op extra tekens."
+  ship_radar_range_label: "Straal"
+  ship_radar_location_label: "Locatie"
+  ship_radar_location_device_label: "Apparaatlocatie"
+  ship_radar_location_custom_label: "Aangepast"
+  ship_radar_latitude_label: Breedtegraad
+  ship_radar_longitude_label: Lengtegraad
+  ship_radar_coordinates_help: "Decimale graden, bijvoorbeeld 42.3601 en -71.0589. Breedtegraden ten zuiden van de evenaar en lengtegraden ten westen van Greenwich zijn negatief."
+  ship_radar_coordinates_invalid: "Vul decimale graden in: breedtegraad van -90 tot 90, lengtegraad van -180 tot 180, maximaal 7 decimalen."
+  ship_radar_categories_label: "Scheepstypes"
+  ship_radar_cat_cargo_label: "Vracht"
+  ship_radar_cat_tanker_label: "Tankers"
+  ship_radar_cat_passenger_label: "Passagiers"
+  ship_radar_cat_fishing_label: "Visserij"
+  ship_radar_cat_pleasure_label: "Zeil- en pleziervaart"
+  ship_radar_cat_service_label: "Sleep- en dienstvaartuigen"
+  ship_radar_cat_high_speed_label: "Snelle vaartuigen"
+  ship_radar_cat_other_label: "Overig en onbekend"
+  ship_radar_favorites_label: "Favoriete schepen (MMSI)"
+  ship_radar_favorites_help: "Maximaal 20 negencijferige MMSI-nummers, gescheiden door komma's. Favorieten worden in goud getekend en alleen binnen de straal gevolgd."
+  ship_radar_favorites_invalid: "Vul negencijferige MMSI-nummers in, gescheiden door komma's, maximaal 20."
+  ship_radar_alert_title: "Radar tonen bij vertrek"
+  ship_radar_alert_description: "Schakel het scherm naar de scheepsradar wanneer een favoriet schip dat stillag of buiten bereik was, gaat varen."
+
   weather_title: Weer
   weather_note: Toon het lokale buitenweer op het scherm.
 
@@ -157,6 +189,7 @@ setup_page:
   auto_page_screen_time_weather_label: Tijd & weer
   auto_page_screen_flight_radar_label: Vluchtradar
   auto_page_screen_weather_radar_label: Buienradar
+  auto_page_screen_ship_radar_label: "Scheepsradar"
   auto_page_screen_pm1_label: PM1
   auto_page_screen_pm25_label: PM2.5
   auto_page_screen_pm4_label: PM4
@@ -222,6 +255,14 @@ weather:
 notification:
   fallback: Melding
   dismiss: Sluiten
+
+ship_radar:
+  key_missing: "AIS API-sleutel ontbreekt"
+  location_missing: "Locatie ontbreekt"
+  offline: "Offline"
+  connecting: "Verbinden..."
+  reconnecting: "Opnieuw verbinden..."
+  key_rejected: "AIS API-sleutel geweigerd"
 
 date:
   format: "{weekday} {day} {month}"
