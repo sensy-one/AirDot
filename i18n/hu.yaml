@@ -53,6 +53,8 @@ setup_page:
   sen66_co2_reference_label: CO2 bázisérték
   sen66_co2_calibration_title: CO2 bázisérték kényszerített kalibrálása
   sen66_co2_calibration_description: Helyezd az AirDot-ot friss, kültéri levegőre legalább 3 percre, majd mentsd el.
+  sen66_voc_learning_time_label: VOC alapszint tanulási ideje
+  sen66_learning_time_help: Órák (1-1000). Gyakran üres helyiségekhez hosszabb idő ajánlott.
 
   alerts_title: Riasztások
   alerts_note: Állítsd be, mikor riasszon az AirDot.
@@ -114,6 +116,38 @@ setup_page:
   flight_radar_traffic_all_label: Összes repülőgép
   flight_radar_traffic_military_label: Csak katonai
 
+  ship_radar_title: "Hajóradar"
+  ship_radar_note: "Az aisstream.io AIS-adatai alapján hajókat mutat egy helyszín körül, partvonaltérképen. Ingyenes aisstream.io API-kulcs szükséges."
+  ship_radar_enabled_title: "Hajóradar"
+  ship_radar_enabled_description: "Közeli hajók megjelenítése. Bekapcsolt állapotban nyitva marad a kapcsolat az aisstream.io-val, hogy a hajók neve és típusa összegyűjthető legyen."
+  ship_radar_api_key_label: "aisstream.io API-kulcs"
+  ship_radar_api_key_placeholder: "Illeszd be az API-kulcsot"
+  ship_radar_api_key_saved_placeholder: "Elmentve. Hagyd üresen a megtartáshoz."
+  ship_radar_api_key_clear_label: "Mentett kulcs törlése"
+  ship_radar_api_key_invalid: "Az API-kulcs 16-64 betűből, számjegyből, kötőjelből vagy aláhúzásjelből áll. Ellenőrizd, nincs-e benne felesleges karakter."
+  ship_radar_range_label: "Sugár"
+  ship_radar_location_label: "Helyszín"
+  ship_radar_location_device_label: "Eszköz helye"
+  ship_radar_location_custom_label: "Egyéni"
+  ship_radar_latitude_label: Szélesség (Latitude)
+  ship_radar_longitude_label: Hosszúság (Longitude)
+  ship_radar_coordinates_help: "Tizedes fok, például 42.3601 és -71.0589. Az Egyenlítőtől délre eső szélességek és a Greenwichtől nyugatra eső hosszúságok negatívak."
+  ship_radar_coordinates_invalid: "Tizedes fokot adj meg: szélesség -90 és 90, hosszúság -180 és 180 között, legfeljebb 7 tizedesjeggyel."
+  ship_radar_categories_label: "Hajótípusok"
+  ship_radar_cat_cargo_label: "Teherhajó"
+  ship_radar_cat_tanker_label: "Tartályhajó"
+  ship_radar_cat_passenger_label: "Utasszállító"
+  ship_radar_cat_fishing_label: "Halászhajó"
+  ship_radar_cat_pleasure_label: "Vitorlás és kedvtelési"
+  ship_radar_cat_service_label: "Vontató és szolgálati"
+  ship_radar_cat_high_speed_label: "Nagysebességű vízi jármű"
+  ship_radar_cat_other_label: "Egyéb és ismeretlen"
+  ship_radar_favorites_label: "Kedvenc hajók (MMSI)"
+  ship_radar_favorites_help: "Legfeljebb 20 kilencjegyű MMSI-szám, vesszővel elválasztva. A kedvencek arany színnel jelennek meg, és csak a sugáron belül követi őket az eszköz."
+  ship_radar_favorites_invalid: "Kilencjegyű MMSI-számokat adj meg vesszővel elválasztva, legfeljebb 20-at."
+  ship_radar_alert_title: "Radar megjelenítése induláskor"
+  ship_radar_alert_description: "A kijelző a hajóradarra vált, amikor egy kedvenc hajó, amely állt vagy hatótávon kívül volt, elindul."
+
   weather_title: Időjárás
   weather_note: A helyi kültéri időjárás megjelenítése a kijelzőn.
 
@@ -155,6 +189,7 @@ setup_page:
   auto_page_screen_time_weather_label: Idő & időjárás
   auto_page_screen_flight_radar_label: Repülőradar
   auto_page_screen_weather_radar_label: Csapadékradar
+  auto_page_screen_ship_radar_label: "Hajóradar"
   auto_page_screen_pm1_label: PM1
   auto_page_screen_pm25_label: PM2.5
   auto_page_screen_pm4_label: PM4
@@ -221,6 +256,14 @@ weather:
 notification:
   fallback: Értesítés
   dismiss: Bezárás
+
+ship_radar:
+  key_missing: "Hiányzó AIS API-kulcs"
+  location_missing: "Hiányzó helyadat"
+  offline: "Offline"
+  connecting: "Csatlakozás..."
+  reconnecting: "Újracsatlakozás..."
+  key_rejected: "AIS API-kulcs elutasítva"
 
 date:
   format: "{month} {day} {weekday}"

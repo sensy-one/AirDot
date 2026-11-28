@@ -53,6 +53,8 @@ setup_page:
   sen66_co2_reference_label: Referenční hodnota CO2
   sen66_co2_calibration_title: Vynutit kalibraci referenční hodnoty CO2
   sen66_co2_calibration_description: Umístěte AirDot alespoň na 3 minuty na čerstvý venkovní vzduch a poté nastavení uložte.
+  sen66_voc_learning_time_label: Doba učení základní úrovně VOC
+  sen66_learning_time_help: Hodiny (1-1000). Pro často prázdné místnosti zvolte delší dobu.
 
   alerts_title: Upozornění
   alerts_note: Nastavte, kdy vás má AirDot upozornit.
@@ -114,6 +116,38 @@ setup_page:
   flight_radar_traffic_all_label: Všechna letadla
   flight_radar_traffic_military_label: Pouze vojenská
 
+  ship_radar_title: "Lodní radar"
+  ship_radar_note: "Zobrazuje plavidla AIS ze služby aisstream.io v okolí zvoleného místa na mapě pobřeží. Vyžaduje bezplatný klíč API aisstream.io."
+  ship_radar_enabled_title: "Lodní radar"
+  ship_radar_enabled_description: "Zobrazovat lodě v okolí. Dokud je funkce zapnutá, zůstává otevřené spojení s aisstream.io, aby bylo možné zjišťovat názvy a typy plavidel."
+  ship_radar_api_key_label: "Klíč API aisstream.io"
+  ship_radar_api_key_placeholder: "Vložte klíč API"
+  ship_radar_api_key_saved_placeholder: "Uloženo. Ponechte prázdné, chcete-li klíč zachovat."
+  ship_radar_api_key_clear_label: "Odstranit uložený klíč"
+  ship_radar_api_key_invalid: "Klíč API má 16 až 64 znaků: písmena, číslice, pomlčky nebo podtržítka. Zkontrolujte, zda neobsahuje nadbytečné znaky."
+  ship_radar_range_label: "Poloměr"
+  ship_radar_location_label: "Poloha"
+  ship_radar_location_device_label: "Poloha zařízení"
+  ship_radar_location_custom_label: "Vlastní"
+  ship_radar_latitude_label: Zeměpisná šířka
+  ship_radar_longitude_label: Zeměpisná délka
+  ship_radar_coordinates_help: "Desetinné stupně, například 42.3601 a -71.0589. Zeměpisné šířky jižně od rovníku a délky západně od Greenwiche jsou záporné."
+  ship_radar_coordinates_invalid: "Zadejte desetinné stupně: šířku od -90 do 90, délku od -180 do 180, nejvýše 7 desetinných míst."
+  ship_radar_categories_label: "Typy plavidel"
+  ship_radar_cat_cargo_label: "Nákladní"
+  ship_radar_cat_tanker_label: "Tankery"
+  ship_radar_cat_passenger_label: "Osobní"
+  ship_radar_cat_fishing_label: "Rybářská"
+  ship_radar_cat_pleasure_label: "Plachetnice a rekreační"
+  ship_radar_cat_service_label: "Remorkéry a servisní"
+  ship_radar_cat_high_speed_label: "Rychlá plavidla"
+  ship_radar_cat_other_label: "Ostatní a neznámá"
+  ship_radar_favorites_label: "Oblíbená plavidla (MMSI)"
+  ship_radar_favorites_help: "Až 20 devítimístných čísel MMSI oddělených čárkami. Oblíbená plavidla se zobrazují zlatě a sledují se jen uvnitř poloměru."
+  ship_radar_favorites_invalid: "Zadejte devítimístná čísla MMSI oddělená čárkami, nejvýše 20."
+  ship_radar_alert_title: "Zobrazit radar při vyplutí"
+  ship_radar_alert_description: "Přepnout displej na lodní radar, když se oblíbené plavidlo, které stálo nebo bylo mimo dosah, dá do pohybu."
+
   weather_title: Počasí
   weather_note: Zobrazovat na displeji místní venkovní počasí.
 
@@ -155,6 +189,7 @@ setup_page:
   auto_page_screen_time_weather_label: Čas & počasí
   auto_page_screen_flight_radar_label: Letecký radar
   auto_page_screen_weather_radar_label: Srážkový radar
+  auto_page_screen_ship_radar_label: "Lodní radar"
   auto_page_screen_pm1_label: PM1
   auto_page_screen_pm25_label: PM2.5
   auto_page_screen_pm4_label: PM4
@@ -221,6 +256,14 @@ weather:
 notification:
   fallback: Upozornění
   dismiss: Zavřít
+
+ship_radar:
+  key_missing: "Chybí klíč API AIS"
+  location_missing: "Chybí poloha"
+  offline: "Offline"
+  connecting: "Připojování..."
+  reconnecting: "Opětovné připojování..."
+  key_rejected: "Klíč API AIS odmítnut"
 
 date:
   format: "{weekday} {day} {month}"

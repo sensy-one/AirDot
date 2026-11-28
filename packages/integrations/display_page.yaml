@@ -21,13 +21,14 @@ select:
       - Pressure
       - Light
       - Rain Radar
+      - Ship Radar
     lambda: |-
       esphome::lvgl::LvPageType *const pages[] = {
         id(air_quality_summary_page), id(time_page), id(flight_radar_page),
         id(pm1_history_page), id(pm25_history_page), id(pm4_history_page), id(pm10_history_page),
         id(co2_history_page), id(voc_history_page), id(nox_history_page),
         id(temp_history_page), id(hum_history_page), id(pressure_history_page), id(lux_history_page),
-        id(weather_radar_page)
+        id(weather_radar_page), id(ship_radar_page)
       };
       for (size_t index = 0; index < sizeof(pages) / sizeof(pages[0]); index++) {
         if (pages[index] != nullptr && pages[index]->is_showing()) {
@@ -69,13 +70,16 @@ select:
           if (*requested == 14 &&
               (!AirDot::onboarding::has_saved_wifi_settings() || !AirDot::onboarding::load_weather_enabled()))
             return;
+          if (*requested == 15 &&
+              (!AirDot::onboarding::has_saved_wifi_settings() || !AirDot::onboarding::load_ship_radar_enabled()))
+            return;
 
           esphome::lvgl::LvPageType *const pages[] = {
             id(air_quality_summary_page), id(time_page), id(flight_radar_page),
             id(pm1_history_page), id(pm25_history_page), id(pm4_history_page), id(pm10_history_page),
             id(co2_history_page), id(voc_history_page), id(nox_history_page),
             id(temp_history_page), id(hum_history_page), id(pressure_history_page), id(lux_history_page),
-            id(weather_radar_page)
+            id(weather_radar_page), id(ship_radar_page)
           };
           if (*requested >= sizeof(pages) / sizeof(pages[0]) || pages[*requested] == nullptr)
             return;
@@ -93,6 +97,10 @@ select:
           if (*requested == 14) {
             id(ui_refresh_weather_radar_page).execute();
             id(weather_radar_request_update).execute();
+          }
+          if (*requested == 15) {
+            id(ui_refresh_ship_radar_page).execute();
+            id(ship_radar_map_request_update).execute();
           }
       - component.update: ha_display_page
       - lambda: |-

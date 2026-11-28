@@ -47,6 +47,7 @@ enum class Service : uint8_t {
   WEATHER,
   FLIGHT_RADAR,
   TIME_SYNC,
+  SHIP_RADAR,
   COUNT,
 };
 

@@ -53,6 +53,8 @@ setup_page:
   sen66_co2_reference_label: Baseline CO₂
   sen66_co2_calibration_title: Forza la calibrazione della baseline CO₂
   sen66_co2_calibration_description: Metti AirDot all'aria aperta per almeno 3 minuti, quindi salva.
+  sen66_voc_learning_time_label: Tempo di apprendimento baseline VOC
+  sen66_learning_time_help: Ore (1-1000). Usa tempi più lunghi per stanze spesso vuote.
 
   alerts_title: Avvisi
   alerts_note: Imposta quando AirDot deve avvisarti.
@@ -114,6 +116,38 @@ setup_page:
   flight_radar_traffic_all_label: Tutti gli aeromobili
   flight_radar_traffic_military_label: Solo militari
 
+  ship_radar_title: "Radar navale"
+  ship_radar_note: "Mostra le imbarcazioni AIS di aisstream.io intorno a una posizione su una mappa costiera. Richiede una chiave API gratuita di aisstream.io."
+  ship_radar_enabled_title: "Radar navale"
+  ship_radar_enabled_description: "Mostra le navi nelle vicinanze. Finché è attivo, mantiene aperta una connessione ad aisstream.io per raccogliere nomi e tipi delle imbarcazioni."
+  ship_radar_api_key_label: "Chiave API aisstream.io"
+  ship_radar_api_key_placeholder: "Incolla la tua chiave API"
+  ship_radar_api_key_saved_placeholder: "Salvata. Lascia vuoto per mantenerla."
+  ship_radar_api_key_clear_label: "Rimuovi la chiave salvata"
+  ship_radar_api_key_invalid: "Le chiavi API sono composte da 16 a 64 lettere, cifre, trattini o trattini bassi. Controlla che non ci siano caratteri in più."
+  ship_radar_range_label: "Raggio"
+  ship_radar_location_label: "Posizione"
+  ship_radar_location_device_label: "Posizione del dispositivo"
+  ship_radar_location_custom_label: "Personalizzata"
+  ship_radar_latitude_label: Latitudine
+  ship_radar_longitude_label: Longitudine
+  ship_radar_coordinates_help: "Gradi decimali, per esempio 42.3601 e -71.0589. Le latitudini a sud dell'equatore e le longitudini a ovest di Greenwich sono negative."
+  ship_radar_coordinates_invalid: "Inserisci gradi decimali: latitudine da -90 a 90, longitudine da -180 a 180, al massimo 7 decimali."
+  ship_radar_categories_label: "Tipi di imbarcazione"
+  ship_radar_cat_cargo_label: "Mercantili"
+  ship_radar_cat_tanker_label: "Cisterne"
+  ship_radar_cat_passenger_label: "Passeggeri"
+  ship_radar_cat_fishing_label: "Pesca"
+  ship_radar_cat_pleasure_label: "Vela e diporto"
+  ship_radar_cat_service_label: "Rimorchiatori e servizio"
+  ship_radar_cat_high_speed_label: "Unità veloci"
+  ship_radar_cat_other_label: "Altro e sconosciuto"
+  ship_radar_favorites_label: "Imbarcazioni preferite (MMSI)"
+  ship_radar_favorites_help: "Fino a 20 numeri MMSI di nove cifre, separati da virgole. Le preferite sono disegnate in oro e vengono seguite solo all'interno del raggio."
+  ship_radar_favorites_invalid: "Inserisci numeri MMSI di nove cifre separati da virgole, al massimo 20."
+  ship_radar_alert_title: "Mostra il radar alla partenza"
+  ship_radar_alert_description: "Passa al radar navale quando un'imbarcazione preferita che era ferma o fuori portata si mette in moto."
+
   weather_title: Meteo
   weather_note: Mostra il meteo locale esterno sul display.
 
@@ -155,6 +189,7 @@ setup_page:
   auto_page_screen_time_weather_label: Ora & meteo
   auto_page_screen_flight_radar_label: Radar voli
   auto_page_screen_weather_radar_label: Radar pioggia
+  auto_page_screen_ship_radar_label: "Radar navale"
   auto_page_screen_pm1_label: PM1
   auto_page_screen_pm25_label: PM2.5
   auto_page_screen_pm4_label: PM4
@@ -220,6 +255,14 @@ weather:
 notification:
   fallback: Notifica
   dismiss: Chiudi
+
+ship_radar:
+  key_missing: "Chiave API AIS mancante"
+  location_missing: "Posizione mancante"
+  offline: "Offline"
+  connecting: "Connessione..."
+  reconnecting: "Riconnessione..."
+  key_rejected: "Chiave API AIS rifiutata"
 
 date:
   format: "{weekday} {day} {month}"

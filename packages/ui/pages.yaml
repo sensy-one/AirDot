@@ -85,3 +85,4 @@ lvgl:
         title: LIGHT
         unit: lx
     - !include ../../ui/pages/weather_radar.yaml
+    - !include ../../ui/pages/ship_radar.yaml

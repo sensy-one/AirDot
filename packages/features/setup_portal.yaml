@@ -359,11 +359,14 @@ script:
                       id(setup_pending_sen66_co2_calibration) = 0;
                       id(setup_pending_sen66_co2_reference_ppm) = 427;
             - script.execute: sen66_apply_temperature_offset
+            - delay: 50ms
             - lambda: |-
                 if (AirDot::onboarding::load_alert_snooze_minutes() == 0) {
                   id(air_quality_hazard_sound_snooze_until_ms) = 0;
                   id(air_quality_hazard_focus_snooze_until_ms) = 0;
                 }
+            - script.execute: sen66_apply_learning_times
+            - script.wait: sen66_apply_learning_times
             - script.execute: ui_apply_display_theme
             - script.execute: ui_refresh_air_quality_summary
             - script.execute: ui_refresh_time_weather_page
@@ -797,6 +800,16 @@ interval:
               return id(flight_radar_page)->is_showing() &&
                   (!AirDot::onboarding::has_saved_wifi_settings() ||
                    !AirDot::onboarding::load_flight_radar_enabled());
+          then:
+            - lambda: |-
+                id(air_quality_summary_page)->get_parent()->show_page(
+                    id(air_quality_summary_page)->index, LV_SCREEN_LOAD_ANIM_NONE, 0);
+      - if:
+          condition:
+            lambda: |-
+              return id(ship_radar_page)->is_showing() &&
+                  (!AirDot::onboarding::has_saved_wifi_settings() ||
+                   !AirDot::onboarding::load_ship_radar_enabled());
           then:
             - lambda: |-
                 id(air_quality_summary_page)->get_parent()->show_page(

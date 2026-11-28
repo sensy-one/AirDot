@@ -94,6 +94,13 @@ script:
           AirDot::weather_radar::refresh_weather_radar_scope(
               id(weather_radar_scope), id(ui_font_small), id(ui_font_radar_progress), id(ui_font_radar_tag));
 
+          set_radar_background(id(ship_radar_page));
+          set_radar_background(id(ship_radar_scope));
+          AirDot::ship_radar::configure_ship_radar_location(
+              id(outdoor_latitude), id(outdoor_longitude), id(outdoor_location_valid));
+          AirDot::ship_radar::refresh_ship_scope(
+              id(ship_radar_scope), id(ui_font_radar_tag), id(ui_font_small), id(ui_font_radar_progress));
+
           apply_history(
             id(pm1_history_page), id(pm1_history_title_label), id(pm1_history_max_label),
             id(pm1_history_empty_label), id(pm1_history_min_label), id(pm1_current_value_label), id(pm1_unit_label));

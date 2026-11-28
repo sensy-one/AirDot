@@ -1,0 +1,112 @@
+# Ship radar: AIS vessels from aisstream.io over a coastline map.
+#
+# The AIS stream runs whenever the feature is enabled (not only while the page
+# is showing): Class B vessels send their name and type only every 6 minutes,
+# and favourite departure alerts need continuous tracking.
+
+script:
+  - id: ship_radar_map_request_update
+    mode: single
+    then:
+      - lambda: |-
+          if (!AirDot::onboarding::load_ship_radar_enabled() || !AirDot::onboarding::has_saved_wifi_settings())
+            return;
+          AirDot::ship_radar::configure_ship_radar_location(
+              id(outdoor_latitude), id(outdoor_longitude), id(outdoor_location_valid));
+          const auto &state = AirDot::ship_radar::ship_scope_state_();
+          if (!state.map_location_valid)
+            return;
+          const auto kind = AirDot::radar_map::MapKind::MARINE;
+          const bool showing = id(ship_radar_page)->is_showing();
+          if (showing) {
+            const lv_area_t area{0, 0, 479, 479};
+            const int radius = 240 - AirDot::flight_radar::RADAR_SCREEN_MARGIN;
+            AirDot::radar_map::prepare_map(area, state.map_latitude, state.map_longitude, state.map_range_km,
+                AirDot::ship_radar::ship_traffic_radius_(radius), radius,
+                AirDot::onboarding::load_dark_mode_enabled(), kind);
+          }
+          if (AirDot::radar_map::request_map(state.map_latitude, state.map_longitude, state.map_range_km,
+                  AirDot::onboarding::online_runtime_available(
+                      id(setup_ap_active), id(setup_portal_active), id(onboarding_ui_active)),
+                  kind) && showing)
+            id(ui_refresh_ship_radar_page).execute();
+
+interval:
+  # Render the marine map in short slices, only while its page is showing.
+  - interval: 5ms
+    then:
+      - lambda: |-
+          if (!id(ship_radar_page)->is_showing())
+            return;
+          if (AirDot::radar_map::service_map_render(AirDot::radar_map::MapKind::MARINE))
+            id(ui_refresh_ship_radar_page).execute();
+
+  - interval: 250ms
+    then:
+      - lambda: |-
+          if (id(ship_radar_page)->is_showing() && AirDot::ship_radar::ship_map_loading_visible_())
+            AirDot::ship_radar::invalidate_ship_scope();
+      - if:
+          condition:
+            lambda: "return AirDot::radar_map::consume_result(AirDot::radar_map::MapKind::MARINE);"
+          then:
+            - lambda: |-
+                if (id(ship_radar_page)->is_showing()) id(ui_refresh_ship_radar_page).execute();
+
+  - interval: 1s
+    then:
+      - script.execute: ship_radar_map_request_update
+      - lambda: |-
+          const uint32_t now = millis();
+          const bool enabled =
+              AirDot::onboarding::load_ship_radar_enabled() && AirDot::onboarding::has_saved_wifi_settings();
+          const bool online = AirDot::onboarding::online_runtime_available(
+              id(setup_ap_active), id(setup_portal_active), id(onboarding_ui_active));
+          const auto &state = AirDot::ship_radar::ship_scope_state_();
+          AirDot::ship_radar::configure_stream(enabled, online, state.map_location_valid,
+              state.map_latitude, state.map_longitude, state.map_range_km);
+
+          // Redraw when vessels moved (at most every 2 s) and every 10 s to
+          // drop stale vessels. Free the map image when hidden.
+          static uint32_t last_revision = 0, last_redraw_ms = 0, hidden_since_ms = 0;
+          const bool showing = id(ship_radar_page)->is_showing();
+          if (showing) {
+            hidden_since_ms = 0;
+            const uint32_t revision = AirDot::ship_radar::vessel_revision();
+            if ((revision != last_revision && now - last_redraw_ms >= 2000UL) || now - last_redraw_ms >= 10000UL) {
+              last_revision = revision;
+              last_redraw_ms = now;
+              AirDot::ship_radar::refresh_ship_render_list();
+              AirDot::ship_radar::invalidate_ship_scope();
+            }
+          } else {
+            if (hidden_since_ms == 0) hidden_since_ms = now;
+            if (now - hidden_since_ms >= 300000UL &&
+                AirDot::radar_map::render_requested(AirDot::radar_map::MapKind::MARINE))
+              AirDot::radar_map::release_render(AirDot::radar_map::MapKind::MARINE);
+          }
+      # A favourite getting under way switches the display to the ship radar
+      # (no banner or sound).
+      - if:
+          condition:
+            lambda: |-
+              if (!AirDot::onboarding::load_ship_radar_enabled() || !AirDot::onboarding::has_saved_wifi_settings())
+                return false;
+              const bool hazard_focus_active =
+                  id(air_quality_hazard_focus_hazard_since_ms) != 0 || id(air_quality_hazard_focus_metric) != -1 ||
+                  id(air_quality_hazard_focus_clear_since_ms) != 0 || id(air_quality_hazard_focus_status_since_ms) != 0;
+              const bool allowed = AirDot::onboarding::load_ship_radar_alert_enabled() &&
+                  !AirDot::onboarding::setup_or_onboarding_active(
+                      id(setup_ap_active), id(setup_portal_active), id(onboarding_ui_active)) &&
+                  id(ui_alert_active) == 0 && !hazard_focus_active;
+              if (!AirDot::ship_radar::poll_favorite_alert(millis(), allowed))
+                return false;
+              id(ui_auto_page_switch_last_ms) = millis();
+              if (AirDot::onboarding::load_display_alert_wake_screen_enabled())
+                AirDot::onboarding::wake_display_with_brightness(
+                    id(display_panel), id(display_backlight), id(ambient_light_sensor).state,
+                    ${display_auto_dim_min_lux}, ${display_auto_dim_max_lux},
+                    ${display_auto_dim_min_brightness});
+              return true;
+          then:
+            - script.execute: ui_show_ship_radar_page
