@@ -24,7 +24,10 @@ struct RenderCache {
   bool dark{true}, valid{false};
   uint32_t revision{0}, source_revision{0};
 };
-inline RenderCache &render_cache() { static RenderCache cache; return cache; }
+inline RenderCache &render_cache(MapKind kind = MapKind::ROADS) {
+  static RenderCache caches[MAP_KIND_COUNT];
+  return caches[static_cast<size_t>(kind) < MAP_KIND_COUNT ? static_cast<size_t>(kind) : 0];
+}
 
 namespace map_render_detail {
 struct Key {
@@ -48,6 +51,7 @@ struct Job {
   Key key;
   uint32_t generation{0}, source_revision{0};
   size_t cleared{0}, segment{0};
+  int land_row{0};
   bool line_active{false}, motorway{false};
   int x{0}, y{0}, x2{0}, y2{0}, dx{0}, dy{0}, sx{0}, sy{0}, error{0}, gray{0};
 };
@@ -57,8 +61,11 @@ struct State {
   uint32_t generation{1};
   bool requested{false};
 };
-inline State &state() { static State value; return value; }
-inline void cancel_job() { auto &job=state().job;std::free(job.pixels);job=Job{}; }
+inline State &state(MapKind kind = MapKind::ROADS) {
+  static State values[MAP_KIND_COUNT];
+  return values[static_cast<size_t>(kind) < MAP_KIND_COUNT ? static_cast<size_t>(kind) : 0];
+}
+inline void cancel_job(MapKind kind) { auto &job=state(kind).job;std::free(job.pixels);job=Job{}; }
 inline uint32_t now_micros() {
 #ifdef USE_ESP32
   return esphome::micros();
@@ -91,9 +98,42 @@ inline void begin_line(Job &job,const Segment &segment) {
   job.dx=std::abs(job.x2-job.x);job.sx=job.x<job.x2?1:-1;
   job.dy=-std::abs(job.y2-job.y);job.sy=job.y<job.y2?1:-1;job.error=job.dx+job.dy;
   const auto style=segment.style;job.motorway=style==Style::MOTORWAY;
-  job.gray=key.dark?(style==Style::MOTORWAY?72:style==Style::MAJOR?52:style==Style::MINOR?35:28):
-                    (style==Style::MOTORWAY?181:style==Style::MAJOR?202:style==Style::MINOR?221:229);
+  job.gray=key.dark?(style==Style::MOTORWAY?72:style==Style::MAJOR?52:style==Style::MINOR?35:
+                     style==Style::COAST?80:style==Style::RIVER?44:28):
+                    (style==Style::MOTORWAY?181:style==Style::MAJOR?202:style==Style::MINOR?221:
+                     style==Style::COAST?170:style==Style::RIVER?210:229);
   job.line_active=true;
+}
+// Land is everything inside the scope that the water mask does not cover.
+// Kept close to the background so the coastline still reads first.
+inline constexpr uint8_t LAND_GRAY_DARK = 34;
+inline constexpr uint8_t LAND_GRAY_LIGHT = 238;
+inline bool fill_land_slice(Job &job,const MapData &map,uint32_t started) {
+  if(!map.has_water_mask)return true;
+  const auto &key=job.key;
+  const int cx=key.width/2,cy=key.height/2,radius=key.radius*key.radius;
+  const int fade_radius=key.radius*FADE_START_PERCENT/100,fade_start=fade_radius*fade_radius;
+  const int span=std::max(1,radius-fade_start);
+  const int base=key.dark?LAND_GRAY_DARK:LAND_GRAY_LIGHT;
+  while(job.land_row<key.height) {
+    if(expired(started))return false;
+    const int y=job.land_row++,dy=y-cy;
+    if(dy*dy>radius)continue;
+    const int cell_y=dy*MASK_PIXELS_PER_RANGE/key.scale+MASK_RADIUS;
+    uint16_t *row=job.pixels+static_cast<size_t>(y)*key.width;
+    for(int x=0;x<key.width;++x) {
+      const int dx=x-cx,distance=dx*dx+dy*dy;
+      if(distance>radius)continue;
+      if(water_at(map,dx*MASK_PIXELS_PER_RANGE/key.scale+MASK_RADIUS,cell_y))continue;
+      int gray=base;
+      if(distance>fade_start) {
+        const int weight=std::max(0,radius-distance);
+        gray=key.dark?gray*weight/span:255-(255-gray)*weight/span;
+      }
+      row[x]=map_gray_rgb565(static_cast<uint8_t>(gray),x,y);
+    }
+  }
+  return true;
 }
 inline bool draw_slice(Job &job,const MapData &map,uint32_t started) {
   const size_t count=std::min<size_t>(map.count,MAX_SEGMENTS);
@@ -102,7 +142,7 @@ inline bool draw_slice(Job &job,const MapData &map,uint32_t started) {
     if(!job.line_active) {
       if(job.segment>=count)return true;
       const auto &segment=map.segments[job.segment++];
-      if(static_cast<uint8_t>(segment.style)>static_cast<uint8_t>(Style::WATER)){++completed;continue;}
+      if(static_cast<uint8_t>(segment.style)>static_cast<uint8_t>(Style::RIVER)){++completed;continue;}
       begin_line(job,segment);
     }
     plot(job,job.x,job.y);
@@ -123,29 +163,30 @@ inline bool draw_slice(Job &job,const MapData &map,uint32_t started) {
 }  // namespace map_render_detail
 
 inline bool prepare_map(const lv_area_t &area,float latitude,float longitude,
-                        uint8_t range_km,int pixels_per_range,int clip_radius,bool dark) {
+                        uint8_t range_km,int pixels_per_range,int clip_radius,bool dark,
+                        MapKind kind=MapKind::ROADS) {
   const int width=area.x2-area.x1+1,height=area.y2-area.y1+1;
   if(!valid_coordinates(latitude,longitude)||width<=0||height<=0||width>640||height>640||
       pixels_per_range<=0||pixels_per_range>640||clip_radius<=0||clip_radius>640)return false;
   const map_render_detail::Key key{latitude,longitude,range_km,width,height,pixels_per_range,clip_radius,dark};
-  auto &state=map_render_detail::state();
+  auto &state=map_render_detail::state(kind);
   if(!state.requested||!map_render_detail::same(state.wanted,key)) {state.wanted=key;state.requested=true;++state.generation;}
-  return map_render_detail::matches_cache(render_cache(),key);
+  return map_render_detail::matches_cache(render_cache(kind),key);
 }
 
 // Call from the main loop. DRAW only queues requests and consumes complete images.
-inline bool service_map_render() {
+inline bool service_map_render(MapKind kind=MapKind::ROADS) {
   using namespace map_render_detail;
-  auto &request=state();auto &cache=render_cache();auto &job=request.job;
+  auto &request=state(kind);auto &cache=render_cache(kind);auto &job=request.job;
   if(!request.requested)return false;
-  const uint32_t source=map_revision();
+  const uint32_t source=map_revision(kind);
   if(matches_cache(cache,request.wanted)&&cache.source_revision==source) {
-    if(job.pixels)cancel_job();
+    if(job.pixels)cancel_job(kind);
     return false;
   }
-  if(job.pixels&&(job.generation!=request.generation||job.source_revision!=source||!same(job.key,request.wanted)))cancel_job();
+  if(job.pixels&&(job.generation!=request.generation||job.source_revision!=source||!same(job.key,request.wanted)))cancel_job(kind);
   if(!job.pixels) {
-    if(!with_map(request.wanted.latitude,request.wanted.longitude,request.wanted.range,[](const MapData&){}))return false;
+    if(!with_map(request.wanted.latitude,request.wanted.longitude,request.wanted.range,[](const MapData&){},kind))return false;
     const size_t count=static_cast<size_t>(request.wanted.width)*request.wanted.height;
 #ifdef USE_ESP32
     job.pixels=static_cast<uint16_t*>(heap_caps_malloc(count*sizeof(uint16_t),MALLOC_CAP_SPIRAM|MALLOC_CAP_8BIT));
@@ -165,9 +206,11 @@ inline bool service_map_render() {
   }
   if(job.cleared<count||expired(started))return false;
   bool complete=false;
-  if(!with_map(job.key.latitude,job.key.longitude,job.key.range,[&](const MapData &map){complete=draw_slice(job,map,started);}))return false;
+  if(!with_map(job.key.latitude,job.key.longitude,job.key.range,[&](const MapData &map){
+        if(fill_land_slice(job,map,started))complete=draw_slice(job,map,started);
+      },kind))return false;
   if(!complete)return false;
-  if(job.generation!=request.generation||job.source_revision!=map_revision()) {cancel_job();return false;}
+  if(job.generation!=request.generation||job.source_revision!=map_revision(kind)) {cancel_job(kind);return false;}
   lv_image_cache_drop(&cache.image);
   auto *previous=cache.pixels;cache.pixels=job.pixels;job.pixels=nullptr;
   cache.allocated_pixels=count;
@@ -182,10 +225,26 @@ inline bool service_map_render() {
 }
 
 inline bool draw_map(lv_layer_t *layer,const lv_area_t &area,float latitude,float longitude,
-                     uint8_t range_km,int pixels_per_range,int clip_radius,bool dark) {
-  if(!layer||!prepare_map(area,latitude,longitude,range_km,pixels_per_range,clip_radius,dark))return false;
-  lv_draw_image_dsc_t image;lv_draw_image_dsc_init(&image);image.src=&render_cache().image;image.opa=LV_OPA_COVER;
+                     uint8_t range_km,int pixels_per_range,int clip_radius,bool dark,
+                     MapKind kind=MapKind::ROADS) {
+  if(!layer||!prepare_map(area,latitude,longitude,range_km,pixels_per_range,clip_radius,dark,kind))return false;
+  lv_draw_image_dsc_t image;lv_draw_image_dsc_init(&image);image.src=&render_cache(kind).image;image.opa=LV_OPA_COVER;
   lv_draw_image(layer,&image,&area);return true;
 }
+
+// Frees a kind's rendered image and any job in progress, e.g. after its page
+// has been hidden for a while. The next prepare_map() renders it again.
+inline void release_render(MapKind kind) {
+  using namespace map_render_detail;
+  auto &cache=render_cache(kind);auto &request=state(kind);
+  if(request.job.pixels)cancel_job(kind);
+  request.requested=false;
+  if(!cache.pixels)return;
+  lv_image_cache_drop(&cache.image);
+  std::free(cache.pixels);
+  const uint32_t revision=cache.revision+1;
+  cache=RenderCache{};cache.revision=revision;
+}
+inline bool render_requested(MapKind kind) { return map_render_detail::state(kind).requested; }
 
 }  // namespace AirDot::radar_map

@@ -15,6 +15,8 @@ namespace AirDot::radar_map::persistent_cache {
 // delete the previous value first, or touch the ESPHome preferences namespace.
 inline constexpr const char *NVS_NAMESPACE = "airdot_map";
 inline constexpr const char *NVS_KEY = "cache_v1";
+inline constexpr const char *NVS_MARINE_KEY = "cache_marine_v1";
+inline const char *key_for(MapKind kind) { return kind == MapKind::MARINE ? NVS_MARINE_KEY : NVS_KEY; }
 
 enum class Result : uint8_t {
   HIT, MISS, KEY_MISMATCH, CORRUPT, NO_SPACE, NO_MEMORY, UNCHANGED, SAVED,
@@ -106,7 +108,8 @@ template<typename Storage>
 Result save_to(Storage &storage, const MapData &map, uint64_t created_unix) {
   uint8_t desired_header[protocol::HEADER_SIZE];
   if (!protocol::make_header(map, created_unix, desired_header)) return Result::INVALID_MAP;
-  const size_t length = protocol::HEADER_SIZE + static_cast<size_t>(map.count) * protocol::SEGMENT_SIZE;
+  const size_t length = protocol::HEADER_SIZE + static_cast<size_t>(map.count) * protocol::SEGMENT_SIZE +
+                       (map.has_water_mask ? MASK_BYTES : 0);
   size_t old_length = 0;
   const IoResult old_result = storage.blob_length(old_length);
   if (old_result != IoResult::OK && old_result != IoResult::NOT_FOUND) return io_result(old_result);
@@ -163,17 +166,17 @@ inline IoResult nvs_result(esp_err_t error) {
 }
 class NvsStorage {
  public:
-  explicit NvsStorage(bool writable) {
+  NvsStorage(bool writable, const char *key) : key_(key) {
     error_ = nvs_open(NVS_NAMESPACE, writable ? NVS_READWRITE : NVS_READONLY, &handle_);
   }
   ~NvsStorage() { if (error_ == ESP_OK) nvs_close(handle_); }
   NvsStorage(const NvsStorage &) = delete;
   NvsStorage &operator=(const NvsStorage &) = delete;
   IoResult blob_length(size_t &length) {
-    return nvs_result(error_ == ESP_OK ? nvs_get_blob(handle_, NVS_KEY, nullptr, &length) : error_);
+    return nvs_result(error_ == ESP_OK ? nvs_get_blob(handle_, key_, nullptr, &length) : error_);
   }
   IoResult read_blob(uint8_t *data, size_t &length) {
-    return nvs_result(error_ == ESP_OK ? nvs_get_blob(handle_, NVS_KEY, data, &length) : error_);
+    return nvs_result(error_ == ESP_OK ? nvs_get_blob(handle_, key_, data, &length) : error_);
   }
   IoResult statistics(Statistics &out) {
     nvs_stats_t stats{};
@@ -183,10 +186,11 @@ class NvsStorage {
     return IoResult::OK;
   }
   IoResult write_blob(const uint8_t *data, size_t length) {
-    return nvs_result(error_ == ESP_OK ? nvs_set_blob(handle_, NVS_KEY, data, length) : error_);
+    return nvs_result(error_ == ESP_OK ? nvs_set_blob(handle_, key_, data, length) : error_);
   }
   IoResult commit() { return nvs_result(error_ == ESP_OK ? nvs_commit(handle_) : error_); }
  private:
+  const char *key_;
   nvs_handle_t handle_{0};
   esp_err_t error_{ESP_FAIL};
 };
@@ -205,17 +209,18 @@ class Operation {
 #ifdef USE_ESP32
 // Call load once per requested location while no map worker is active. Only a
 // fully validated matching map is returned, including offline after a reboot.
+// map.kind selects the stored slot.
 inline Result load(float latitude, float longitude, uint8_t range, MapData &map,
                    protocol::Metadata *metadata = nullptr) {
   detail::Operation operation;
   if (!operation.acquired()) { map.count = 0; return Result::BUSY; }
-  detail::NvsStorage storage(false);
+  detail::NvsStorage storage(false, key_for(map.kind));
   return detail::load_from(storage, latitude, longitude, range, map, metadata, false);
 }
 inline Result load_latest(uint8_t range, MapData &map, protocol::Metadata *metadata = nullptr) {
   detail::Operation operation;
   if (!operation.acquired()) { map.count = 0; return Result::BUSY; }
-  detail::NvsStorage storage(false);
+  detail::NvsStorage storage(false, key_for(map.kind));
   return detail::load_from(storage, 0, 0, range, map, metadata, true);
 }
 // Flash writes belong in the existing map worker, before publication, rather
@@ -223,7 +228,7 @@ inline Result load_latest(uint8_t range, MapData &map, protocol::Metadata *metad
 inline Result save(const MapData &map, uint64_t created_unix = 0) {
   detail::Operation operation;
   if (!operation.acquired()) return Result::BUSY;
-  detail::NvsStorage storage(true);
+  detail::NvsStorage storage(true, key_for(map.kind));
   return detail::save_to(storage, map, created_unix);
 }
 #endif

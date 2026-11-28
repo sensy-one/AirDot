@@ -411,6 +411,8 @@ inline FetchResult fetch_map(MapData &map, float latitude, float longitude, uint
     progress.total = plan.count;
     map.count = 0; map.truncated = false; map.coarse = attempt != 0;
     TileDecoder decoder(map, []() { vTaskDelay(1); });
+    // A marine map without its water mask could never be restored from cache.
+    if (map.kind == MapKind::MARINE && !map.has_water_mask) return failure("tile_alloc");
     size_t tier_bytes = 0;
     bool lower_zoom = false;
     callback(progress);

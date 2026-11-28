@@ -109,6 +109,9 @@ script:
           const bool weather_radar_page_available =
               AirDot::onboarding::has_saved_wifi_settings() &&
               AirDot::onboarding::load_weather_enabled();
+          const bool ship_radar_page_available =
+              AirDot::onboarding::has_saved_wifi_settings() &&
+              AirDot::onboarding::load_ship_radar_enabled();
 
           auto show_flight_radar_page = [&]() {
             id(flight_radar_page)->get_parent()->show_page(
@@ -160,6 +163,9 @@ script:
               case 14:
                 return weather_radar_page_available &&
                        auto_cycle_screen_enabled(AirDot::onboarding::AUTO_PAGE_SCREEN_WEATHER_RADAR);
+              case 15:
+                return ship_radar_page_available &&
+                       auto_cycle_screen_enabled(AirDot::onboarding::AUTO_PAGE_SCREEN_SHIP_RADAR);
               default:
                 return false;
             }
@@ -228,6 +234,9 @@ script:
                 id(ui_refresh_weather_radar_page).execute();
                 id(weather_radar_request_update).execute();
                 break;
+              case 15:
+                id(ui_show_ship_radar_page).execute();
+                break;
               default:
                 break;
             }
@@ -264,11 +273,13 @@ script:
               return 13;
             if (id(weather_radar_page)->is_showing())
               return 14;
+            if (id(ship_radar_page)->is_showing())
+              return 15;
             return 0;
           };
 
-          // Preserve existing page indices and put the new weather view after Flight Radar.
-          constexpr uint8_t PAGE_ORDER[] = {0, 1, 2, 14, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13};
+          // Preserve existing page indices; the radar views follow Flight Radar.
+          constexpr uint8_t PAGE_ORDER[] = {0, 1, 2, 14, 15, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13};
           constexpr uint8_t PAGE_COUNT = sizeof(PAGE_ORDER) / sizeof(PAGE_ORDER[0]);
           const uint8_t current_index = current_page_index();
           uint8_t position = 0;

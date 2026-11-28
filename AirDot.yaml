@@ -32,6 +32,7 @@ packages:
   ui_time_weather_page: !include packages/ui/time_weather_page.yaml
   ui_flight_radar_page: !include packages/ui/flight_radar_page.yaml
   ui_weather_radar_page: !include packages/ui/weather_radar_page.yaml
+  ui_ship_radar_page: !include packages/ui/ship_radar_page.yaml
 
   feature_setup_portal: !include packages/features/setup_portal.yaml
   feature_time_sync: !include packages/features/time_sync.yaml
@@ -39,4 +40,5 @@ packages:
   feature_flight_radar: !include packages/features/flight_radar.yaml
   feature_radar_map: !include packages/features/radar_map.yaml
   feature_weather_radar: !include packages/features/weather_radar.yaml
+  feature_ship_radar: !include packages/features/ship_radar.yaml
   feature_air_quality: !include packages/features/air_quality.yaml

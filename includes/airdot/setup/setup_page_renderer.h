@@ -162,6 +162,17 @@ class SetupPageRenderer {
         flight_radar_settings.traffic_mode == FLIGHT_RADAR_TRAFFIC_MILITARY_ONLY;
     const uint8_t flight_radar_range_km = normalize_flight_radar_range_km(flight_radar_settings.range_km);
     const std::string flight_radar_range_value = std::to_string(static_cast<unsigned>(flight_radar_range_km));
+    const auto &ship_radar_settings = load_ship_radar_settings();
+    const uint8_t ship_radar_range_km = normalize_ship_radar_range_km(ship_radar_settings.range_km);
+    const bool ship_radar_custom_location = ship_radar_settings.location_mode == SHIP_RADAR_LOCATION_CUSTOM;
+    const bool ship_radar_has_coordinates =
+        ship_radar_settings.latitude_e7 != 0 || ship_radar_settings.longitude_e7 != 0;
+    const std::string ship_radar_latitude_value =
+        ship_radar_has_coordinates ? coordinate_input_value_(ship_radar_settings.latitude_e7) : "";
+    const std::string ship_radar_longitude_value =
+        ship_radar_has_coordinates ? coordinate_input_value_(ship_radar_settings.longitude_e7) : "";
+    const bool ship_radar_key_saved = has_ship_radar_api_key();
+    const std::string ship_radar_favorites_value = ship_radar_favorites_text();
     char mqtt_port_value[6];
     std::snprintf(
         mqtt_port_value, sizeof(mqtt_port_value), "%u", static_cast<unsigned>(mqtt_settings.port));
@@ -171,6 +182,7 @@ class SetupPageRenderer {
     const std::string saved_wifi_password = has_wifi_settings ? fixed_string_(wifi_settings.password) : "";
     const bool wifi_configured = !saved_wifi_ssid.empty();
     const bool flight_radar_active = wifi_configured && flight_radar_configured_enabled;
+    const bool ship_radar_active = wifi_configured && ship_radar_settings.enabled == 1;
     const bool time_sync_enabled = stored_time_server_enabled || manual_time_enabled;
     const bool time_server_enabled = wifi_configured && stored_time_server_enabled && !manual_time_enabled;
     const bool manual_time_mode = time_sync_enabled && (manual_time_enabled || !wifi_configured);
@@ -423,6 +435,7 @@ class SetupPageRenderer {
       margin-top: 18px;
     }
     .coordinate-range .field { margin-top: 0; }
+    .coordinate-range .field-hint { grid-column: 1 / -1; }
     .time-range[hidden] { display: none; }
     .coordinate-range[hidden] { display: none; }
     .time-control { min-width: 0; }
@@ -1987,6 +2000,279 @@ class SetupPageRenderer {
               </div>
             </section>
 
+            <section id="ship_radar_section" class="section)html";
+    if (!wifi_configured)
+      html += " is-disabled";
+    html += R"html(" aria-labelledby="ship-radar-title">
+              <div class="section-header">
+                <div>
+)html";
+    html += "                  <h2 id=\"ship-radar-title\" data-i18n=\"ship_radar_title\">";
+    html += text.ship_radar_title;
+    html += "</h2>\n                  <p class=\"section-note\" data-i18n=\"ship_radar_note\">";
+    html += text.ship_radar_note;
+    html += R"html(</p>
+                </div>
+              </div>
+
+)html";
+    html += "              <div id=\"ship_radar_enabled_row\" class=\"toggle-row";
+    if (!wifi_configured)
+      html += " is-disabled";
+    html += R"html(">
+                <div class="toggle-copy">
+)html";
+    html += "                  <p class=\"toggle-title\" data-i18n=\"ship_radar_enabled_title\">";
+    html += text.ship_radar_enabled_title;
+    html += "</p>\n                  <p class=\"toggle-description\" data-i18n=\"ship_radar_enabled_description\">";
+    html += text.ship_radar_enabled_description;
+    html += R"html(</p>
+                </div>
+
+)html";
+    html += "                <label class=\"switch\" data-i18n-aria-label=\"ship_radar_enabled_title\" aria-label=\"";
+    html += text.ship_radar_enabled_title;
+    html += R"html(">
+)html";
+    html += "                  <input id=\"ship_radar_enabled\" type=\"checkbox\" name=\"ship_radar_enabled\" value=\"1\" aria-controls=\"ship_radar_fields\"";
+    if (ship_radar_active)
+      html += " checked";
+    if (!wifi_configured)
+      html += " disabled";
+    html += R"html(>
+                  <span class="slider" aria-hidden="true"></span>
+                </label>
+              </div>
+
+              <div id="ship_radar_fields" class="flight-radar-fields)html";
+    if (!ship_radar_active)
+      html += " is-disabled";
+    html += "\"";
+    if (!ship_radar_active)
+      html += " hidden";
+    html += R"html(>
+                <div class="field">
+)html";
+    // The stored key is never sent back to the browser.
+    html += "                  <label for=\"ship_radar_api_key\" data-i18n=\"ship_radar_api_key_label\">";
+    html += text.ship_radar_api_key_label;
+    html += R"html(</label>
+                  <div class="password-control">
+                    <input id="ship_radar_api_key" name="ship_radar_api_key" type="password" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false" maxlength="64" pattern="[A-Za-z0-9_\-]{16,64}" data-invalid-message=")html";
+    html += html_escape_(text.ship_radar_api_key_invalid);
+    html += R"html(" data-i18n-placeholder=")html";
+    html += ship_radar_key_saved ? "ship_radar_api_key_saved_placeholder" : "ship_radar_api_key_placeholder";
+    html += "\" placeholder=\"";
+    html += html_escape_(ship_radar_key_saved ? text.ship_radar_api_key_saved_placeholder
+                                              : text.ship_radar_api_key_placeholder);
+    html += "\" value=\"\"";
+    if (!ship_radar_active)
+      html += " disabled";
+    html += R"html(>
+                    <button class="password-toggle" type="button" data-password-toggle="ship_radar_api_key" data-i18n-aria-label="password_visibility_toggle_label" aria-label=")html";
+    html += html_escape_(text.password_visibility_toggle_label);
+    html += R"html(" aria-pressed="false">
+                      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                        <path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path>
+                        <path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path>
+                      </svg>
+                    </button>
+                  </div>
+)html";
+    if (ship_radar_key_saved) {
+      html += "                  <label class=\"screen-option\" for=\"ship_radar_api_key_clear\">\n"
+              "                    <input id=\"ship_radar_api_key_clear\" type=\"checkbox\" name=\"ship_radar_api_key_clear\" value=\"1\"";
+      if (!ship_radar_active)
+        html += " disabled";
+      html += ">\n                    <span data-i18n=\"ship_radar_api_key_clear_label\">";
+      html += html_escape_(text.ship_radar_api_key_clear_label);
+      html += "</span>\n                  </label>\n";
+    }
+    html += R"html(                </div>
+
+                <div class="field">
+)html";
+    html += "                  <label for=\"ship_radar_range_km\" data-i18n=\"ship_radar_range_label\">";
+    html += text.ship_radar_range_label;
+    html += R"html(</label>
+                  <div class="control-wrap">
+                    <select id="ship_radar_range_km" name="ship_radar_range_km")html";
+    if (!ship_radar_active)
+      html += " disabled";
+    html += R"html(>
+)html";
+    html += flight_radar_range_options_(ship_radar_range_km, imperial_units);
+    html += R"html(
+                    </select>
+                    <svg class="chevron" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                      <path d="m5 7.5 5 5 5-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+                    </svg>
+                  </div>
+                </div>
+
+                <div class="field">
+)html";
+    html += "                  <label for=\"ship_radar_location_device\" data-i18n=\"ship_radar_location_label\">";
+    html += text.ship_radar_location_label;
+    html += "</label>\n                  <div class=\"segmented\" role=\"radiogroup\" data-i18n-aria-label=\"ship_radar_location_label\" aria-label=\"";
+    html += text.ship_radar_location_label;
+    html += R"html(">
+                    <label class="segment" for="ship_radar_location_device">
+                      <input id="ship_radar_location_device" type="radio" name="ship_radar_location" value="device")html";
+    if (!ship_radar_custom_location)
+      html += " checked";
+    if (!ship_radar_active)
+      html += " disabled";
+    html += R"html(>
+)html";
+    html += "                      <span data-i18n=\"ship_radar_location_device_label\">";
+    html += text.ship_radar_location_device_label;
+    html += R"html(</span>
+                    </label>
+                    <label class="segment" for="ship_radar_location_custom">
+                      <input id="ship_radar_location_custom" type="radio" name="ship_radar_location" value="custom")html";
+    if (ship_radar_custom_location)
+      html += " checked";
+    if (!ship_radar_active)
+      html += " disabled";
+    html += R"html(>
+)html";
+    html += "                      <span data-i18n=\"ship_radar_location_custom_label\">";
+    html += text.ship_radar_location_custom_label;
+    html += R"html(</span>
+                    </label>
+                  </div>
+                </div>
+
+              <div id="ship_radar_location_fields" class="coordinate-range")html";
+    if (!ship_radar_active || !ship_radar_custom_location)
+      html += " hidden";
+    html += R"html(>
+                <div class="field">
+)html";
+    html += "                  <label for=\"ship_radar_latitude\" data-i18n=\"ship_radar_latitude_label\">";
+    html += text.ship_radar_latitude_label;
+    html += R"html(</label>
+                  <input id="ship_radar_latitude" name="ship_radar_latitude" type="text" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false" enterkeyhint="next" maxlength="18" pattern="-?[0-9]{1,2}([.,][0-9]{1,7})?" placeholder="42.3601" data-coordinate-max="90" data-invalid-message=")html";
+    html += html_escape_(text.ship_radar_coordinates_invalid);
+    html += "\" value=\"";
+    html += html_escape_(ship_radar_latitude_value);
+    html += "\"";
+    if (!ship_radar_active || !ship_radar_custom_location)
+      html += " disabled";
+    else
+      html += " required";
+    html += R"html(>
+                </div>
+                <div class="field">
+)html";
+    html += "                  <label for=\"ship_radar_longitude\" data-i18n=\"ship_radar_longitude_label\">";
+    html += text.ship_radar_longitude_label;
+    html += R"html(</label>
+                  <input id="ship_radar_longitude" name="ship_radar_longitude" type="text" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false" enterkeyhint="done" maxlength="18" pattern="-?[0-9]{1,3}([.,][0-9]{1,7})?" placeholder="-71.0589" data-coordinate-max="180" data-invalid-message=")html";
+    html += html_escape_(text.ship_radar_coordinates_invalid);
+    html += "\" value=\"";
+    html += html_escape_(ship_radar_longitude_value);
+    html += "\"";
+    if (!ship_radar_active || !ship_radar_custom_location)
+      html += " disabled";
+    else
+      html += " required";
+    html += R"html(>
+                </div>
+                <p class="field-hint" data-i18n="ship_radar_coordinates_help">)html";
+    html += html_escape_(text.ship_radar_coordinates_help);
+    html += R"html(</p>
+              </div>
+
+                <div class="field">
+)html";
+    html += "                  <label data-i18n=\"ship_radar_categories_label\">";
+    html += text.ship_radar_categories_label;
+    html += R"html(</label>
+                  <div class="screen-grid">
+)html";
+    {
+      const uint8_t mask = ship_radar_settings.category_mask;
+      const struct { const char *id; uint8_t bit; const char *key; const char *label; } categories[] = {
+          {"ship_radar_cat_cargo", SHIP_CATEGORY_CARGO, "ship_radar_cat_cargo_label", text.ship_radar_cat_cargo_label},
+          {"ship_radar_cat_tanker", SHIP_CATEGORY_TANKER, "ship_radar_cat_tanker_label", text.ship_radar_cat_tanker_label},
+          {"ship_radar_cat_passenger", SHIP_CATEGORY_PASSENGER, "ship_radar_cat_passenger_label",
+           text.ship_radar_cat_passenger_label},
+          {"ship_radar_cat_fishing", SHIP_CATEGORY_FISHING, "ship_radar_cat_fishing_label", text.ship_radar_cat_fishing_label},
+          {"ship_radar_cat_pleasure", SHIP_CATEGORY_PLEASURE, "ship_radar_cat_pleasure_label",
+           text.ship_radar_cat_pleasure_label},
+          {"ship_radar_cat_service", SHIP_CATEGORY_SERVICE, "ship_radar_cat_service_label", text.ship_radar_cat_service_label},
+          {"ship_radar_cat_high_speed", SHIP_CATEGORY_HIGH_SPEED, "ship_radar_cat_high_speed_label",
+           text.ship_radar_cat_high_speed_label},
+          {"ship_radar_cat_other", SHIP_CATEGORY_OTHER, "ship_radar_cat_other_label", text.ship_radar_cat_other_label},
+      };
+      for (const auto &category : categories) {
+        html += "                    <label class=\"screen-option\" for=\"";
+        html += category.id;
+        html += "\">\n                      <input id=\"";
+        html += category.id;
+        html += "\" type=\"checkbox\" name=\"";
+        html += category.id;
+        html += "\" value=\"1\" data-ship-category";
+        if ((mask & category.bit) != 0)
+          html += " checked";
+        if (!ship_radar_active)
+          html += " disabled";
+        html += ">\n                      <span data-i18n=\"";
+        html += category.key;
+        html += "\">";
+        html += html_escape_(category.label);
+        html += "</span>\n                    </label>\n";
+      }
+    }
+    html += R"html(                  </div>
+                </div>
+
+                <div class="field">
+)html";
+    html += "                  <label for=\"ship_radar_favorites\" data-i18n=\"ship_radar_favorites_label\">";
+    html += text.ship_radar_favorites_label;
+    html += R"html(</label>
+                  <input id="ship_radar_favorites" name="ship_radar_favorites" type="text" inputmode="numeric" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false" maxlength="260" placeholder="368207620, 244660000" value=")html";
+    html += html_escape_(ship_radar_favorites_value);
+    html += "\" data-invalid-message=\"";
+    html += html_escape_(text.ship_radar_favorites_invalid);
+    html += "\"";
+    if (!ship_radar_active)
+      html += " disabled";
+    html += ">\n                  <p class=\"section-note\" data-i18n=\"ship_radar_favorites_help\">";
+    html += text.ship_radar_favorites_help;
+    html += R"html(</p>
+                </div>
+
+              <div id="ship_radar_alert_row" class="toggle-row">
+                <div class="toggle-copy">
+)html";
+    html += "                  <p class=\"toggle-title\" data-i18n=\"ship_radar_alert_title\">";
+    html += text.ship_radar_alert_title;
+    html += "</p>\n                  <p class=\"toggle-description\" data-i18n=\"ship_radar_alert_description\">";
+    html += text.ship_radar_alert_description;
+    html += R"html(</p>
+                </div>
+
+)html";
+    html += "                <label class=\"switch\" data-i18n-aria-label=\"ship_radar_alert_title\" aria-label=\"";
+    html += text.ship_radar_alert_title;
+    html += R"html(">
+)html";
+    html += "                  <input id=\"ship_radar_alert\" type=\"checkbox\" name=\"ship_radar_alert\" value=\"1\"";
+    if (ship_radar_settings.alert_enabled == 1)
+      html += " checked";
+    if (!ship_radar_active)
+      html += " disabled";
+    html += R"html(>
+                  <span class="slider" aria-hidden="true"></span>
+                </label>
+              </div>
+              </div>
+            </section>
+
             <section class="section" aria-labelledby="display-title">
               <div class="section-header">
                 <div>
@@ -2322,6 +2608,9 @@ class SetupPageRenderer {
     append_auto_page_screen_option("auto_page_screen_weather_radar", "auto_page_screen_weather_radar",
                                    AUTO_PAGE_SCREEN_WEATHER_RADAR, "auto_page_screen_weather_radar_label",
                                    text.auto_page_screen_weather_radar_label);
+    append_auto_page_screen_option("auto_page_screen_ship_radar", "auto_page_screen_ship_radar",
+                                   AUTO_PAGE_SCREEN_SHIP_RADAR, "auto_page_screen_ship_radar_label",
+                                   text.auto_page_screen_ship_radar_label);
     append_auto_page_screen_option("auto_page_screen_pm1", "auto_page_screen_pm1", AUTO_PAGE_SCREEN_PM1,
                                    "auto_page_screen_pm1_label", text.auto_page_screen_pm1_label);
     append_auto_page_screen_option("auto_page_screen_pm25", "auto_page_screen_pm25", AUTO_PAGE_SCREEN_PM25,
@@ -2485,6 +2774,20 @@ class SetupPageRenderer {
             const flightRadarFields = document.getElementById("flight_radar_fields");
             const flightRadarRangeInput = document.getElementById("flight_radar_range_km");
             const flightRadarTrafficInputs = Array.from(document.querySelectorAll("input[name='flight_radar_traffic']"));
+            const shipRadarSection = document.getElementById("ship_radar_section");
+            const shipRadarEnabledRow = document.getElementById("ship_radar_enabled_row");
+            const shipRadarEnabledInput = document.getElementById("ship_radar_enabled");
+            const shipRadarFields = document.getElementById("ship_radar_fields");
+            const shipRadarRangeInput = document.getElementById("ship_radar_range_km");
+            const shipRadarKeyInput = document.getElementById("ship_radar_api_key");
+            const shipRadarKeyClearInput = document.getElementById("ship_radar_api_key_clear");
+            const shipRadarLocationInputs = Array.from(document.querySelectorAll("input[name='ship_radar_location']"));
+            const shipRadarLocationFields = document.getElementById("ship_radar_location_fields");
+            const shipRadarLatitudeInput = document.getElementById("ship_radar_latitude");
+            const shipRadarLongitudeInput = document.getElementById("ship_radar_longitude");
+            const shipRadarCategoryInputs = Array.from(document.querySelectorAll("input[data-ship-category]"));
+            const shipRadarFavoritesInput = document.getElementById("ship_radar_favorites");
+            const shipRadarAlertInput = document.getElementById("ship_radar_alert");
             const customThresholdsToggle = document.getElementById("custom_air_quality_thresholds_enabled");
             const customThresholdsPanel = document.getElementById("custom_thresholds_panel");
             const customThresholdMetricGroups = customThresholdsPanel ?
@@ -2607,10 +2910,12 @@ class SetupPageRenderer {
               return km + " km";
             }
             function updateFlightRadarRangeLabels() {
-              if (!flightRadarRangeInput) return;
-              Array.from(flightRadarRangeInput.options).forEach((option) => {
-                const km = Number(option.dataset.km || option.value);
-                if (Number.isFinite(km)) option.textContent = formatFlightRadarRange(km);
+              [flightRadarRangeInput, shipRadarRangeInput].forEach((select) => {
+                if (!select) return;
+                Array.from(select.options).forEach((option) => {
+                  const km = Number(option.dataset.km || option.value);
+                  if (Number.isFinite(km)) option.textContent = formatFlightRadarRange(km);
+                });
               });
             }
             function parseCoordinateInput(input, minimum, maximum) {
@@ -2735,6 +3040,68 @@ class SetupPageRenderer {
               setDisabled(flightRadarTrafficInputs, !active);
               updateFlightRadarRangeLabels();
             }
+            function validateShipRadarFavorites() {
+              if (!shipRadarFavoritesInput) return true;
+              const tokens = shipRadarFavoritesInput.value.split(/[\s,;]+/).filter((token) => token.length > 0);
+              const unique = new Set(tokens);
+              const valid = tokens.every((token) => /^[1-9][0-9]{8}$/.test(token)) && unique.size <= 20;
+              shipRadarFavoritesInput.setCustomValidity(valid ? "" : (shipRadarFavoritesInput.dataset.invalidMessage || "Invalid MMSI list"));
+              return valid;
+            }
+            // Messages for fields the browser would otherwise reject with a
+            // generic "match the requested format" (or, for an out-of-range
+            // coordinate, accept and the device would ignore).
+            function validateShipRadarCoordinate(input) {
+              if (!input) return true;
+              const value = input.value.trim();
+              const max = Number(input.dataset.coordinateMax || 180);
+              const number = Number(value.replace(",", "."));
+              const valid = input.disabled || value === "" ||
+                (/^-?[0-9]{1,3}([.,][0-9]{1,7})?$/.test(value) && Number.isFinite(number) && Math.abs(number) <= max);
+              input.setCustomValidity(valid ? "" : (input.dataset.invalidMessage || "Invalid coordinate"));
+              return valid;
+            }
+            function validateShipRadarKey() {
+              if (!shipRadarKeyInput) return true;
+              const trimmed = shipRadarKeyInput.value.trim();
+              if (trimmed !== shipRadarKeyInput.value) shipRadarKeyInput.value = trimmed;
+              const valid = shipRadarKeyInput.disabled || trimmed === "" || /^[A-Za-z0-9_-]{16,64}$/.test(trimmed);
+              shipRadarKeyInput.setCustomValidity(valid ? "" : (shipRadarKeyInput.dataset.invalidMessage || "Invalid API key"));
+              return valid;
+            }
+            function updateShipRadarControls() {
+              const online = wifiOnlineSelected();
+              const active = online && shipRadarEnabledInput ? shipRadarEnabledInput.checked : false;
+              const customSelected = shipRadarLocationInputs.some((input) => input.checked && input.value === "custom");
+              setDisabledClass(shipRadarSection, !online);
+              setDisabledClass(shipRadarEnabledRow, !online);
+              if (shipRadarEnabledInput) shipRadarEnabledInput.disabled = !online;
+              if (shipRadarFields) {
+                shipRadarFields.hidden = !active;
+                shipRadarFields.classList.toggle("is-disabled", !active);
+              }
+              [shipRadarRangeInput, shipRadarKeyInput, shipRadarKeyClearInput, shipRadarFavoritesInput, shipRadarAlertInput]
+                .forEach((input) => { if (input) input.disabled = !active; });
+              setDisabled(shipRadarLocationInputs, !active);
+              setDisabled(shipRadarCategoryInputs, !active);
+              if (shipRadarLocationFields) shipRadarLocationFields.hidden = !(active && customSelected);
+              [shipRadarLatitudeInput, shipRadarLongitudeInput].forEach((input) => {
+                if (!input) return;
+                input.disabled = !(active && customSelected);
+                input.required = active && customSelected;
+              });
+              if (shipRadarKeyInput && shipRadarKeyClearInput && shipRadarKeyClearInput.checked) shipRadarKeyInput.value = "";
+              if (shipRadarRangeInput) {
+                Array.from(shipRadarRangeInput.options).forEach((option) => {
+                  const km = Number(option.dataset.km || option.value);
+                  if (Number.isFinite(km)) option.textContent = formatFlightRadarRange(km);
+                });
+              }
+              validateShipRadarFavorites();
+              validateShipRadarCoordinate(shipRadarLatitudeInput);
+              validateShipRadarCoordinate(shipRadarLongitudeInput);
+              validateShipRadarKey();
+            }
             function validateCustomThresholds() {
               let valid = true;
               customThresholdMetricGroups.forEach((group) => {
@@ -2813,6 +3180,7 @@ class SetupPageRenderer {
               }
               if (!online && weatherEnabledInput) weatherEnabledInput.checked = false;
               if (!online && flightRadarEnabledInput) flightRadarEnabledInput.checked = false;
+              if (!online && shipRadarEnabledInput) shipRadarEnabledInput.checked = false;
               if (!online && exactLocationInput) exactLocationInput.checked = false;
               const timeSyncActive = timeSyncSelected();
               const timeAvailable = localTimeSelected();
@@ -2824,6 +3192,7 @@ class SetupPageRenderer {
               setDisabledClass(weatherSection, !online);
               setDisabledClass(weatherEnabledRow, !online);
               updateFlightRadarControls();
+              updateShipRadarControls();
               setDisabledClass(integrationsSection, !online);
               setDisabledClass(haRow, !online);
               setDisabledClass(mqttRow, !online);
@@ -3129,6 +3498,21 @@ class SetupPageRenderer {
                 const value = text[element.dataset.i18nAriaLabel];
                 if (value !== undefined) element.setAttribute("aria-label", value);
               });
+              if (shipRadarFavoritesInput && text.ship_radar_favorites_invalid !== undefined) {
+                shipRadarFavoritesInput.dataset.invalidMessage = text.ship_radar_favorites_invalid;
+                validateShipRadarFavorites();
+              }
+              if (text.ship_radar_coordinates_invalid !== undefined) {
+                [shipRadarLatitudeInput, shipRadarLongitudeInput].forEach((input) => {
+                  if (!input) return;
+                  input.dataset.invalidMessage = text.ship_radar_coordinates_invalid;
+                  validateShipRadarCoordinate(input);
+                });
+              }
+              if (shipRadarKeyInput && text.ship_radar_api_key_invalid !== undefined) {
+                shipRadarKeyInput.dataset.invalidMessage = text.ship_radar_api_key_invalid;
+                validateShipRadarKey();
+              }
               if (customThresholdsPanel && text.custom_thresholds_order_error !== undefined) {
                 customThresholdsPanel.dataset.orderError = text.custom_thresholds_order_error;
                 validateCustomThresholds();
@@ -3341,6 +3725,14 @@ class SetupPageRenderer {
             if (flightRadarRangeInput) {
               flightRadarRangeInput.addEventListener("change", updateFlightRadarRangeLabels);
             }
+            [shipRadarEnabledInput, shipRadarKeyClearInput, ...shipRadarLocationInputs].forEach((input) => {
+              if (input) input.addEventListener("change", updateDependentControls);
+            });
+            if (shipRadarFavoritesInput) shipRadarFavoritesInput.addEventListener("input", validateShipRadarFavorites);
+            [shipRadarLatitudeInput, shipRadarLongitudeInput].forEach((input) => {
+              if (input) input.addEventListener("input", () => validateShipRadarCoordinate(input));
+            });
+            if (shipRadarKeyInput) shipRadarKeyInput.addEventListener("input", validateShipRadarKey);
             if (airQualityProfileSelect) {
               airQualityProfileSelect.addEventListener("change", () => {
                 const selectedOption = airQualityProfileSelect.options[airQualityProfileSelect.selectedIndex];

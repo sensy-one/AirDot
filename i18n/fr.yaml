@@ -114,6 +114,38 @@ setup_page:
   flight_radar_traffic_all_label: Tous les avions
   flight_radar_traffic_military_label: Militaire seul
 
+  ship_radar_title: "Radar maritime"
+  ship_radar_note: "Affiche les navires AIS d'aisstream.io autour d'une position sur une carte du littoral. Nécessite une clé API aisstream.io gratuite."
+  ship_radar_enabled_title: "Radar maritime"
+  ship_radar_enabled_description: "Affichez les navires à proximité. Une connexion à aisstream.io reste ouverte tant que l'option est activée, afin de recueillir les noms et types des navires."
+  ship_radar_api_key_label: "Clé API aisstream.io"
+  ship_radar_api_key_placeholder: "Collez votre clé API"
+  ship_radar_api_key_saved_placeholder: "Enregistrée. Laissez vide pour la conserver."
+  ship_radar_api_key_clear_label: "Supprimer la clé enregistrée"
+  ship_radar_api_key_invalid: "Une clé API comporte de 16 à 64 lettres, chiffres, tirets ou tirets bas. Vérifiez qu'il n'y a pas de caractères en trop."
+  ship_radar_range_label: "Rayon"
+  ship_radar_location_label: "Position"
+  ship_radar_location_device_label: "Position de l'appareil"
+  ship_radar_location_custom_label: "Personnalisée"
+  ship_radar_latitude_label: Latitude
+  ship_radar_longitude_label: Longitude
+  ship_radar_coordinates_help: "Degrés décimaux, par exemple 42.3601 et -71.0589. Les latitudes au sud de l'équateur et les longitudes à l'ouest de Greenwich sont négatives."
+  ship_radar_coordinates_invalid: "Saisissez des degrés décimaux : latitude de -90 à 90, longitude de -180 à 180, 7 décimales au maximum."
+  ship_radar_categories_label: "Types de navires"
+  ship_radar_cat_cargo_label: "Cargo"
+  ship_radar_cat_tanker_label: "Navire-citerne"
+  ship_radar_cat_passenger_label: "Passagers"
+  ship_radar_cat_fishing_label: "Pêche"
+  ship_radar_cat_pleasure_label: "Voile et plaisance"
+  ship_radar_cat_service_label: "Remorqueurs et servitude"
+  ship_radar_cat_high_speed_label: "Engins à grande vitesse"
+  ship_radar_cat_other_label: "Autres et inconnus"
+  ship_radar_favorites_label: "Navires favoris (MMSI)"
+  ship_radar_favorites_help: "Jusqu'à 20 numéros MMSI à neuf chiffres, séparés par des virgules. Les favoris sont affichés en doré et ne sont suivis qu'à l'intérieur du rayon."
+  ship_radar_favorites_invalid: "Saisissez des numéros MMSI à neuf chiffres séparés par des virgules, 20 au maximum."
+  ship_radar_alert_title: "Afficher le radar au départ"
+  ship_radar_alert_description: "Basculez l'écran sur le radar maritime lorsqu'un navire favori qui était à l'arrêt ou hors de portée se met en route."
+
   weather_title: Météo
   weather_note: Affichez la météo extérieure locale à l’écran.
 
@@ -155,6 +187,7 @@ setup_page:
   auto_page_screen_time_weather_label: Heure & météo
   auto_page_screen_flight_radar_label: Radar aérien
   auto_page_screen_weather_radar_label: Radar de pluie
+  auto_page_screen_ship_radar_label: "Radar maritime"
   auto_page_screen_pm1_label: PM1
   auto_page_screen_pm25_label: PM2.5
   auto_page_screen_pm4_label: PM4
@@ -220,6 +253,14 @@ weather:
 notification:
   fallback: Notification
   dismiss: Fermer
+
+ship_radar:
+  key_missing: "Clé API AIS manquante"
+  location_missing: "Position manquante"
+  offline: "Hors ligne"
+  connecting: "Connexion..."
+  reconnecting: "Reconnexion..."
+  key_rejected: "Clé API AIS refusée"
 
 date:
   format: "{weekday} {day} {month}"
